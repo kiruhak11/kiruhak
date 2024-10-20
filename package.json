@@ -11,6 +11,7 @@
     "deploy": "scp -r .output/* j53779400@c64869e17b97.hosting.myjino.ru:~/domains/kiruhak11.ru/ && ssh j53779400@c64869e17b97.hosting.myjino.ru \"mkdir -p ~/domains/kiruhak11.ru/tmp && touch ~/domains/kiruhak11.ru/tmp/restart.txt\""
   },
   "dependencies": {
+    "@nuxtjs/device": "^3.2.4",
     "nuxt": "^3.13.2",
     "vue": "latest",
     "vue-router": "latest"

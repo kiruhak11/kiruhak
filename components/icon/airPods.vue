@@ -106,3 +106,9 @@
     </g>
   </svg>
 </template>
+
+<style lang="scss" scoped>
+path {
+  fill: var(--color-text);
+}
+</style>

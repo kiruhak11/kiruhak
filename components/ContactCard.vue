@@ -82,6 +82,6 @@
 }
 .container .glass svg {
   font-size: 2.5em;
-  fill: #363636;
+  fill: var(--color-text);
 }
 </style>

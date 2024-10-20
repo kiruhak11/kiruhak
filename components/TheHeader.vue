@@ -1,25 +1,28 @@
 <template>
   <header class="header container">
-    <div class="logo">
+    <div class="logo" v-if="!isMobile">
       <LoaderIcon />
       <div class="logo__text">
-        <nuxt-link to="/">
-          <h1>Kiruhak: Front-end developer</h1>
-        </nuxt-link>
+        <NuxtLink to="/">
+          <h1>Kirill: Front-end developer</h1>
+        </NuxtLink>
       </div>
     </div>
 
-    <nav>
+    <nav v-if="!isMobile">
       <ul>
-        <li><nuxt-link to="/projects">Каталог проектов</nuxt-link></li>
-        <li><nuxt-link to="/contact">Мои контакты</nuxt-link></li>
+        <li><NuxtLink to="/projects">Каталог проектов</NuxtLink></li>
+        <li><NuxtLink to="/contact">Мои контакты</NuxtLink></li>
       </ul>
     </nav>
-    <Switcher />
+    <Switcher v-if="!isMobile" />
+    <HamburgerMenu v-else />
   </header>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+const { isMobile } = useDevice();
+</script>
 
 <style lang="scss" scoped>
 .header {

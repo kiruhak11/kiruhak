@@ -15,14 +15,14 @@
 .about-container {
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+  margin-top: 128px;
+  padding: 0 8px;
   background-color: var(--background-color);
 }
 
 .about-content {
   background: var(--background-color-hover);
-  padding: 30px;
+  padding: 24px;
   border-radius: 15px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   max-width: 600px;

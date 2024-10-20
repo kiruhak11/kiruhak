@@ -1,11 +1,14 @@
 <template>
   <NuxtLayout>
     <div class="container">
-      <ContactCard />
+      <ContactCard v-if="!isMobile" />
+      <ContactCardMobile v-if="isMobile" />
     </div>
   </NuxtLayout>
 </template>
-
+<script lang="ts" setup>
+const { isMobile } = useDevice();
+</script>
 <style lang="scss" scoped>
 .container {
   padding-top: 32px;

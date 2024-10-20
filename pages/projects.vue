@@ -31,7 +31,9 @@ h1 {
 }
 
 .card {
-  margin: 0 24px;
+  display: flex;
+  margin: 24px 12px;
+  justify-content: center;
   &s {
     display: flex;
     justify-content: center;
