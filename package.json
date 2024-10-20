@@ -7,11 +7,15 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "deploy": "scp -r .output/* j53779400@c64869e17b97.hosting.myjino.ru:~/domains/kiruhak11.ru/ && ssh j53779400@c64869e17b97.hosting.myjino.ru \"mkdir -p ~/domains/kiruhak11.ru/tmp && touch ~/domains/kiruhak11.ru/tmp/restart.txt\""
   },
   "dependencies": {
     "nuxt": "^3.13.2",
     "vue": "latest",
     "vue-router": "latest"
+  },
+  "devDependencies": {
+    "sass-embedded": "^1.80.3"
   }
 }

@@ -1,6 +1,9 @@
 <template>
   <div>
-    <NuxtRouteAnnouncer />
-    <NuxtWelcome />
+    <nuxt-page />
   </div>
 </template>
+
+<style lang="scss">
+@import "assets/styles/index";
+</style>

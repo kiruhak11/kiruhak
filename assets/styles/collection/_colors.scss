@@ -1,0 +1,17 @@
+:root {
+  --background-color: #f6f6f6;
+  --airpods-store-color: #007bff;
+  --background-color-hover: #dddddd; // Темный фон
+  --background-color-links: #aaa; // Темный фон
+  --border-color: #ccc;
+  --color-text: #333;
+  --color-text-hover: #696969;
+}
+
+.dark {
+  --background-color: #121212; // Темный фон
+  --airpods-store-color: #007bff;
+  --background-color-hover: #868686;
+  --color-text: #e0e0e0; // Светлый текст
+  --color-text-hover: #e0e0e0; // Светлый текст
+}
