@@ -17,22 +17,27 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #f0f4f8;
+  background-color: var(--background-color);
 }
 
 .about-content {
-  background: white;
+  background: var(--background-color-hover);
   padding: 30px;
   border-radius: 15px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   max-width: 600px;
   text-align: center;
 
-  /* Анимация появления */
   opacity: 0;
   transform: scale(0.9);
-  animation: fadeIn 0.7s ease forwards; /* Срабатывание анимации */
-  animation-delay: 0.3s; /* Задержка перед началом анимации */
+  animation: fadeIn 0.7s ease forwards;
+  animation-delay: 0.3s;
+  box-shadow: 0 0px 16px var(--box-shadow-color);
+  transition: background-color 0.3s, box-shadow 0.3s;
+  &:hover {
+    background-color: var(--background-color-hover);
+    box-shadow: 0 0px 24px var(--box-shadow-color-hover);
+  }
 }
 
 @keyframes fadeIn {
@@ -46,12 +51,12 @@
   font-size: 2.5rem;
   font-weight: bold;
   margin-bottom: 20px;
-  color: #333;
+  color: var(--color-text);
 }
 
 .description {
   font-size: 1.2rem;
-  color: #555;
+  color: var(--color-text);
   line-height: 1.6;
 }
 </style>

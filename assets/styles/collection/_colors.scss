@@ -1,17 +1,25 @@
 :root {
   --background-color: #f6f6f6;
   --airpods-store-color: #007bff;
-  --background-color-hover: #dddddd; // Темный фон
-  --background-color-links: #aaa; // Темный фон
+  --background-color-hover: #d3eefa4d;
+  --background-color-links: #aaa;
   --border-color: #ccc;
   --color-text: #333;
   --color-text-hover: #696969;
+  --color-accent: #007bff;
+  --box-shadow-color: rgba(0, 174, 255, 0.3);
+  --box-shadow-color-hover: rgba(0, 174, 255, 0.5);
 }
 
 .dark {
-  --background-color: #121212; // Темный фон
+  --background-color: #121212;
   --airpods-store-color: #007bff;
-  --background-color-hover: #868686;
-  --color-text: #e0e0e0; // Светлый текст
-  --color-text-hover: #e0e0e0; // Светлый текст
+  --background-color-hover: #000000;
+  --background-color-links: #e0e0e0;
+  --border-color: #333;
+  --color-text: #e0e0e0;
+  --color-text-hover: #e0e0e0;
+  --color-accent: #007bff;
+  --box-shadow-color: rgba(0, 174, 255, 0.3);
+  --box-shadow-color-hover: rgba(0, 174, 255, 0.5);
 }

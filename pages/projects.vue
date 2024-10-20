@@ -2,7 +2,7 @@
   <NuxtLayout>
     <main>
       <div class="container">
-        <div class="lable">Проекты</div>
+        <div class="lable"><h1>Проекты</h1></div>
         <div class="cards">
           <div class="card"><ProjectCardAPS /></div>
           <div class="card"><ProjectCardAPS /></div>
@@ -14,6 +14,22 @@
 </template>
 
 <style lang="scss" scoped>
+h1 {
+  padding: 16px;
+  color: var(--color-text);
+  opacity: 0;
+  transform: scale(0.9);
+  animation: fadeIn 0.7s ease forwards;
+  animation-delay: 0.3s;
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .card {
   margin: 0 24px;
   &s {

@@ -58,13 +58,24 @@
   display: flex;
   justify-content: center;
   align-items: center;
-}
 
+  opacity: 0;
+  transform: scale(0.9);
+  animation: fadeIn 0.7s ease forwards;
+  animation-delay: 0.3s;
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 .container .glass {
   position: relative;
   width: 180px;
   height: 200px;
-  background: linear-gradient(#363636, transparent);
+  background: linear-gradient(var(--color-text), transparent);
   box-shadow: 0 25px 25px rgba(0, 0, 0, 0.25);
   display: flex;
   justify-content: center;
@@ -91,7 +102,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  color: #363636;
+  color: var(--color-text);
 }
 .container .glass svg {
   font-size: 2.5em;

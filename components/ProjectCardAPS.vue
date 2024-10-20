@@ -1,7 +1,11 @@
 <template>
   <div class="card">
     <NuxtLink to="https://airpodsstore.kiruhak11.ru" class="content">
-      <svg viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg
+        viewBox="0 0 128 128"
+        fill="black"
+        xmlns="http://www.w3.org/2000/svg"
+      >
         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
         <g
           id="SVGRepo_tracerCarrier"
@@ -119,18 +123,37 @@
 </template>
 
 <style lang="scss" scoped>
+.title {
+  color: var(--color-text);
+}
 .card {
   width: 200px;
   height: 280px;
   overflow: visible;
   cursor: pointer;
   position: relative;
+  opacity: 0;
+  transform: scale(0.9);
+  animation: fadeIn 0.7s ease forwards;
+  animation-delay: 0.3s;
+  transition: background-color 0.3s, box-shadow 0.3s;
+
+  &:hover {
+    box-shadow: 0 12px 24px var(--box-shadow-color-hover);
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .card::before,
 .content {
   border-radius: 5px;
-  box-shadow: 0px 0px 5px 1px #00000022;
+  box-shadow: 0 0px 16px var(--box-shadow-color);
   transition: transform 300ms, box-shadow 200ms;
 }
 
@@ -151,7 +174,7 @@
 }
 
 .info {
-  color: #00000066;
+  color: var(--color-text-hover);
 }
 
 .price {
@@ -167,7 +190,7 @@
   position: absolute;
   width: 100%;
   height: 100%;
-  background-color: white;
+  background-color: var(--background-color);
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -188,5 +211,8 @@
 .card:active::before,
 .card:active .content {
   box-shadow: none;
+}
+path {
+  fill: var(--color-text);
 }
 </style>
