@@ -8,7 +8,6 @@
     >
       <IconGoTop />
     </button>
-    <the-footer />
   </div>
 </template>
 
