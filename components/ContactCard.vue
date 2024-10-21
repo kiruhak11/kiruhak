@@ -32,6 +32,7 @@
 .container {
   position: relative;
   display: flex;
+  width: auto;
   justify-content: center;
   align-items: center;
 
