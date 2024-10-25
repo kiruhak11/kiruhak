@@ -4,6 +4,4 @@
   </div>
 </template>
 
-<style lang="scss">
-@import "assets/styles/index";
-</style>
+<style lang="scss" src="~/assets/styles/index.scss"></style>

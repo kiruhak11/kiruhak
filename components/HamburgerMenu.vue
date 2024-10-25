@@ -13,7 +13,11 @@
     </div>
 
     <!-- Мобильное меню -->
-    <nav :class="{ 'mobile-nav-open': isOpen }" class="mobile-nav">
+    <nav
+      :class="{ 'mobile-nav-open': isOpen }"
+      class="mobile-nav"
+      @click="toggleMenu"
+    >
       <ul>
         <div class="container">
           <div class="line"></div>
