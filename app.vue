@@ -9,4 +9,5 @@ useSeoMeta({
     title ? `${title} | kiruhak` : "kiruhak - Frontend Developer",
 });
 </script>
+
 <style lang="scss" src="~/assets/styles/index.scss"></style>
