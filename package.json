@@ -8,7 +8,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "deploy": "scp -r .output/* j53779400@c64869e17b97.hosting.myjino.ru:~/domains/kiruhak11.ru/ && ssh j53779400@c64869e17b97.hosting.myjino.ru \"mkdir -p ~/domains/kiruhak11.ru/tmp && touch ~/domains/kiruhak11.ru/tmp/restart.txt\""
+    "deploy": "scp -r .output/* j53779400@c64869e17b97.hosting.myjino.ru:~/domains/kiruhak11.ru/ && ssh j53779400@c64869e17b97.hosting.myjino.ru \"mkdir -p ~/domains/kiruhak11.ru/tmp && touch ~/domains/kiruhak11.ru/tmp/restart.txt && chmod -R 777 ~/domains/kiruhak11.ru/\""
   },
   "dependencies": {
     "@morev/vue-transitions": "^3.0.2",
@@ -24,6 +24,7 @@
     "nuxt": "^3.11.2",
     "pinia": "^2.1.7",
     "pinia-plugin-persistedstate": "^3.2.1",
+    "sass-loader": "^16.0.2",
     "vue-router": "^4.3.2",
     "vue-toastification": "^2.0.0-rc.5"
   },
@@ -39,7 +40,7 @@
     "eslint-config-prettier": "^8.10.0",
     "eslint-plugin-prettier": "^4.2.1",
     "prettier": "^2.8.8",
-    "sass": "^1.77.4",
+    "sass": "^1.80.3",
     "stylelint": "^16.7.0",
     "stylelint-config-rational-order-fix": "^0.1.9",
     "stylelint-config-recommended-vue": "latest",

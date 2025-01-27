@@ -1,12 +1,12 @@
 <template>
   <div class="card">
-    <NuxtLink to="https://airpodsstore.kiruhak11.ru" class="content">
-      <IconAirPods />
+    <NuxtLink to="https://devhorizon.kiruhak11.ru" class="content">
+      <IconBook />
       <div class="description">
         <p class="title">
-          <strong>AirPods Store</strong>
+          <strong>DevHorizon</strong>
         </p>
-        <p class="info">Start in 01.09.2024</p>
+        <p class="info">Start in 01.10.2024</p>
         <p class="price">Finished</p>
       </div>
     </NuxtLink>

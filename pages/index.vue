@@ -5,3 +5,4 @@
     </main>
   </NuxtLayout>
 </template>
+<script></script>

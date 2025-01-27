@@ -5,8 +5,8 @@
         <div class="lable"><h1>Проекты</h1></div>
         <div class="cards">
           <div class="card"><ProjectCardAPS /></div>
-          <div class="card"><ProjectCardAPS /></div>
-          <div class="card"><ProjectCardAPS /></div>
+          <div class="card"><ProjectCardMA /></div>
+          <div class="card"><ProjectCardDH /></div>
         </div>
       </div>
     </main>

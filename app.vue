@@ -3,7 +3,10 @@
     <nuxt-page />
   </div>
 </template>
-
-<style lang="scss">
-@import "assets/styles/index";
-</style>
+<script setup lang="ts">
+useSeoMeta({
+  titleTemplate: (title) =>
+    title ? `${title} | kiruhak` : "kiruhak - Frontend Developer",
+});
+</script>
+<style lang="scss" src="~/assets/styles/index.scss"></style>

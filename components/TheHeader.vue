@@ -61,7 +61,6 @@ const { isMobile } = useDevice();
       text-transform: uppercase;
       letter-spacing: 1.5px;
       transition: color 0.3s;
-      font-family: "Ubuntu";
     }
 
     h1:hover {
