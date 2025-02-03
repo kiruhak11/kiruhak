@@ -45,8 +45,8 @@ body {
   min-height: 100dvh;
 }
 .button-go-top {
-  background-color: var(--color-text);
-  color: var(--background-color);
+  background-color: var(--background-color);
+  color: var(--color-text);
   padding: 12px;
   border-radius: 100%;
   position: fixed;
