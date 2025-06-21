@@ -127,6 +127,9 @@
   </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+import SuccessModal from '~/components/SuccessModal.vue'
+import InfoModal from '~/components/InfoModal.vue'
 
 const props = defineProps({
   isOpen: Boolean
@@ -144,7 +147,7 @@ const form = ref({
   description: ''
 })
 
-const { closeModal } = useFrogModal()
+const { closeModal, setModal } = useFrogModal()
 
 const resetForm = () => {
   form.value = {
@@ -161,16 +164,39 @@ const submitForm = async () => {
   isSubmitting.value = true
   
   try {
-    const message = formatMessage()
-    const telegramUrl = `https://t.me/kiruhak11?text=${encodeURIComponent(message)}`
-    window.open(telegramUrl, '_blank')
+    const response = await $fetch('/api/telegram', {
+      method: 'POST',
+      body: {
+        message: formatMessage()
+      }
+    });
     
-    // Показываем уведомление об успешной отправке
-    alert('Заявка отправлена! Я свяжусь с вами в ближайшее время.')
+    console.log('Telegram response:', response)
+    
+    // Закрываем текущее модальное окно
     closeModal()
     resetForm()
+    
+    // Показываем уведомление об успешной отправке
+    setTimeout(() => {
+      setModal(SuccessModal, {
+        title: 'Заявка отправлена!',
+        message: 'Я свяжусь с вами в ближайшее время для обсуждения деталей проекта.',
+        buttonText: 'Отлично!'
+      })
+    }, 300)
+    
   } catch (error) {
-    alert('Произошла ошибка при отправке заявки. Попробуйте еще раз.')
+    console.error('Error sending form:', error)
+    
+    // Показываем уведомление об ошибке
+    setTimeout(() => {
+      setModal(InfoModal, {
+        title: 'Ошибка отправки',
+        message: 'Произошла ошибка при отправке заявки. Попробуйте еще раз или свяжитесь со мной напрямую.',
+        buttonText: 'Понятно'
+      })
+    }, 300)
   } finally {
     isSubmitting.value = false
   }
@@ -199,19 +225,19 @@ const formatMessage = () => {
     other: 'Другое'
   }
   
-  return `🎯 Новая заявка на разработку сайта
+  return `<b>🎯 Новая заявка на разработку сайта</b>
 
-👤 Имя: ${form.value.name}
-📞 Контакты: ${form.value.contact}
-🏗️ Тип проекта: ${projectTypeMap[form.value.projectType] || 'Не указан'}
-💰 Бюджет: ${budgetMap[form.value.budget] || 'Не указан'}
-⏰ Сроки: ${deadlineMap[form.value.deadline] || 'Не указаны'}
+👤 <b>Имя:</b> ${form.value.name}
+📞 <b>Контакты:</b> ${form.value.contact}
+🏗️ <b>Тип проекта:</b> ${projectTypeMap[form.value.projectType] || 'Не указан'}
+💰 <b>Бюджет:</b> ${budgetMap[form.value.budget] || 'Не указан'}
+⏰ <b>Сроки:</b> ${deadlineMap[form.value.deadline] || 'Не указаны'}
 
-📝 Описание проекта:
+📝 <b>Описание проекта:</b>
 ${form.value.description}
 
 ---
-Отправлено с сайта kiruhak11.ru`
+Отправлено с сайта <a href="https://kiruhak11.ru">kiruhak11.ru</a>`
 }
 </script>
 

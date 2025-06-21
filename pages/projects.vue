@@ -78,6 +78,7 @@ const projects = ref([
     id: 1,
     title: "KES - Сайт КотлоЭнергоСнаб",
     url: "https://kes.kiruhak11.ru",
+    isOnline: true,
     startDate: "15.01.2025",
     status: statuses.DEVELOPMENT,
     description: "Комплексная система управления предприятием с модулями учета, аналитики и отчетности. Включает в себя CRM, управление складом, финансовый учет и аналитические дашборды.",
@@ -88,6 +89,7 @@ const projects = ref([
     id: 2,
     title: "AirPods Store",
     url: "https://airpodsstore.kiruhak11.ru",
+    isOnline: true,
     startDate: "01.09.2024",
     status: statuses.DEVELOPMENT,
     description: "Интернет-магазин аксессуаров для Apple устройств. Современный дизайн, удобная навигация, корзина покупок и система оплаты.",
@@ -98,6 +100,7 @@ const projects = ref([
     id: 3,
     title: "Mixer Timetable",
     url: "https://mixers-adalin.ru",
+    isOnline: true,
     startDate: "01.01.2025",
     status: statuses.COMPLETED,
     description: "Веб-приложение для управления расписанием и планирования задач. Интуитивный интерфейс, календарь событий и система уведомлений.",
@@ -108,10 +111,11 @@ const projects = ref([
     id: 4,
     title: "DevHorizon",
     url: "https://devhorizon.kiruhak11.ru",
+    isOnline: false,
     startDate: "01.10.2024",
     status: statuses.STOPPED,
     description: "Платформа для разработчиков с блогами, туториалами и обменом опытом. Система комментариев, рейтингов и поиска контента.",
-    technologies: ["Vue.js", "Express.js", "MongoDB", "JWT", "Markdown"],
+    technologies: ["Vue.js", "Nuxt.js", "Prisma", "Docker", "BIG"],
     image: "https://placehold.co/300x200?text=DevHorizon"
   }
 ])

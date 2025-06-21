@@ -19,17 +19,30 @@ export default defineEventHandler(async (event) => {
       body: {
         chat_id: chatId,
         text: message,
-        parse_mode: 'HTML'
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
       }
     })
     
+    console.log('Telegram message sent successfully:', response)
+    
     return {
       success: true,
-      data: response
+      data: response,
+      message: 'Message sent successfully'
     }
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Telegram API error:', error)
+    
+    // Проверяем, является ли ошибка связанной с Telegram API
+    if (error.statusCode === 400) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Invalid message format'
+      })
+    }
+    
     throw createError({
       statusCode: 500,
       statusMessage: 'Failed to send message to Telegram'

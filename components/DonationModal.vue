@@ -83,6 +83,8 @@
 </template>
 
 <script setup lang="ts">
+import SuccessModal from '~/components/SuccessModal.vue'
+import InfoModal from '~/components/InfoModal.vue'
 
 const props = defineProps({
   isOpen: Boolean
@@ -94,19 +96,43 @@ const amounts = [100, 300, 500, 1000]
 const selectedAmount = ref(300)
 const customAmount = ref('')
 
-const { closeModal } = useFrogModal()
+const { closeModal, setModal } = useFrogModal()
 
 const openTelegram = () => {
   const amount = selectedAmount.value || customAmount.value
   const message = `Привет! Хочу поддержать проект на сумму ${amount}₽`
   const telegramUrl = `https://t.me/kiruhak11?text=${encodeURIComponent(message)}`
   window.open(telegramUrl, '_blank')
+  
+  // Закрываем текущее модальное окно
+  closeModal()
+  
+  // Показываем уведомление
+  setTimeout(() => {
+    setModal(SuccessModal, {
+      title: 'Спасибо за поддержку!',
+      message: 'Ваша поддержка помогает развивать проект. Спасибо! 🙏',
+      buttonText: 'Понятно'
+    })
+  }, 300)
 }
 
 const copyCardNumber = () => {
-  const cardNumber = '2200 7004 XXXX XXXX' // Замените на реальный номер карты
+  const cardNumber = '2200 2460 6394 8171' // Замените на реальный номер карты
   navigator.clipboard.writeText(cardNumber).then(() => {
-    alert('Номер карты скопирован в буфер обмена!')
+    // Показываем уведомление
+    setModal(InfoModal, {
+      title: 'Номер карты скопирован!',
+      message: 'Номер банковской карты скопирован в буфер обмена.',
+      buttonText: 'Отлично!'
+    })
+  }).catch(() => {
+    // Показываем уведомление об ошибке
+    setModal(InfoModal, {
+      title: 'Ошибка копирования',
+      message: 'Не удалось скопировать номер карты. Попробуйте скопировать вручную: 2200 2460 6394 8171',
+      buttonText: 'Понятно'
+    })
   })
 }
 </script>

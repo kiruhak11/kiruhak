@@ -49,8 +49,11 @@ const targetStats = {
 
 <style lang="scss" scoped>
 .stats-container {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  align-items: center;
   justify-content: center;
+  gap: 24px;
   width: 100%;
   padding: 16px;
 }
@@ -90,7 +93,7 @@ h2 {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
 }
 

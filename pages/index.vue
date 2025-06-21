@@ -2,6 +2,7 @@
   <NuxtLayout>
     <main>
       <div class="container">
+        <!-- Hero Section -->
         <div class="hero-section">
           <Typewriter text="Привет, я Кирилл!" :speed="100" :delay="500" />
           <p class="hero-subtitle">
@@ -25,14 +26,34 @@
           </div>
         </div>
 
-        <AboutMe @openOrderModal="
-setModal(OrderModal)" @openDonationModal="setModal( DonationModal)" />
+        <!-- About Me Section -->
+        <AboutMe @openOrderModal="setModal(OrderModal)" @openDonationModal="setModal(DonationModal)" />
         
-        <StatsSection />
+        <!-- Centered Stats Section -->
+        <div class="stats-container">
+          <StatsSection />
+        </div>
         
+        <!-- Interactive Components -->
+        <div class="interactive-section">
+          <FocusChecker />
+        </div>
+        
+        <div class="interactive-section">
+          <InteractiveGallery />
+        </div>
+        
+        <div class="interactive-section">
+          <ParallaxSection />
+        </div>
+        
+        <div class="interactive-section">
+          <PhysicalBox />
+        </div>
+        
+        <!-- Floating Cards -->
         <FloatingCards />
       </div>
-
     </main>
   </NuxtLayout>
 </template>
@@ -43,30 +64,14 @@ import Typewriter from '~/components/Typewriter.vue'
 import AboutMe from '~/components/AboutMe.vue'
 import StatsSection from '~/components/StatsSection.vue'
 import FloatingCards from '~/components/FloatingCards.vue'
+import FocusChecker from '~/components/FocusChecker.vue'
+import InteractiveGallery from '~/components/InteractiveGallery.vue'
+import ParallaxSection from '~/components/ParallaxSection.vue'
+import PhysicalBox from '~/components/PhysicalBox.vue'
 import OrderModal from '~/components/OrderModal.vue'
 import DonationModal from '~/components/DonationModal.vue'
 
 const { setModal } = useFrogModal()
-
-// Состояние модальных окон
-const isDonationModalOpen = ref(false)
-const isOrderModalOpen = ref(false)
-
-const openDonationModal = () => {
-  isDonationModalOpen.value = true
-}
-
-const closeDonationModal = () => {
-  isDonationModalOpen.value = false
-}
-
-const openOrderModal = () => {
-  isOrderModalOpen.value = true
-}
-
-const closeOrderModal = () => {
-  isOrderModalOpen.value = false
-}
 </script>
 
 <style lang="scss" scoped>
@@ -135,6 +140,24 @@ const closeOrderModal = () => {
   }
 }
 
+.stats-container {
+  display: flex;
+  justify-content: center;
+  margin: 60px 0;
+}
+
+.interactive-section {
+  margin: 60px 0;
+  
+  &:first-of-type {
+    margin-top: 40px;
+  }
+  
+  &:last-of-type {
+    margin-bottom: 40px;
+  }
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -169,6 +192,14 @@ const closeOrderModal = () => {
     width: 100%;
     max-width: 300px;
     justify-content: center;
+  }
+  
+  .stats-container {
+    margin: 40px 0;
+  }
+  
+  .interactive-section {
+    margin: 40px 0;
   }
 }
 </style>

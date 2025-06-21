@@ -80,7 +80,7 @@ import { computed } from 'vue'
 const props = defineProps({
   project: {
     type: Object,
-    default: () => ({})
+    required: true
   }
 })
 

@@ -165,7 +165,6 @@ const { setModal } = useFrogModal()
 <style lang="scss" scoped>
 .contact-page {
   min-height: 100vh;
-  background: var(--background-color);
   padding: 32px 0;
 }
 
@@ -322,6 +321,7 @@ const { setModal } = useFrogModal()
     font-size: 1.1rem;
     font-weight: 600;
     margin: 0 0 8px 0;
+    color: var(--color-text);
   }
   
   p {
