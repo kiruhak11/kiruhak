@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: "2024-04-03",
   devtools: { enabled: true },
-  modules: ["@nuxtjs/device", "@nuxtjs/google-fonts"],
+  modules: ["@nuxtjs/device", "@nuxtjs/google-fonts", "rubillex_frog-modal"],
   googleFonts: {
     families: {
       Ubuntu: [400, 500, 600, 700],

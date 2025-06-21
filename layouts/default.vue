@@ -1,5 +1,6 @@
 <template>
   <div class="app">
+    <ParticleBackground />
     <TheHeader />
     <div class="content"><slot></slot></div>
     <button
@@ -12,6 +13,9 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
+import ParticleBackground from '~/components/ParticleBackground.vue'
+
 const goTop = () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
@@ -56,8 +60,9 @@ body {
   opacity: 0;
   cursor: pointer;
   visibility: hidden;
-  border: 1px solid var(--color-text);
+  border: 1px solid var(--border-color);
   transition: all 0.3s cubic-bezier(0.27, 0.09, 0.42, 1.53);
+  box-shadow: var(--card-shadow);
 
   &_active {
     opacity: 1;
@@ -65,8 +70,10 @@ body {
   }
   &:hover {
     background-color: var(--background-color-hover);
-    color: var(--color-text-hover);
-    border: 1px solid var(--color-text);
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent);
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow-hover);
   }
 
   svg {

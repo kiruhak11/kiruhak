@@ -1,0 +1,400 @@
+<template>
+  <client-only>
+    <FrogModalWrapper
+    :desktop-position="FrogModalWrapperPosition.CENTER"
+    :mobile-position="FrogModalWrapperPosition.BOTTOM"
+    mobile-swipe-to-close
+    class="modal"
+  >
+      <div class="modal-overlay" @click="closeModal">
+        <div class="modal-content" @click.stop>
+          <button class="close-button" @click="closeModal">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          
+          <div class="modal-body">
+            <div class="order-header">
+              <div class="code-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <polyline points="16,18 22,12 16,6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <polyline points="8,6 2,12 8,18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <h2>Заказать сайт</h2>
+              <p>Расскажите о вашем проекте, и я свяжусь с вами для обсуждения деталей</p>
+            </div>
+            
+            <form @submit.prevent="submitForm" class="order-form">
+              <div class="form-group">
+                <label for="name">Имя *</label>
+                <input 
+                  id="name"
+                  v-model="form.name"
+                  type="text"
+                  required
+                  placeholder="Ваше имя"
+                />
+              </div>
+              
+              <div class="form-group">
+                <label for="contact">Контакты *</label>
+                <input 
+                  id="contact"
+                  v-model="form.contact"
+                  type="text"
+                  required
+                  placeholder="Telegram, телефон или email"
+                />
+              </div>
+              
+              <div class="form-group">
+                <label for="projectType">Тип проекта *</label>
+                <select 
+                  id="projectType"
+                  v-model="form.projectType"
+                  required
+                >
+                  <option value="">Выберите тип проекта</option>
+                  <option value="landing">Лендинг</option>
+                  <option value="corporate">Корпоративный сайт</option>
+                  <option value="ecommerce">Интернет-магазин</option>
+                  <option value="blog">Блог</option>
+                  <option value="portfolio">Портфолио</option>
+                  <option value="other">Другое</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="budget">Бюджет</label>
+                <select 
+                  id="budget"
+                  v-model="form.budget"
+                >
+                  <option value="">Не указан</option>
+                  <option value="small">До 50,000₽</option>
+                  <option value="medium">50,000₽ - 150,000₽</option>
+                  <option value="large">150,000₽ - 500,000₽</option>
+                  <option value="enterprise">Более 500,000₽</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="deadline">Сроки</label>
+                <select 
+                  id="deadline"
+                  v-model="form.deadline"
+                >
+                  <option value="">Не указаны</option>
+                  <option value="urgent">Срочно (1-2 недели)</option>
+                  <option value="normal">Обычно (1-2 месяца)</option>
+                  <option value="flexible">Гибкие сроки</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="description">Описание проекта *</label>
+                <textarea 
+                  id="description"
+                  v-model="form.description"
+                  required
+                  rows="4"
+                  placeholder="Опишите ваш проект, цели, функциональность..."
+                ></textarea>
+              </div>
+              
+              <div class="form-actions">
+                <button type="submit" class="submit-button" :disabled="isSubmitting">
+                  <span v-if="isSubmitting" class="loading">
+                    <svg class="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="31.416" stroke-dashoffset="31.416">
+                        <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                        <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                      </circle>
+                    </svg>
+                    Отправка...
+                  </span>
+                  <span v-else>Отправить заявку</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </FrogModalWrapper>
+  </client-only>
+  </template>
+
+<script setup lang="ts">
+
+const props = defineProps({
+  isOpen: Boolean
+})
+
+const emit = defineEmits(['close'])
+
+const isSubmitting = ref(false)
+const form = ref({
+  name: '',
+  contact: '',
+  projectType: '',
+  budget: '',
+  deadline: '',
+  description: ''
+})
+
+const { closeModal } = useFrogModal()
+
+const resetForm = () => {
+  form.value = {
+    name: '',
+    contact: '',
+    projectType: '',
+    budget: '',
+    deadline: '',
+    description: ''
+  }
+}
+
+const submitForm = async () => {
+  isSubmitting.value = true
+  
+  try {
+    const message = formatMessage()
+    const telegramUrl = `https://t.me/kiruhak11?text=${encodeURIComponent(message)}`
+    window.open(telegramUrl, '_blank')
+    
+    // Показываем уведомление об успешной отправке
+    alert('Заявка отправлена! Я свяжусь с вами в ближайшее время.')
+    closeModal()
+    resetForm()
+  } catch (error) {
+    alert('Произошла ошибка при отправке заявки. Попробуйте еще раз.')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const formatMessage = () => {
+  const budgetMap = {
+    small: 'До 50,000₽',
+    medium: '50,000₽ - 150,000₽',
+    large: '150,000₽ - 500,000₽',
+    enterprise: 'Более 500,000₽'
+  }
+  
+  const deadlineMap = {
+    urgent: 'Срочно (1-2 недели)',
+    normal: 'Обычно (1-2 месяца)',
+    flexible: 'Гибкие сроки'
+  }
+  
+  const projectTypeMap = {
+    landing: 'Лендинг',
+    corporate: 'Корпоративный сайт',
+    ecommerce: 'Интернет-магазин',
+    blog: 'Блог',
+    portfolio: 'Портфолио',
+    other: 'Другое'
+  }
+  
+  return `🎯 Новая заявка на разработку сайта
+
+👤 Имя: ${form.value.name}
+📞 Контакты: ${form.value.contact}
+🏗️ Тип проекта: ${projectTypeMap[form.value.projectType] || 'Не указан'}
+💰 Бюджет: ${budgetMap[form.value.budget] || 'Не указан'}
+⏰ Сроки: ${deadlineMap[form.value.deadline] || 'Не указаны'}
+
+📝 Описание проекта:
+${form.value.description}
+
+---
+Отправлено с сайта kiruhak11.ru`
+}
+</script>
+
+<style lang="scss" scoped>
+.modal {
+  opacity: 1;
+}
+
+.modal-content {
+  background: var(--background-color);
+  border-radius: 20px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow-hover);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.close-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: var(--background-color-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  z-index: 10;
+  
+  &:hover {
+    background: var(--background-color-hover);
+    transform: scale(1.1);
+    box-shadow: var(--card-shadow);
+  }
+}
+
+.modal-body {
+  padding: 32px;
+}
+
+.order-header {
+  text-align: center;
+  margin-bottom: 32px;
+  
+  .code-icon {
+    color: var(--color-accent);
+    margin-bottom: 16px;
+  }
+  
+  h2 {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-text);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+}
+
+.order-form {
+  .form-group {
+    margin-bottom: 20px;
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border-color);
+      background: var(--background-color);
+      color: var(--color-text);
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.2s ease;
+      
+      &:focus {
+        outline: none;
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+      
+      &::placeholder {
+        color: var(--color-text-muted);
+      }
+    }
+    
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+  }
+}
+
+.form-actions {
+  margin-top: 32px;
+  text-align: center;
+}
+
+.submit-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 32px;
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  }
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .spinner {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 16px;
+  }
+  
+  .modal-body {
+    padding: 24px;
+  }
+  
+  .order-form {
+    .form-group {
+      margin-bottom: 16px;
+    }
+  }
+}
+</style>

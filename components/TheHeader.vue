@@ -15,7 +15,7 @@
         <li><NuxtLink to="/contact">Мои контакты</NuxtLink></li>
       </ul>
     </nav>
-    <Switcher v-if="!isMobile" />
+    <ThemeToggle v-if="!isMobile" />
     <HamburgerMenu v-else />
   </header>
 </template>

@@ -1,5 +1,6 @@
 <template>
   <div>
+    <FrogModal />
     <nuxt-page />
   </div>
 </template>
