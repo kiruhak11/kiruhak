@@ -43,6 +43,13 @@ export default defineNuxtConfig({
       routes: ["/", "/projects", "/contact"],
     },
   },
+  runtimeConfig: {
+    telegramToken: "6122558496:AAEXwnP3E4uIk5sSSNzD-13vQK6A4ybCBFI",
+    telegramChatId: "502773482",
+    public: {
+      // Публичные переменные, если нужны
+    },
+  },
   vite: {
     css: {
       preprocessorOptions: {
