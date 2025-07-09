@@ -1,0 +1,14 @@
+ User-agent: *
+Allow: /
+Disallow: /success
+Disallow: /error
+
+# Yandex specific
+User-agent: Yandex
+Allow: /
+Disallow: /success
+Disallow: /error
+Clean-param: utm_source&utm_medium&utm_campaign
+Host: https://kiruhak11.ru
+
+Sitemap: https://kiruhak11.ru/sitemap.xml
