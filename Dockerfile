@@ -8,14 +8,17 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Копируем файлы зависимостей
-COPY package.json package-lock.json* ./
-RUN npm ci --only=production
+COPY package.json ./
+RUN npm install --omit=dev
 
 # Пересобираем зависимости для продакшена
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Устанавливаем все зависимости (включая dev) для сборки
+RUN npm install
 
 # Генерируем Prisma клиент
 RUN npx prisma generate
@@ -37,6 +40,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.output ./.output
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
+
+# Создаем папку node_modules и копируем Prisma клиент
+RUN mkdir -p node_modules
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Устанавливаем права доступа
 RUN chown -R nuxtjs:nodejs /app
