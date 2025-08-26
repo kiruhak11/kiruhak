@@ -9,9 +9,11 @@ import json
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
+import os
+
 # Конфигурация
-BOT_TOKEN = "6122558496:AAEXwnP3E4uIk5sSSNzD-13vQK6A4ybCBFI"
-API_URL = "http://localhost:3000/api/auth/create-account"
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "6122558496:AAEXwnP3E4uIk5sSSNzD-13vQK6A4ybCBFI")
+API_URL = os.getenv("API_URL", "http://app:3015/api/auth/create-account")
 
 async def create_user_account(telegram_id, first_name, last_name, username):
     """Создание аккаунта пользователя через API"""

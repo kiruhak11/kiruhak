@@ -45,9 +45,15 @@ docker-compose -f docker-compose.prod.yml up -d --build
 ### 1. **Создайте .env файл:**
 
 ```env
+# База данных
 POSTGRES_PASSWORD=your_secure_password
+
+# Telegram настройки
 TELEGRAM_TOKEN=your_telegram_bot_token
 TELEGRAM_CHAT_ID=your_telegram_chat_id
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+
+# URL сайта
 NUXT_PUBLIC_SITE_URL=https://your-domain.com
 ```
 
