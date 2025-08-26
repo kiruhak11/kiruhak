@@ -7,10 +7,25 @@
       <p>Интерактивная галерея проектов</p>
     </div>
 
-    <div class="gallery-grid">
+    <!-- Состояние загрузки -->
+    <div v-if="loading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Загрузка проектов...</p>
+    </div>
+
+    <!-- Состояние ошибки -->
+    <div v-else-if="error" class="error-state">
+      <p>{{ error }}</p>
+      <button @click="fetchProjects" class="retry-btn">
+        Попробовать снова
+      </button>
+    </div>
+
+    <!-- Галерея проектов -->
+    <div v-else class="gallery-grid">
       <div
         v-for="(project, index) in projects"
-        :key="index"
+        :key="project.id || index"
         class="gallery-item"
         :class="{ active: activeIndex === index }"
         @click="setActiveIndex(index)"
@@ -23,7 +38,6 @@
           <div class="item-overlay">
             <div class="item-content">
               <h3>{{ project.title }}</h3>
-              <p>{{ project.description }}</p>
               <div class="item-tech">
                 <span
                   v-for="tech in project.technologies"
@@ -42,41 +56,83 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import GradientText from "./GradientText.vue";
 
 const activeIndex = ref(0);
+const projects = ref([]);
+const loading = ref(true);
+const error = ref(null);
 
-const projects = ref([
-  {
-    title: "K",
-    description: "Сайт предпрития КотлоЭнергоСнаб",
-    image: "https://placehold.co/400x300/667eea/ffffff?text=KES+System",
-    technologies: ["Vue.js", "Node.js", "Supabase"],
-  },
-  {
-    title: "AirPods Store",
-    description: "Интернет-магазин аксессуаров",
-    image: "https://placehold.co/400x300/f093fb/ffffff?text=AirPods+Store",
-    technologies: ["Vue.js", "Nuxt.js", "SCSS"],
-  },
-  {
-    title: "Mixer Timetable",
-    description: "Приложение для планирования",
-    image: "https://placehold.co/400x300/4facfe/ffffff?text=Mixer+Timetable",
-    technologies: ["Vue.js", "TypeScript", "PDF"],
-  },
-  {
-    title: "DevHorizon",
-    description: "Платформа для разработчиков",
-    image: "https://placehold.co/400x300/fa709a/ffffff?text=DevHorizon",
-    technologies: ["Vue.js", "Nuxt.js", "Prisma", "Docker", "BIG"],
-  },
-]);
+// Загружаем проекты из базы данных
+const fetchProjects = async () => {
+  try {
+    loading.value = true;
+    const response = await $fetch("/api/projects");
+
+    // Фильтруем только избранные проекты и берем максимум 4
+    const featuredProjects = response
+      .filter((project) => project.featured)
+      .slice(0, 6);
+
+    // Если избранных проектов меньше 4, добавляем обычные
+    if (featuredProjects.length < 6) {
+      const remainingProjects = response
+        .filter((project) => !project.featured)
+        .slice(0, 6 - featuredProjects.length);
+      projects.value = [...featuredProjects, ...remainingProjects];
+    } else {
+      projects.value = featuredProjects;
+    }
+
+    console.log(
+      "🔍 InteractiveGallery: Загружено проектов:",
+      projects.value.length
+    );
+  } catch (err) {
+    console.error("Ошибка загрузки проектов:", err);
+    error.value = "Не удалось загрузить проекты";
+
+    // Fallback на статические данные
+    projects.value = [
+      {
+        title: "K-Studio",
+        description: "Корпоративная веб-разработка",
+        image: "https://placehold.co/400x300/667eea/ffffff?text=K-Studio",
+        technologies: ["Vue.js", "Nuxt.js", "SCSS"],
+      },
+      {
+        title: "Проект 2",
+        description: "Веб-приложение",
+        image: "https://placehold.co/400x300/f093fb/ffffff?text=Project+2",
+        technologies: ["Vue.js", "Node.js", "Prisma"],
+      },
+      {
+        title: "Проект 3",
+        description: "Интернет-магазин",
+        image: "https://placehold.co/400x300/4facfe/ffffff?text=Project+3",
+        technologies: ["Vue.js", "TypeScript", "Docker"],
+      },
+      {
+        title: "Проект 4",
+        description: "CRM система",
+        image: "https://placehold.co/400x300/fa709a/ffffff?text=Project+4",
+        technologies: ["Vue.js", "Nuxt.js", "Prisma", "Docker"],
+      },
+    ];
+  } finally {
+    loading.value = false;
+  }
+};
 
 const setActiveIndex = (index) => {
   activeIndex.value = index;
 };
+
+// Загружаем проекты при монтировании компонента
+onMounted(() => {
+  fetchProjects();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -168,7 +224,7 @@ const setActiveIndex = (index) => {
   padding: 20px;
 
   h3 {
-    font-size: 1.5rem;
+    font-size: 1rem;
     font-weight: 700;
     margin-bottom: 8px;
   }
@@ -205,6 +261,57 @@ const setActiveIndex = (index) => {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.loading-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--accent-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.error-state p {
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+}
+
+.retry-btn {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
   }
 }
 

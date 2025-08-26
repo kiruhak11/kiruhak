@@ -165,7 +165,6 @@ const handleTopUp = async () => {
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 1.5rem 0 1.5rem;
-  border-bottom: 1px solid var(--border-color);
   margin-bottom: 1.5rem;
 
   h3 {

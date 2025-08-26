@@ -85,10 +85,10 @@
         <div class="projects-section">
           <div class="section-header">
             <h2 class="section-title">
-              <GradientText variant="secondary">Мои проекты</GradientText>
+              <GradientText variant="secondary">Наши проекты</GradientText>
             </h2>
             <p class="section-description">
-              Посмотрите на мои последние работы и корпоративные решения
+              Посмотрите на наши последние работы и корпоративные решения
             </p>
           </div>
 
@@ -109,7 +109,7 @@
           <!-- Projects grid -->
           <div v-else-if="projects.length > 0" class="projects-grid">
             <ProjectCard
-              v-for="project in projects.slice(0, 6)"
+              v-for="project in projects.slice(0, 3)"
               :key="project.id"
               :project="project"
               @openModal="openProjectModal"
@@ -123,12 +123,6 @@
             :project="selectedProject"
             @close="closeProjectModal"
           />
-
-          <!-- Empty state -->
-          <div v-else class="empty-state">
-            <h3>Проекты не найдены</h3>
-            <p>Пока нет доступных проектов</p>
-          </div>
 
           <!-- View All Projects Button -->
           <div v-if="projects.length > 0" class="view-all-container">

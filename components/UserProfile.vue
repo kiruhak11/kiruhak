@@ -63,6 +63,24 @@
         </svg>
         Редактировать профиль
       </button>
+      <NuxtLink v-if="user?.isAdmin" to="/admin/projects" class="admin-btn">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        Админ панель
+      </NuxtLink>
       <button @click="handleLogout" class="logout-btn">
         <svg
           width="16"
@@ -126,12 +144,16 @@ const {
   formattedBalance,
   initAuth,
   refreshUser,
+  checkTokenStatus,
+  forceRefreshToken,
+  validateToken,
 } = useAuth();
 
 // Инициализируем аутентификацию
 onMounted(async () => {
+  console.log("🔐 UserProfile: Начало инициализации");
   await initAuth();
-  console.log("🔐 Analytics: Состояние аутентификации:", {
+  console.log("🔐 UserProfile: Состояние аутентификации:", {
     isAuthenticated: isAuthenticated.value,
     hasToken: !!token.value,
     user: user.value,
@@ -139,11 +161,14 @@ onMounted(async () => {
 
   // Обновляем данные пользователя с сервера при загрузке страницы
   if (isAuthenticated.value) {
+    console.log("🔐 UserProfile: Обновление данных пользователя");
     await refreshUser();
-    console.log("🔐 Analytics: Данные пользователя обновлены с сервера:", {
+    console.log("🔐 UserProfile: Данные пользователя обновлены с сервера:", {
       balance: user.value?.balance,
       formattedBalance: formattedBalance.value,
     });
+  } else {
+    console.log("🔐 UserProfile: Пользователь не аутентифицирован");
   }
 });
 
@@ -212,7 +237,18 @@ const handleLogout = () => {
     font-weight: bold;
   }
 }
+.admin-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
 
+  background: var(--gradient-primary);
+  color: white;
+}
 .profile-info {
   flex: 1;
 
@@ -270,6 +306,16 @@ const handleLogout = () => {
       &:hover {
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      }
+    }
+
+    &.check-btn {
+      background: linear-gradient(135deg, #ff9800, #f57c00);
+      color: white;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
       }
     }
 

@@ -1,181 +1,192 @@
 <template>
-  <div class="admin-container">
-    <div class="header">
-      <h1>Управление проектами</h1>
-      <button @click="showCreateModal = true" class="create-button">
-        + Добавить проект
-      </button>
-    </div>
+  <NuxtLayout>
+    <div class="admin-container">
+      <div class="header">
+        <h1>Управление проектами</h1>
+        <button @click="showCreateModal = true" class="create-button">
+          + Добавить проект
+        </button>
+      </div>
 
-    <!-- Loading state -->
-    <div v-if="loading" class="loading">
-      <div class="spinner"></div>
-      <p>Загружаем проекты...</p>
-    </div>
+      <!-- Loading state -->
+      <div v-if="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Загружаем проекты...</p>
+      </div>
 
-    <!-- Error state -->
-    <div v-else-if="error" class="error">
-      <p>{{ error }}</p>
-      <button @click="fetchProjects">Попробовать снова</button>
-    </div>
+      <!-- Error state -->
+      <div v-else-if="error" class="error">
+        <p>{{ error }}</p>
+        <button @click="fetchProjects">Попробовать снова</button>
+      </div>
 
-    <!-- Projects list -->
-    <div v-else class="projects-list">
-      <div v-for="project in projects" :key="project.id" class="project-item">
-        <div class="project-info">
-          <img
-            :src="project.image"
-            :alt="project.title"
-            class="project-image"
-          />
-          <div class="project-details">
-            <h3>{{ project.title }}</h3>
-            <p>{{ project.shortDescription }}</p>
-            <div class="project-meta">
-              <span class="category">{{ project.category }}</span>
-              <span v-if="project.featured" class="featured">⭐ Избранный</span>
+      <!-- Projects list -->
+      <div v-else class="projects-list">
+        <div v-for="project in projects" :key="project.id" class="project-item">
+          <div class="project-info">
+            <img
+              :src="project.image"
+              :alt="project.title"
+              class="project-image"
+            />
+            <div class="project-details">
+              <h3>{{ project.title }}</h3>
+              <p>{{ project.shortDescription }}</p>
+              <div class="project-meta">
+                <span class="category">{{ project.category }}</span>
+                <span v-if="project.featured" class="featured"
+                  >⭐ Избранный</span
+                >
+              </div>
             </div>
           </div>
+          <div class="project-actions">
+            <button @click="editProject(project)" class="edit-button">
+              ✏️ Редактировать
+            </button>
+            <button
+              @click="handleDeleteProject(project.id)"
+              class="delete-button"
+            >
+              🗑️ Удалить
+            </button>
+          </div>
         </div>
-        <div class="project-actions">
-          <button @click="editProject(project)" class="edit-button">
-            ✏️ Редактировать
-          </button>
-          <button @click="handleDeleteProject(project.id)" class="delete-button">
-            🗑️ Удалить
-          </button>
+      </div>
+
+      <!-- Create/Edit Modal -->
+      <div
+        v-if="showCreateModal || showEditModal"
+        class="modal-overlay"
+        @click="closeModal"
+      >
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h2>
+              {{ showEditModal ? "Редактировать проект" : "Создать проект" }}
+            </h2>
+            <button @click="closeModal" class="close-button">×</button>
+          </div>
+
+          <form @submit.prevent="submitProject" class="project-form">
+            <div class="form-group">
+              <label>Название проекта *</label>
+              <input v-model="form.title" type="text" required />
+            </div>
+
+            <div class="form-group">
+              <label>Краткое описание *</label>
+              <input v-model="form.shortDescription" type="text" required />
+            </div>
+
+            <div class="form-group">
+              <label>Полное описание *</label>
+              <textarea v-model="form.description" rows="4" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Изображение (URL) *</label>
+              <input v-model="form.image" type="url" required />
+            </div>
+
+            <div class="form-group">
+              <label>Категория *</label>
+              <input v-model="form.category" type="text" required />
+            </div>
+
+            <div class="form-group">
+              <label>Клиент</label>
+              <input v-model="form.client" type="text" />
+            </div>
+
+            <div class="form-group">
+              <label>Длительность</label>
+              <input v-model="form.duration" type="text" />
+            </div>
+
+            <div class="form-group">
+              <label>Бюджет</label>
+              <input v-model="form.budget" type="text" />
+            </div>
+
+            <div class="form-group">
+              <label>Технологии (через запятую)</label>
+              <input
+                v-model="technologiesInput"
+                type="text"
+                placeholder="Vue.js, Nuxt, TypeScript"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Функции (через запятую)</label>
+              <input
+                v-model="featuresInput"
+                type="text"
+                placeholder="Каталог, Корзина, Аналитика"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Вызовы</label>
+              <textarea v-model="form.challenges" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Решения</label>
+              <textarea v-model="form.solutions" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Результаты</label>
+              <textarea v-model="form.results" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Ссылка на сайт</label>
+              <input v-model="form.liveUrl" type="url" />
+            </div>
+
+            <div class="form-group">
+              <label>Ссылка на GitHub</label>
+              <input v-model="form.githubUrl" type="url" />
+            </div>
+
+            <div class="form-group checkbox">
+              <label>
+                <input v-model="form.featured" type="checkbox" />
+                Избранный проект
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label>Порядок отображения</label>
+              <input v-model="form.order" type="number" min="0" />
+            </div>
+
+            <div class="form-actions">
+              <button type="button" @click="closeModal" class="cancel-button">
+                Отмена
+              </button>
+              <button
+                type="submit"
+                :disabled="submitting"
+                class="submit-button"
+              >
+                {{
+                  submitting
+                    ? "Сохранение..."
+                    : showEditModal
+                    ? "Обновить"
+                    : "Создать"
+                }}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
-
-    <!-- Create/Edit Modal -->
-    <div
-      v-if="showCreateModal || showEditModal"
-      class="modal-overlay"
-      @click="closeModal"
-    >
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h2>
-            {{ showEditModal ? "Редактировать проект" : "Создать проект" }}
-          </h2>
-          <button @click="closeModal" class="close-button">×</button>
-        </div>
-
-        <form @submit.prevent="submitProject" class="project-form">
-          <div class="form-group">
-            <label>Название проекта *</label>
-            <input v-model="form.title" type="text" required />
-          </div>
-
-          <div class="form-group">
-            <label>Краткое описание *</label>
-            <input v-model="form.shortDescription" type="text" required />
-          </div>
-
-          <div class="form-group">
-            <label>Полное описание *</label>
-            <textarea v-model="form.description" rows="4" required></textarea>
-          </div>
-
-          <div class="form-group">
-            <label>Изображение (URL) *</label>
-            <input v-model="form.image" type="url" required />
-          </div>
-
-          <div class="form-group">
-            <label>Категория *</label>
-            <input v-model="form.category" type="text" required />
-          </div>
-
-          <div class="form-group">
-            <label>Клиент</label>
-            <input v-model="form.client" type="text" />
-          </div>
-
-          <div class="form-group">
-            <label>Длительность</label>
-            <input v-model="form.duration" type="text" />
-          </div>
-
-          <div class="form-group">
-            <label>Бюджет</label>
-            <input v-model="form.budget" type="text" />
-          </div>
-
-          <div class="form-group">
-            <label>Технологии (через запятую)</label>
-            <input
-              v-model="technologiesInput"
-              type="text"
-              placeholder="Vue.js, Nuxt, TypeScript"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Функции (через запятую)</label>
-            <input
-              v-model="featuresInput"
-              type="text"
-              placeholder="Каталог, Корзина, Аналитика"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Вызовы</label>
-            <textarea v-model="form.challenges" rows="3"></textarea>
-          </div>
-
-          <div class="form-group">
-            <label>Решения</label>
-            <textarea v-model="form.solutions" rows="3"></textarea>
-          </div>
-
-          <div class="form-group">
-            <label>Результаты</label>
-            <textarea v-model="form.results" rows="3"></textarea>
-          </div>
-
-          <div class="form-group">
-            <label>Ссылка на сайт</label>
-            <input v-model="form.liveUrl" type="url" />
-          </div>
-
-          <div class="form-group">
-            <label>Ссылка на GitHub</label>
-            <input v-model="form.githubUrl" type="url" />
-          </div>
-
-          <div class="form-group checkbox">
-            <label>
-              <input v-model="form.featured" type="checkbox" />
-              Избранный проект
-            </label>
-          </div>
-
-          <div class="form-group">
-            <label>Порядок отображения</label>
-            <input v-model="form.order" type="number" min="0" />
-          </div>
-
-          <div class="form-actions">
-            <button type="button" @click="closeModal" class="cancel-button">
-              Отмена
-            </button>
-            <button type="submit" :disabled="submitting" class="submit-button">
-              {{
-                submitting
-                  ? "Сохранение..."
-                  : showEditModal
-                  ? "Обновить"
-                  : "Создать"
-              }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+  </NuxtLayout>
 </template>
 
 <script setup>

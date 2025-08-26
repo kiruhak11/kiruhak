@@ -25,6 +25,12 @@ export const useAuth = () => {
       const savedToken = localStorage.getItem("auth_token");
       const savedUser = localStorage.getItem("auth_user");
 
+      console.log("🔐 useAuth: Инициализация аутентификации", {
+        hasSavedToken: !!savedToken,
+        hasSavedUser: !!savedUser,
+        tokenLength: savedToken ? savedToken.length : 0,
+      });
+
       if (savedToken && savedUser) {
         token.value = savedToken;
         user.value = JSON.parse(savedUser);
@@ -33,6 +39,9 @@ export const useAuth = () => {
           user: user.value,
           token: token.value ? "***" : null,
           tokenLength: token.value ? token.value.length : 0,
+          tokenPreview: token.value
+            ? token.value.substring(0, 20) + "..."
+            : null,
         });
 
         // Обновляем данные пользователя с сервера
@@ -44,6 +53,11 @@ export const useAuth = () => {
             "🔐 useAuth: Ошибка обновления данных пользователя:",
             error
           );
+          // Если не удалось обновить данные, возможно токен истек
+          if (error.status === 401) {
+            console.log("🔐 useAuth: Токен истек, очищаем данные");
+            logout();
+          }
         }
       } else {
         console.log("🔐 useAuth: Нет сохраненных данных аутентификации");
@@ -76,6 +90,10 @@ export const useAuth = () => {
         if (process.client) {
           localStorage.setItem("auth_token", response.token);
           localStorage.setItem("auth_user", JSON.stringify(response.user));
+          console.log("🔐 useAuth: Токен сохранен в localStorage:", {
+            tokenLength: response.token.length,
+            tokenPreview: response.token.substring(0, 20) + "...",
+          });
         }
 
         console.log("🔐 useAuth: Вход успешен");
@@ -105,9 +123,13 @@ export const useAuth = () => {
 
   // Обновление данных пользователя
   const refreshUser = async () => {
-    if (!token.value) return;
+    if (!token.value) {
+      console.log("🔐 useAuth: refreshUser - нет токена");
+      return;
+    }
 
     try {
+      console.log("🔐 useAuth: Обновление данных пользователя с сервера");
       const response = await $fetch("/api/user/me", {
         headers: {
           Authorization: `Bearer ${token.value}`,
@@ -120,12 +142,20 @@ export const useAuth = () => {
         if (process.client) {
           localStorage.setItem("auth_user", JSON.stringify(response.user));
         }
+
+        console.log("🔐 useAuth: Данные пользователя успешно обновлены");
       } else {
-        // Токен недействителен, выходим
+        console.log("🔐 useAuth: Ошибка в ответе сервера, выходим");
         logout();
       }
     } catch (error) {
-      console.error("Refresh user error:", error);
+      console.error("🔐 useAuth: Refresh user error:", error);
+
+      // Проверяем тип ошибки
+      if (error.status === 401) {
+        console.log("🔐 useAuth: Токен недействителен, выходим");
+      }
+
       logout();
     }
   };
@@ -142,6 +172,90 @@ export const useAuth = () => {
     return `${(user.value.balance / 100).toFixed(0)} ₽`;
   });
 
+  // Проверка состояния токена
+  const checkTokenStatus = () => {
+    if (process.client) {
+      const savedToken = localStorage.getItem("auth_token");
+      const savedUser = localStorage.getItem("auth_user");
+
+      console.log("🔐 useAuth: Проверка состояния токена", {
+        hasToken: !!savedToken,
+        hasUser: !!savedUser,
+        tokenLength: savedToken ? savedToken.length : 0,
+        currentToken: token.value ? "present" : "missing",
+        currentUser: user.value ? "present" : "missing",
+      });
+
+      return {
+        hasToken: !!savedToken,
+        hasUser: !!savedUser,
+        tokenLength: savedToken ? savedToken.length : 0,
+      };
+    }
+    return null;
+  };
+
+  // Принудительное обновление токена
+  const forceRefreshToken = async () => {
+    console.log("🔐 useAuth: Принудительное обновление токена");
+
+    if (process.client) {
+      const savedToken = localStorage.getItem("auth_token");
+      const savedUser = localStorage.getItem("auth_user");
+
+      if (savedToken && savedUser) {
+        // Восстанавливаем состояние
+        token.value = savedToken;
+        user.value = JSON.parse(savedUser);
+
+        // Пытаемся обновить данные с сервера
+        try {
+          await refreshUser();
+          console.log("🔐 useAuth: Токен успешно обновлен");
+          return true;
+        } catch (error) {
+          console.error("🔐 useAuth: Ошибка обновления токена:", error);
+          logout();
+          return false;
+        }
+      } else {
+        console.log("🔐 useAuth: Нет сохраненных данных для обновления");
+        return false;
+      }
+    }
+    return false;
+  };
+
+  // Проверка валидности токена
+  const validateToken = () => {
+    if (process.client && token.value) {
+      try {
+        const decoded = JSON.parse(
+          Buffer.from(token.value, "base64").toString()
+        );
+        const currentTime = Math.floor(Date.now() / 1000);
+
+        console.log("🔐 useAuth: Проверка токена:", {
+          userId: decoded.userId,
+          exp: decoded.exp,
+          currentTime,
+          isValid: decoded.exp > currentTime,
+          timeLeft: decoded.exp - currentTime,
+        });
+
+        return {
+          isValid: decoded.exp > currentTime,
+          timeLeft: decoded.exp - currentTime,
+          userId: decoded.userId,
+        };
+      } catch (error) {
+        console.error("🔐 useAuth: Ошибка декодирования токена:", error);
+        return { isValid: false, error: error.message };
+      }
+    }
+    return { isValid: false, error: "No token" };
+  };
+
   return {
     user: readonly(user),
     token: readonly(token),
@@ -153,5 +267,8 @@ export const useAuth = () => {
     loginWithCredentials,
     logout,
     refreshUser,
+    checkTokenStatus,
+    forceRefreshToken,
+    validateToken,
   };
 };
