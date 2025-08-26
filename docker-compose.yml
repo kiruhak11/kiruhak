@@ -95,7 +95,13 @@ services:
     networks:
       - kiruhak_network
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://app:3015/api/health')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import requests; requests.get('http://app:3015/api/health')",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
