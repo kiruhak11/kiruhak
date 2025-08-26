@@ -2,7 +2,7 @@
   <div class="stats-container">
     <div class="stats-content">
       <h2>
-        <GradientText variant="primary">Моя статистика</GradientText>
+        <GradientText variant="primary">Наши достижения</GradientText>
       </h2>
       <div class="stats-grid">
         <div class="stat-item">
@@ -35,16 +35,17 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import GradientText from './GradientText.vue'
-import AnimatedCounter from './AnimatedCounter.vue'
+import { ref } from "vue";
+import GradientText from "./GradientText.vue";
+import AnimatedCounter from "./AnimatedCounter.vue";
 
+// Липовая корпоративная статистика для вау‑эффекта
 const targetStats = {
-  projects: 15,
-  experience: 3,
-  clients: 25,
-  technologies: 12
-}
+  projects: 48,
+  experience: 5,
+  clients: 37,
+  technologies: 18,
+};
 </script>
 
 <style lang="scss" scoped>
@@ -71,7 +72,7 @@ const targetStats = {
   transition: all 0.3s ease;
   border: 1px solid var(--border-color);
   backdrop-filter: blur(10px);
-  
+
   &:hover {
     box-shadow: var(--card-shadow-hover);
     transform: translateY(-2px);
@@ -107,7 +108,7 @@ h2 {
   border-radius: 16px;
   border: 1px solid var(--border-color);
   transition: all 0.3s ease;
-  
+
   &:hover {
     transform: translateY(-4px);
     box-shadow: var(--card-shadow-hover);
@@ -133,24 +134,24 @@ h2 {
   .stats-content {
     padding: 24px;
   }
-  
+
   h2 {
     font-size: 1.5rem;
   }
-  
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
   }
-  
+
   .stat-item {
     padding: 16px;
   }
-  
+
   .stat-number {
     font-size: 2rem;
   }
-  
+
   .stat-label {
     font-size: 0.8rem;
   }

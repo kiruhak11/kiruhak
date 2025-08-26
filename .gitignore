@@ -24,3 +24,5 @@ package-lock.json
 .env
 .env.*
 !.env.example
+
+/generated/prisma

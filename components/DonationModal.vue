@@ -85,6 +85,7 @@
 <script setup lang="ts">
 import SuccessModal from '~/components/SuccessModal.vue'
 import InfoModal from '~/components/InfoModal.vue'
+import { useFrogModal } from "~/composables/useFrogModal";
 
 const props = defineProps({
   isOpen: Boolean

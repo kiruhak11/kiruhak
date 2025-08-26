@@ -2,11 +2,11 @@
   <div class="interactive-gallery">
     <div class="gallery-header">
       <h2>
-        <GradientText variant="primary">Мои работы</GradientText>
+        <GradientText variant="primary">Наши работы</GradientText>
       </h2>
       <p>Интерактивная галерея проектов</p>
     </div>
-    
+
     <div class="gallery-grid">
       <div
         v-for="(project, index) in projects"
@@ -16,13 +16,20 @@
         @click="setActiveIndex(index)"
         @mouseenter="setActiveIndex(index)"
       >
-        <div class="item-image" :style="{ backgroundImage: 'url(' + project.image + ')' }">
+        <div
+          class="item-image"
+          :style="{ backgroundImage: 'url(' + project.image + ')' }"
+        >
           <div class="item-overlay">
             <div class="item-content">
               <h3>{{ project.title }}</h3>
               <p>{{ project.description }}</p>
               <div class="item-tech">
-                <span v-for="tech in project.technologies" :key="tech" class="tech-tag">
+                <span
+                  v-for="tech in project.technologies"
+                  :key="tech"
+                  class="tech-tag"
+                >
                   {{ tech }}
                 </span>
               </div>
@@ -36,35 +43,35 @@
 
 <script setup>
 import { ref } from "vue";
-import GradientText from './GradientText.vue';
+import GradientText from "./GradientText.vue";
 
 const activeIndex = ref(0);
 
 const projects = ref([
   {
-    title: "KES",
+    title: "K",
     description: "Сайт предпрития КотлоЭнергоСнаб",
     image: "https://placehold.co/400x300/667eea/ffffff?text=KES+System",
-    technologies: ["Vue.js", "Node.js", "Supabase"]
+    technologies: ["Vue.js", "Node.js", "Supabase"],
   },
   {
     title: "AirPods Store",
     description: "Интернет-магазин аксессуаров",
     image: "https://placehold.co/400x300/f093fb/ffffff?text=AirPods+Store",
-    technologies: ["Vue.js", "Nuxt.js", "SCSS"]
+    technologies: ["Vue.js", "Nuxt.js", "SCSS"],
   },
   {
     title: "Mixer Timetable",
     description: "Приложение для планирования",
     image: "https://placehold.co/400x300/4facfe/ffffff?text=Mixer+Timetable",
-    technologies: ["Vue.js", "TypeScript", "PDF"]
+    technologies: ["Vue.js", "TypeScript", "PDF"],
   },
   {
     title: "DevHorizon",
     description: "Платформа для разработчиков",
     image: "https://placehold.co/400x300/fa709a/ffffff?text=DevHorizon",
-    technologies: ["Vue.js", "Nuxt.js", "Prisma", "Docker", "BIG"]
-  }
+    technologies: ["Vue.js", "Nuxt.js", "Prisma", "Docker", "BIG"],
+  },
 ]);
 
 const setActiveIndex = (index) => {
@@ -86,13 +93,13 @@ const setActiveIndex = (index) => {
 .gallery-header {
   text-align: center;
   margin-bottom: 32px;
-  
+
   h2 {
     font-size: 2rem;
     font-weight: 700;
     margin-bottom: 8px;
   }
-  
+
   p {
     color: var(--color-text-secondary);
     font-size: 1.1rem;
@@ -112,12 +119,12 @@ const setActiveIndex = (index) => {
   cursor: pointer;
   transition: all 0.3s ease;
   border: 1px solid var(--border-color);
-  
+
   &:hover {
     transform: translateY(-8px);
     box-shadow: var(--card-shadow-hover);
   }
-  
+
   &.active {
     transform: translateY(-8px) scale(1.02);
     box-shadow: 0 16px 40px rgba(102, 126, 234, 0.3);
@@ -138,13 +145,17 @@ const setActiveIndex = (index) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.9),
+    rgba(118, 75, 162, 0.9)
+  );
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
   transition: all 0.3s ease;
-  
+
   .gallery-item:hover &,
   .gallery-item.active & {
     opacity: 1;
@@ -155,13 +166,13 @@ const setActiveIndex = (index) => {
   text-align: center;
   color: white;
   padding: 20px;
-  
+
   h3 {
     font-size: 1.5rem;
     font-weight: 700;
     margin-bottom: 8px;
   }
-  
+
   p {
     font-size: 1rem;
     margin-bottom: 16px;
@@ -201,16 +212,16 @@ const setActiveIndex = (index) => {
   .interactive-gallery {
     padding: 24px;
   }
-  
+
   .gallery-header h2 {
     font-size: 1.5rem;
   }
-  
+
   .gallery-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .item-image {
     height: 160px;
   }

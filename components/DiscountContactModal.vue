@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, onMounted, onUnmounted } from "vue";
 
 const props = defineProps<{
   show: boolean;
-  discount: number;
+  discount: string;
 }>();
 
 const emit = defineEmits(["close", "submit"]);
@@ -61,6 +61,11 @@ const handleSubmit = async () => {
 
     if (!response.ok) throw new Error("Ошибка отправки");
 
+    // Удаляем сохраненную скидку после использования
+    localStorage.removeItem("saved_discount");
+    // Устанавливаем флаг использованной скидки
+    localStorage.setItem("used_discount", "true");
+
     emit("submit");
     phone.value = "";
     message.value = "";
@@ -74,10 +79,31 @@ const handleSubmit = async () => {
 
 const closeModal = () => {
   isVisible.value = false;
+  // Добавляем анимацию закрытия
+  const modalContent = document.querySelector(".modal-content");
+  if (modalContent) {
+    modalContent.style.animation = "modalClose 0.3s ease forwards";
+  }
+
   setTimeout(() => {
     emit("close");
   }, 300); // Время анимации
 };
+
+// Обработчик закрытия модалки по Escape
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === "Escape") {
+    closeModal();
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("keydown", handleKeydown);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("keydown", handleKeydown);
+});
 </script>
 
 <template>
@@ -96,13 +122,13 @@ const closeModal = () => {
 
         <div class="discount-animation">
           <div class="discount-circle">
-            <span class="discount-value">{{ discount }}%</span>
+            <span class="discount-value">{{ discount }}</span>
             <span class="discount-label">скидка</span>
           </div>
         </div>
 
         <p class="description">
-          Оставьте свои контакты, и я свяжусь с вами для обсуждения проекта с
+          Оставьте свои контакты, и мы свяжемся с вами для обсуждения проекта с
           учетом вашей скидки!
         </p>
 
@@ -178,6 +204,7 @@ const closeModal = () => {
   &.visible {
     transform: scale(1);
     opacity: 1;
+    animation: modalOpen 0.3s ease forwards;
   }
 }
 
@@ -357,6 +384,28 @@ const closeModal = () => {
   }
   100% {
     left: 100%;
+  }
+}
+
+@keyframes modalClose {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+}
+
+@keyframes modalOpen {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 

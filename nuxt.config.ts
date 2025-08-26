@@ -9,6 +9,22 @@ export default defineNuxtConfig({
     "@nuxtjs/sitemap",
     "@nuxtjs/robots",
   ],
+  sitemap: {
+    strictNuxtContentPaths: false,
+    sitemaps: true,
+    defaults: {
+      changefreq: "weekly",
+      priority: 0.7,
+    },
+  },
+  robots: {
+    rules: [
+      { userAgent: "*", allow: "/" },
+      { userAgent: "*", disallow: ["/success", "/error"] },
+    ],
+    sitemap: "https://kiruhak11.ru/sitemap.xml",
+    host: "https://kiruhak11.ru",
+  },
   googleFonts: {
     families: {
       Ubuntu: [400, 500, 600, 700],
@@ -16,21 +32,49 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      title: "Кирилл Коваленко - Веб-разработчик",
+      script: [
+        {
+          innerHTML: ` (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=103812891', 'ym');
+
+    ym(103812891, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true});
+    console.log('Yandex Metrika initialized');`,
+        },
+      ],
+      noscript: [
+        {
+          innerHTML: `<div><img src="https://mc.yandex.ru/watch/103812891" style="position:absolute; left:-9999px;" alt="" /></div>`,
+        },
+      ],
+      title: "K-Studio — Веб‑разработка под ключ",
       meta: [
         { charset: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
         {
           name: "description",
           content:
-            "Профессиональная веб-разработка, создание современных веб-приложений и сайтов. Принимаю заказы на фриланс разработку.",
+            "K-Studio — корпоративная веб‑разработка под ключ. Проектирование, разработка и поддержка сайтов и веб‑сервисов. Vue/Nuxt, SEO, интеграции, CRM.",
         },
         {
           name: "keywords",
           content:
-            "веб-разработка, фриланс, программист, создание сайтов, разработка веб-приложений",
+            "веб-разработка, корпоративные сайты, разработка под ключ, Vue, Nuxt, SEO, интеграции, CRM",
         },
         { name: "yandex-verification", content: "44f17adb3814c2c5" },
+        {
+          property: "og:title",
+          content: "K-Studio — Веб‑разработка под ключ",
+        },
+        {
+          property: "og:description",
+          content:
+            "Корпоративные сайты, интернет‑проекты и веб‑приложения. Экспертиза во Vue/Nuxt, интеграции, SEO.",
+        },
+        { property: "og:type", content: "website" },
       ],
       link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
     },

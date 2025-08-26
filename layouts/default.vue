@@ -9,6 +9,7 @@
     >
       <IconGoTop />
     </button>
+    <GlobalModal />
   </div>
 </template>
 

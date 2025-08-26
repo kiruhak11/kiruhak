@@ -3,7 +3,7 @@
     <!-- Гамбургер меню -->
     <div class="hamburger-menu" @click="toggleMenu">
       <div class="hamburger-menu-text">
-        <h1>Portfolio</h1>
+        <h1>K-Studio</h1>
       </div>
       <div class="hamburger-menu-icon">
         <div class="bar" :class="{ open: isOpen }"></div>
@@ -24,19 +24,16 @@
           <div class="logo">
             <div class="logo__text">
               <NuxtLink to="/">
-                <h1>
-                  Kovakenko Kirill: <br />
-                  Front-end developer
-                </h1>
+                <h1>K-Studio</h1>
               </NuxtLink>
             </div>
           </div>
           <div class="line"></div>
           <li>
-            <NuxtLink to="/projects">Каталог</NuxtLink>
+            <NuxtLink to="/projects">Проекты</NuxtLink>
           </li>
           <li>
-            <NuxtLink to="/contact">Мои контакты</NuxtLink>
+            <NuxtLink to="/contact">Контакты</NuxtLink>
           </li>
           <li>
             <Switcher />
