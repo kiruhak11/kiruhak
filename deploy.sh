@@ -34,11 +34,11 @@ docker-compose -f docker-compose.prod.yml ps
 
 # Проверяем health check
 echo "🏥 Проверяем health check..."
-docker-compose -f docker-compose.prod.yml exec -T app wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || {
+docker-compose -f docker-compose.prod.yml exec -T app wget --no-verbose --tries=1 --spider http://localhost:3015/api/health || {
     echo "❌ Health check не прошел!"
     exit 1
 }
 
 echo "✅ Деплой завершен успешно!"
-echo "🌐 Приложение доступно по адресу: http://localhost:3000"
+echo "🌐 Приложение доступно по адресу: http://localhost:3015"
 echo "📊 Логи: docker-compose -f docker-compose.prod.yml logs -f"

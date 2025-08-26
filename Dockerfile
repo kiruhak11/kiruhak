@@ -43,9 +43,9 @@ RUN chown -R nuxtjs:nodejs /app
 
 USER nuxtjs
 
-EXPOSE 3000
+EXPOSE 3015
 
-ENV PORT 3000
+ENV PORT 3015
 ENV HOSTNAME "0.0.0.0"
 
 # Запускаем приложение

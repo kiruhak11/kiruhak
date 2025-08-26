@@ -53,9 +53,9 @@ services:
       TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
       # Другие переменные окружения
-      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost:3015}
     ports:
-      - "3000:3000"
+      - "3015:3015"
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,7 +73,7 @@ services:
           "--no-verbose",
           "--tries=1",
           "--spider",
-          "http://localhost:3000/api/health",
+          "http://localhost:3015/api/health",
         ]
       interval: 30s
       timeout: 10s
