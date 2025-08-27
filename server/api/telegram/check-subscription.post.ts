@@ -15,21 +15,22 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Получаем токен бота из переменных окружения
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    const channelUsername =
-      process.env.TELEGRAM_CHANNEL_USERNAME || "web_kiruhak11";
+    // Захардкоженные настройки бота
+    const botToken = process.env.TELEGRAM_BOT_TOKEN; // Замените на ваш токен
+    const channelUsername = "web_kiruhak11";
 
     console.log("🔧 Конфигурация:", {
       botToken: botToken ? "***" : "НЕ НАСТРОЕН",
       channelUsername,
     });
 
-    if (!botToken) {
-      console.error("TELEGRAM_BOT_TOKEN не настроен");
+    if (!botToken || botToken === "YOUR_BOT_TOKEN_HERE") {
+      console.error(
+        "Токен бота не настроен - замените YOUR_BOT_TOKEN_HERE на реальный токен"
+      );
       return {
         success: false,
-        error: "Ошибка конфигурации бота",
+        error: "Ошибка конфигурации бота - замените токен в коде",
       };
     }
 
