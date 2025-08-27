@@ -178,7 +178,7 @@ async function main() {
 
   // Создаем UI компоненты
   console.log("Создаем UI компоненты...");
-  
+
   const uiComponents = [
     {
       name: "Кнопка с градиентом",
@@ -300,11 +300,12 @@ async function main() {
 
   // Создаем материалы
   console.log("Создаем материалы...");
-  
+
   const materials = [
     {
       title: "Чек-лист оптимизации Vue.js приложения",
-      description: "Полный чек-лист для оптимизации производительности Vue.js приложений",
+      description:
+        "Полный чек-лист для оптимизации производительности Vue.js приложений",
       type: "checklist",
       category: "performance",
       pages: 3,
@@ -392,11 +393,12 @@ const props = defineProps&lt;Props&gt;();
 
   // Создаем туториалы
   console.log("Создаем туториалы...");
-  
+
   const tutorials = [
     {
       title: "Основы Vue 3 Composition API",
-      description: "Изучите основы Vue 3 Composition API с практическими примерами",
+      description:
+        "Изучите основы Vue 3 Composition API с практическими примерами",
       difficulty: "beginner",
       category: "vue",
       duration: "25 мин",
@@ -452,7 +454,8 @@ const totalPrice = computed(() => {
       ],
       testQuestions: [
         {
-          question: "Какая функция используется для создания реактивных примитивов в Vue 3?",
+          question:
+            "Какая функция используется для создания реактивных примитивов в Vue 3?",
           type: "single",
           order: 1,
           answers: [
