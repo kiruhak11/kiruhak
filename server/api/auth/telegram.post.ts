@@ -40,7 +40,8 @@ export default defineEventHandler(async (event) => {
       return {
         success: false,
         error: "Database connection failed",
-        details: dbError instanceof Error ? dbError.message : "Unknown database error",
+        details:
+          dbError instanceof Error ? dbError.message : "Unknown database error",
       };
     }
 
@@ -89,7 +90,10 @@ export default defineEventHandler(async (event) => {
       } catch (createError) {
         console.error("User creation failed:", createError);
         console.error("Create error details:", {
-          message: createError instanceof Error ? createError.message : "Unknown error",
+          message:
+            createError instanceof Error
+              ? createError.message
+              : "Unknown error",
           code: (createError as any)?.code,
           meta: (createError as any)?.meta,
         });
