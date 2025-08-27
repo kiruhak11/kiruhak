@@ -30,6 +30,7 @@ services:
       DATABASE_URL: postgresql://kiruhak_user:${POSTGRES_PASSWORD}@postgres:5432/kiruhak
       TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME}
       NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL}
     ports:
       - "3015:3015"
@@ -63,6 +64,7 @@ services:
     restart: unless-stopped
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME}
       API_URL: http://app:3015/api/auth/create-account
     depends_on:
       app:
@@ -70,7 +72,13 @@ services:
     networks:
       - kiruhak_network
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://app:3015/api/health')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import requests; requests.get('http://app:3015/api/health')",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

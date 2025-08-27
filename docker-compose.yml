@@ -86,6 +86,7 @@ services:
     restart: unless-stopped
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME}
       API_URL: http://app:3015/api/auth/telegram
     depends_on:
       app:
