@@ -9,10 +9,14 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
+  console.log("Начинаем заполнение базы данных...");
+
   // Очищаем существующие данные
   await prisma.project.deleteMany();
   await prisma.site.deleteMany();
   await prisma.user.deleteMany();
+
+  console.log("Существующие данные очищены");
 
   // Создаем тестового пользователя-администратора
   const adminUser = await prisma.user.create({

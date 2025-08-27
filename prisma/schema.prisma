@@ -33,18 +33,20 @@ model Project {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  telegramId    String   @unique
-  username      String?
-  firstName     String?
-  lastName      String?
-  photoUrl      String?
-  login         String   @unique // Логин для входа
-  password      String   // Хешированный пароль
-  isAdmin       Boolean  @default(false)
-  balance       Int      @default(15000) // Баланс в копейках (15000 = 150 рублей)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                    String    @id @default(cuid())
+  telegramId            String    @unique
+  username              String?
+  firstName             String?
+  lastName              String?
+  photoUrl              String?
+  login                 String    @unique // Логин для входа
+  password              String    // Хешированный пароль
+  isAdmin               Boolean   @default(false)
+  balance               Int       @default(15000) // Баланс в копейках (15000 = 150 рублей)
+  isSubscribed          Boolean   @default(false) // Подписка на Telegram канал
+  subscriptionCheckedAt DateTime? // Время последней проверки подписки
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   sites Site[]
   transactions Transaction[]
@@ -95,4 +97,20 @@ model Transaction {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("transactions")
+}
+
+model UiComponent {
+  id          String   @id @default(cuid())
+  name        String   // Название компонента
+  description String?  // Описание
+  category    String   // Категория (buttons, inputs, cards, etc.)
+  code        String   // HTML/CSS/JS код компонента
+  preview     String?  // URL превью изображения
+  tags        String[] // Теги для поиска
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("ui_components")
 }

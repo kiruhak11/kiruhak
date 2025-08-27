@@ -1,5 +1,6 @@
 <template>
-  <NuxtLayout>
+  <div class="admin-layout">
+    <AdminNavigation />
     <div class="admin-container">
       <div class="header">
         <h1>Управление проектами</h1>
@@ -186,7 +187,7 @@
         </div>
       </div>
     </div>
-  </NuxtLayout>
+  </div>
 </template>
 
 <script setup>
@@ -308,9 +309,15 @@ const handleDeleteProject = async (id) => {
 </script>
 
 <style scoped>
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
 .admin-container {
+  flex: 1;
   max-width: 1200px;
-  margin: 0 auto;
+  margin-left: 250px;
   padding: 2rem;
 }
 
@@ -561,7 +568,12 @@ const handleDeleteProject = async (id) => {
 }
 
 @media (max-width: 768px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
   .admin-container {
+    margin-left: 0;
     padding: 1rem;
   }
 

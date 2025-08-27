@@ -1,0 +1,599 @@
+<template>
+  <div class="modal-overlay" @click="$emit('close')">
+    <div class="modal-content" @click.stop>
+      <div class="modal-header">
+        <h2>
+          {{ isEditing ? "Редактировать компонент" : "Создать компонент" }}
+        </h2>
+        <button @click="$emit('close')" class="close-button">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <line
+              x1="18"
+              y1="6"
+              x2="6"
+              y2="18"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <line
+              x1="6"
+              y1="6"
+              x2="18"
+              y2="18"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <form @submit.prevent="handleSubmit" class="modal-form">
+        <div class="form-grid">
+          <!-- Основная информация -->
+          <div class="form-section">
+            <h3>Основная информация</h3>
+
+            <div class="form-group">
+              <label for="name">Название компонента *</label>
+              <input
+                id="name"
+                v-model="form.name"
+                type="text"
+                required
+                placeholder="Например: Кнопка с градиентом"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="description">Описание</label>
+              <textarea
+                id="description"
+                v-model="form.description"
+                rows="3"
+                placeholder="Краткое описание компонента"
+              ></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="category">Категория *</label>
+                <select id="category" v-model="form.category" required>
+                  <option value="">Выберите категорию</option>
+                  <option value="buttons">Кнопки</option>
+                  <option value="inputs">Инпуты</option>
+                  <option value="cards">Карточки</option>
+                  <option value="modals">Модальные окна</option>
+                  <option value="forms">Формы</option>
+                  <option value="navigation">Навигация</option>
+                  <option value="loaders">Лоадеры</option>
+                  <option value="animations">Анимации</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="order">Порядок</label>
+                <input
+                  id="order"
+                  v-model.number="form.order"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="tags">Теги</label>
+              <input
+                id="tags"
+                v-model="tagsInput"
+                type="text"
+                placeholder="vue, button, gradient (через запятую)"
+                @input="updateTags"
+              />
+              <div class="tags-preview">
+                <span v-for="tag in form.tags" :key="tag" class="tag">
+                  {{ tag }}
+                  <button
+                    type="button"
+                    @click="removeTag(tag)"
+                    class="tag-remove"
+                  >
+                    ×
+                  </button>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Код компонента -->
+          <div class="form-section">
+            <h3>Код компонента</h3>
+
+            <div class="form-group">
+              <label for="code">HTML/CSS/JS код *</label>
+              <div class="code-editor">
+                <div class="code-tabs">
+                  <button
+                    type="button"
+                    :class="{ active: activeTab === 'html' }"
+                    @click="activeTab = 'html'"
+                  >
+                    HTML
+                  </button>
+                  <button
+                    type="button"
+                    :class="{ active: activeTab === 'css' }"
+                    @click="activeTab = 'css'"
+                  >
+                    CSS
+                  </button>
+                  <button
+                    type="button"
+                    :class="{ active: activeTab === 'js' }"
+                    @click="activeTab = 'js'"
+                  >
+                    JS
+                  </button>
+                </div>
+                <textarea
+                  id="code"
+                  v-model="form.code"
+                  rows="15"
+                  required
+                  placeholder="Вставьте код компонента..."
+                  class="code-textarea"
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="preview">URL превью изображения</label>
+              <input
+                id="preview"
+                v-model="form.preview"
+                type="url"
+                placeholder="https://example.com/preview.png"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Превью -->
+        <div class="form-section">
+          <h3>Превью компонента</h3>
+          <div class="preview-container">
+            <div class="preview-frame">
+              <div v-html="form.code" class="component-preview"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Настройки -->
+        <div class="form-section">
+          <h3>Настройки</h3>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input v-model="form.isActive" type="checkbox" />
+              <span class="checkmark"></span>
+              Компонент активен
+            </label>
+          </div>
+        </div>
+
+        <!-- Действия -->
+        <div class="form-actions">
+          <button type="button" @click="$emit('close')" class="cancel-button">
+            Отмена
+          </button>
+          <button type="submit" class="save-button" :disabled="saving">
+            {{ saving ? "Сохранение..." : isEditing ? "Обновить" : "Создать" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from "vue";
+
+const props = defineProps<{
+  component?: any;
+}>();
+
+const emit = defineEmits<{
+  close: [];
+  save: [componentData: any];
+}>();
+
+// Состояние формы
+const form = ref({
+  name: "",
+  description: "",
+  category: "",
+  code: "",
+  preview: "",
+  tags: [] as string[],
+  order: 0,
+  isActive: true,
+});
+
+const tagsInput = ref("");
+const activeTab = ref("html");
+const saving = ref(false);
+
+// Вычисляемые свойства
+const isEditing = computed(() => !!props.component);
+
+// Методы
+const updateTags = () => {
+  const tags = tagsInput.value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
+  form.value.tags = tags;
+};
+
+const removeTag = (tagToRemove: string) => {
+  form.value.tags = form.value.tags.filter((tag) => tag !== tagToRemove);
+  tagsInput.value = form.value.tags.join(", ");
+};
+
+const handleSubmit = async () => {
+  saving.value = true;
+  try {
+    await emit("save", { ...form.value });
+  } finally {
+    saving.value = false;
+  }
+};
+
+// Инициализация формы при редактировании
+onMounted(() => {
+  if (props.component) {
+    form.value = {
+      name: props.component.name,
+      description: props.component.description || "",
+      category: props.component.category,
+      code: props.component.code,
+      preview: props.component.preview || "",
+      tags: [...props.component.tags],
+      order: props.component.order,
+      isActive: props.component.isActive,
+    };
+    tagsInput.value = props.component.tags.join(", ");
+  }
+});
+
+// Обновление тегов при изменении input
+watch(tagsInput, updateTags);
+</script>
+
+<style lang="scss" scoped>
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: var(--background-color);
+  border-radius: 16px;
+  max-width: 1000px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border-color);
+
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--color-text);
+  }
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: var(--background-color-secondary);
+    color: var(--color-text);
+  }
+}
+
+.modal-form {
+  padding: 32px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.form-section {
+  h3 {
+    margin: 0 0 20px 0;
+    font-size: 1.2rem;
+    color: var(--color-text);
+    border-bottom: 2px solid var(--color-accent);
+    padding-bottom: 8px;
+  }
+}
+
+.form-group {
+  margin-bottom: 20px;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  input,
+  textarea,
+  select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--background-color);
+    color: var(--color-text);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.tags-preview {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(102, 126, 234, 0.1);
+  color: var(--color-accent);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+
+  &:hover {
+    background: rgba(102, 126, 234, 0.2);
+  }
+}
+
+.code-editor {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.code-tabs {
+  display: flex;
+  background: var(--background-color-secondary);
+  border-bottom: 1px solid var(--border-color);
+
+  button {
+    flex: 1;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &.active {
+      background: var(--background-color);
+      color: var(--color-accent);
+      border-bottom: 2px solid var(--color-accent);
+    }
+
+    &:hover:not(.active) {
+      background: var(--background-color);
+      color: var(--color-text);
+    }
+  }
+}
+
+.code-textarea {
+  border: none !important;
+  border-radius: 0 !important;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  background: var(--background-color) !important;
+}
+
+.preview-container {
+  background: var(--background-color-secondary);
+  border-radius: 8px;
+  padding: 24px;
+  min-height: 200px;
+}
+
+.preview-frame {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-height: 160px;
+}
+
+.component-preview {
+  width: 100%;
+  height: 100%;
+}
+
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-weight: normal !important;
+
+  input[type="checkbox"] {
+    display: none;
+  }
+
+  .checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  input[type="checkbox"]:checked + .checkmark {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+
+    &::after {
+      content: "✓";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+    }
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-color);
+}
+
+.cancel-button,
+.save-button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.cancel-button {
+  background: var(--background-color-secondary);
+  color: var(--color-text);
+
+  &:hover {
+    background: var(--border-color);
+  }
+}
+
+.save-button {
+  background: var(--color-accent);
+  color: white;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// Адаптивность
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    margin: 10px;
+    max-height: 95vh;
+  }
+
+  .modal-form {
+    padding: 20px;
+  }
+}
+</style>

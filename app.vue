@@ -23,7 +23,7 @@ useSeoMeta({
 useHead({
   script: [
     {
-      innerHTML: 'window.KIRUHAK_SITE_ID = "cmete8lh50001ricjc8r3e5ql";',
+      innerHTML: 'window.KIRUHAK_SITE_ID = "cmetglx3f0001ri3lsfzyscli";',
     },
     {
       src: "https://kiruhak11.ru/analytics.js",
