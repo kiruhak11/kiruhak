@@ -135,6 +135,127 @@
             </div>
           </div>
 
+          <!-- Прямые контакты -->
+          <div class="contact-section">
+            <h2>
+              <GradientText variant="primary">Прямые контакты</GradientText>
+            </h2>
+            <div class="direct-contacts">
+              <a
+                href="tel:+79609430029"
+                class="social-card phone"
+                @click="trackContact('phone')"
+              >
+                <div class="card-icon">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div class="card-content">
+                  <h3>Телефон</h3>
+                  <p>Прямая связь</p>
+                  <span class="contact-value">+7 960 943 00 29</span>
+                </div>
+                <div class="card-arrow">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M7 17L17 7"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M7 7H17V17"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </div>
+              </a>
+
+              <a
+                href="mailto:web@kiruhak11.ru"
+                class="social-card email"
+                @click="trackContact('email')"
+              >
+                <div class="card-icon">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <polyline
+                      points="22,6 12,13 2,6"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div class="card-content">
+                  <h3>Email</h3>
+                  <p>Письменная связь</p>
+                  <span class="contact-value">web@kiruhak11.ru</span>
+                </div>
+                <div class="card-arrow">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M7 17L17 7"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M7 7H17V17"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </div>
+              </a>
+            </div>
+          </div>
+
           <!-- Информация о работе -->
           <div class="contact-section">
             <h2>
@@ -367,6 +488,12 @@ const { setModal } = useFrogModal();
   gap: 24px;
 }
 
+.direct-contacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
 .social-card {
   display: flex;
   align-items: center;
@@ -410,6 +537,20 @@ const { setModal } = useFrogModal();
       color: #4a76a8;
     }
   }
+
+  &.phone:hover {
+    border-color: #25d366;
+    .card-icon {
+      color: #25d366;
+    }
+  }
+
+  &.email:hover {
+    border-color: #ea4335;
+    .card-icon {
+      color: #ea4335;
+    }
+  }
 }
 
 .card-icon {
@@ -437,6 +578,12 @@ const { setModal } = useFrogModal();
     color: var(--color-accent);
     font-weight: 600;
     font-size: 0.9rem;
+  }
+
+  .contact-value {
+    color: var(--color-accent);
+    font-weight: 600;
+    font-size: 1rem;
   }
 }
 
