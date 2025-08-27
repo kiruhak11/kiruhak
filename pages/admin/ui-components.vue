@@ -220,6 +220,8 @@ const showCreateModal = ref(false);
 const editingComponent = ref(null);
 const loading = ref(false);
 
+const { apiFetch } = useApi();
+
 // Загрузка компонентов
 const loadComponents = async () => {
   loading.value = true;
@@ -229,7 +231,7 @@ const loadComponents = async () => {
     if (selectedCategory.value)
       params.append("category", selectedCategory.value);
 
-    const response = await $fetch(`/api/ui-components?${params}`);
+    const response = await apiFetch(`/api/ui-components?${params}`);
     if (response.success) {
       components.value = response.components;
     }
@@ -256,17 +258,30 @@ const editComponent = (component) => {
 
 // Удаление компонента
 const deleteComponent = async (id) => {
-  if (!confirm("Вы уверены, что хотите удалить этот компонент?")) return;
+  console.log("🔐 UI Components: Функция deleteComponent вызвана с ID:", id);
+
+  // Убираем диалог подтверждения для быстрого удаления
+  // if (!confirm("Вы действительно хотите удалить этот компонент? Это действие нельзя отменить.")) {
+  //   console.log("🔐 UI Components: Пользователь отменил удаление");
+  //   return;
+  // }
 
   try {
-    const response = await $fetch(`/api/ui-components/${id}`, {
+    console.log("🔐 UI Components: Удаление компонента", id);
+    const response = await apiFetch(`/api/ui-components/${id}`, {
       method: "DELETE",
     });
     if (response.success) {
+      console.log("🔐 UI Components: Компонент успешно удален");
       await loadComponents();
+    } else {
+      console.log(
+        "🔐 UI Components: Ошибка при удалении компонента:",
+        response
+      );
     }
   } catch (error) {
-    console.error("Ошибка удаления компонента:", error);
+    console.error("🔐 UI Components: Ошибка удаления компонента:", error);
   }
 };
 
@@ -279,17 +294,35 @@ const closeModal = () => {
 // Сохранение компонента
 const saveComponent = async (componentData) => {
   try {
+    // Проверяем токен перед отправкой запроса
+    if (process.client) {
+      const token = localStorage.getItem("auth_token");
+      console.log("🔐 UI Components: Токен перед сохранением:", {
+        hasToken: !!token,
+        tokenLength: token ? token.length : 0,
+        tokenPreview: token ? token.substring(0, 20) + "..." : null,
+      });
+    }
+
     if (editingComponent.value) {
       // Обновление
-      await $fetch(`/api/ui-components/${editingComponent.value.id}`, {
+      console.log(
+        "🔐 UI Components: Обновление компонента",
+        editingComponent.value.id
+      );
+      await apiFetch(`/api/ui-components/${editingComponent.value.id}`, {
         method: "PUT",
         body: componentData,
       });
     } else {
       // Создание
-      await $fetch("/api/ui-components", {
+      console.log("🔐 UI Components: Создание нового компонента");
+      await apiFetch("/api/ui-components", {
         method: "POST",
         body: componentData,
+        headers: {
+          authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
       });
     }
 
@@ -297,12 +330,57 @@ const saveComponent = async (componentData) => {
     closeModal();
   } catch (error) {
     console.error("Ошибка сохранения компонента:", error);
+
+    // Дополнительная диагностика ошибки
+    if (error.status === 401) {
+      console.error("🔐 UI Components: 401 ошибка - проблема с авторизацией");
+      console.error("🔐 UI Components: Проверьте токен в localStorage");
+
+      if (process.client) {
+        const token = localStorage.getItem("auth_token");
+        console.error("🔐 UI Components: Текущий токен:", {
+          hasToken: !!token,
+          tokenLength: token ? token.length : 0,
+        });
+      }
+    }
   }
 };
 
 // Загрузка при монтировании
-onMounted(() => {
-  loadComponents();
+onMounted(async () => {
+  console.log("🔐 UI Components: Страница загружена, проверяем аутентификацию");
+
+  // Проверяем токен при загрузке страницы
+  if (process.client) {
+    const token = localStorage.getItem("auth_token");
+    const user = localStorage.getItem("auth_user");
+
+    console.log("🔐 UI Components: Состояние аутентификации при загрузке:", {
+      hasToken: !!token,
+      hasUser: !!user,
+      tokenLength: token ? token.length : 0,
+      tokenPreview: token ? token.substring(0, 20) + "..." : null,
+    });
+
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        console.log("🔐 UI Components: Данные пользователя:", {
+          id: userData.id,
+          firstName: userData.firstName,
+          isAdmin: userData.isAdmin,
+        });
+      } catch (error) {
+        console.error(
+          "🔐 UI Components: Ошибка парсинга данных пользователя:",
+          error
+        );
+      }
+    }
+  }
+
+  await loadComponents();
 });
 </script>
 

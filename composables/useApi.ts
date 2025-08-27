@@ -1,19 +1,25 @@
 export const useApi = () => {
-  const apiFetch = async (url: string, options: any = {}) => {
-    const headers = {
+  const getAuthHeaders = () => {
+    if (process.client) {
+      const token = localStorage.getItem("auth_token");
+      if (token) {
+        return {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        };
+      }
+    }
+    return {
       "Content-Type": "application/json",
+    };
+  };
+
+  const apiFetch = async (url: string, options: any = {}) => {
+    const authHeaders = getAuthHeaders();
+    const headers = {
+      ...authHeaders,
       ...options.headers,
     };
-
-    // Добавляем токен если он есть
-    let currentToken = null;
-    if (process.client) {
-      currentToken = localStorage.getItem("auth_token");
-    }
-
-    if (currentToken) {
-      headers.Authorization = `Bearer ${currentToken}`;
-    }
 
     console.log("🔐 useApi: Отправка запроса", {
       url,
@@ -21,8 +27,8 @@ export const useApi = () => {
         ...headers,
         Authorization: headers.Authorization ? "Bearer ***" : undefined,
       },
-      token: currentToken ? currentToken.substring(0, 50) + "..." : "null",
-      tokenLength: currentToken ? currentToken.length : 0,
+      hasAuth: !!headers.Authorization,
+      tokenLength: headers.Authorization ? headers.Authorization.length : 0,
     });
 
     return await $fetch(url, {
@@ -33,5 +39,6 @@ export const useApi = () => {
 
   return {
     apiFetch,
+    getAuthHeaders,
   };
 };

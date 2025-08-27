@@ -2,6 +2,15 @@ import { prisma } from "../../utils/prisma";
 
 export default defineEventHandler(async (event) => {
   try {
+    // Проверяем права администратора
+    const user = event.context.user;
+    if (!user || !user.isAdmin) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Admin access required",
+      });
+    }
+
     const id = getRouterParam(event, "id");
 
     if (!id) {

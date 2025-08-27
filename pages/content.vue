@@ -94,7 +94,7 @@
                 >
               </h3>
               <div class="tutorials-grid">
-                <div class="tutorial-card">
+                <NuxtLink to="/tutorials" class="tutorial-card">
                   <div class="tutorial-header">
                     <h4>Vue 3 Composition API</h4>
                     <span class="difficulty beginner">Начинающий</span>
@@ -106,10 +106,10 @@
                     <span>⏱️ 15 мин</span>
                     <span>📝 Код + примеры</span>
                   </div>
-                  <button class="tutorial-button">Читать туториал</button>
-                </div>
+                  <button class="tutorial-button">Начать туториал</button>
+                </NuxtLink>
 
-                <div class="tutorial-card">
+                <NuxtLink to="/tutorials" class="tutorial-card">
                   <div class="tutorial-header">
                     <h4>Nuxt 3 - SSR и SSG</h4>
                     <span class="difficulty intermediate">Средний</span>
@@ -121,10 +121,10 @@
                     <span>⏱️ 25 мин</span>
                     <span>🚀 Продакшен</span>
                   </div>
-                  <button class="tutorial-button">Читать туториал</button>
-                </div>
+                  <button class="tutorial-button">Начать туториал</button>
+                </NuxtLink>
 
-                <div class="tutorial-card">
+                <NuxtLink to="/tutorials" class="tutorial-card">
                   <div class="tutorial-header">
                     <h4>Vue + TypeScript</h4>
                     <span class="difficulty advanced">Продвинутый</span>
@@ -134,8 +134,8 @@
                     <span>⏱️ 30 мин</span>
                     <span>🔧 TypeScript</span>
                   </div>
-                  <button class="tutorial-button">Читать туториал</button>
-                </div>
+                  <button class="tutorial-button">Начать туториал</button>
+                </NuxtLink>
               </div>
             </div>
 
@@ -147,26 +147,26 @@
                 >
               </h3>
               <div class="materials-grid">
-                <div class="material-card">
+                <NuxtLink to="/materials" class="material-card">
                   <h4>Чек-лист оптимизации</h4>
                   <p>
                     50+ пунктов для оптимизации производительности Vue.js
                     приложений
                   </p>
-                  <button class="material-button">Скачать PDF</button>
-                </div>
+                  <button class="material-button">Открыть материалы</button>
+                </NuxtLink>
 
-                <div class="material-card">
+                <NuxtLink to="/materials" class="material-card">
                   <h4>Шаблоны компонентов</h4>
                   <p>Готовые шаблоны для часто используемых компонентов</p>
-                  <button class="material-button">Скачать код</button>
-                </div>
+                  <button class="material-button">Открыть материалы</button>
+                </NuxtLink>
 
-                <div class="material-card">
+                <NuxtLink to="/materials" class="material-card">
                   <h4>Архитектурные решения</h4>
                   <p>Лучшие практики организации кода в больших проектах</p>
-                  <button class="material-button">Читать</button>
-                </div>
+                  <button class="material-button">Открыть материалы</button>
+                </NuxtLink>
               </div>
             </div>
 
@@ -214,9 +214,9 @@
                     </div>
                     <button
                       class="component-button"
-                      @click="copyCode(component)"
+                      @click="openCodeModal(component)"
                     >
-                      Копировать код
+                      Просмотреть код
                     </button>
                   </div>
                 </div>
@@ -226,12 +226,20 @@
         </div>
       </div>
     </main>
+
+    <!-- Модалка для отображения кода -->
+    <CodeModal
+      :is-open="showCodeModal"
+      :component="selectedComponent"
+      @close="closeCodeModal"
+    />
   </NuxtLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import GradientText from "~/components/GradientText.vue";
+import CodeModal from "~/components/CodeModal.vue";
 
 // Состояние подписки
 const isSubscribed = ref(false);
@@ -241,39 +249,70 @@ const checking = ref(false);
 const uiComponents = ref([]);
 
 // Проверка подписки на Telegram канал
-const checkSubscription = async () => {
+const checkSubscription = async (showAlert = true) => {
   checking.value = true;
 
   try {
-    // Получаем информацию о текущем пользователе
-    const userResponse = await $fetch("/api/user/me");
+    // Используем данные из useAuth вместо прямого запроса
+    const { user, initAuth } = useAuth();
 
-    if (!userResponse.success) {
+    // Инициализируем аутентификацию, если данные еще не загружены
+    if (!user.value) {
+      await initAuth();
+    }
+
+    if (!user.value) {
       throw new Error("Пользователь не авторизован");
     }
+
+    console.log("🔍 Проверка подписки для пользователя:", {
+      id: user.value.id,
+      telegramId: user.value.telegramId,
+      username: user.value.username,
+    });
 
     // Проверяем подписку через API
     const response = await $fetch("/api/telegram/check-subscription", {
       method: "POST",
       body: {
-        userId: userResponse.user.id,
-        telegramId: userResponse.user.telegramId,
+        userId: user.value.id,
+        telegramId: user.value.telegramId,
       },
     });
+
+    console.log("📡 Ответ API проверки подписки:", response);
 
     if (response.success && response.isSubscribed) {
       isSubscribed.value = true;
       // Сохраняем статус в localStorage
       localStorage.setItem("telegram_subscribed", "true");
+      console.log("✅ Подписка подтверждена");
     } else {
-      // Показываем сообщение об ошибке
-      alert(
-        "Вы не подписаны на канал @web_kiruhak11. Пожалуйста, подпишитесь и попробуйте снова."
-      );
+      isSubscribed.value = false;
+      localStorage.removeItem("telegram_subscribed");
+      console.log("❌ Пользователь не подписан на канал", {
+        success: response.success,
+        isSubscribed: response.isSubscribed,
+        error: response.error,
+        memberStatus: response.memberStatus,
+      });
+
+      // Показываем сообщение об ошибке только если это не автоматическая проверка
+      if (showAlert) {
+        alert(
+          "Вы не подписаны на канал @web_kiruhak11. Пожалуйста, подпишитесь и попробуйте снова."
+        );
+      }
     }
   } catch (error) {
-    console.error("Ошибка проверки подписки:", error);
-    alert("Ошибка при проверке подписки. Попробуйте позже.");
+    console.error("❌ Ошибка проверки подписки:", error);
+    isSubscribed.value = false;
+    localStorage.removeItem("telegram_subscribed");
+
+    // Показываем сообщение об ошибке только если это не автоматическая проверка
+    if (showAlert) {
+      alert("Ошибка при проверке подписки. Попробуйте позже.");
+    }
   } finally {
     checking.value = false;
   }
@@ -291,41 +330,49 @@ const loadUiComponents = async () => {
   }
 };
 
-// Копирование кода компонента
-const copyCode = async (component) => {
-  try {
-    await navigator.clipboard.writeText(component.code);
-    alert("Код скопирован в буфер обмена!");
-  } catch (error) {
-    console.error("Ошибка копирования:", error);
-    // Fallback для старых браузеров
-    const textArea = document.createElement("textarea");
-    textArea.value = component.code;
-    document.body.appendChild(textArea);
-    textArea.select();
-    document.execCommand("copy");
-    document.body.removeChild(textArea);
-    alert("Код скопирован в буфер обмена!");
-  }
+// Модалка для отображения кода
+const showCodeModal = ref(false);
+const selectedComponent = ref(null);
+
+const openCodeModal = (component) => {
+  selectedComponent.value = component;
+  showCodeModal.value = true;
+};
+
+const closeCodeModal = () => {
+  showCodeModal.value = false;
+  selectedComponent.value = null;
 };
 
 // Проверяем подписку при загрузке страницы
 onMounted(async () => {
-  // Проверяем сохраненное состояние подписки
-  const savedStatus = localStorage.getItem("telegram_subscribed");
-  if (savedStatus === "true") {
-    isSubscribed.value = true;
+  // Инициализируем аутентификацию
+  const { user, initAuth } = useAuth();
+
+  if (!user.value) {
+    await initAuth();
   }
 
-  // Также можно проверить статус из базы данных
-  try {
-    const userResponse = await $fetch("/api/user/me");
-    if (userResponse.success && userResponse.user.isSubscribed) {
-      isSubscribed.value = true;
-      localStorage.setItem("telegram_subscribed", "true");
-    }
-  } catch (error) {
-    console.log("Пользователь не авторизован");
+  // Если пользователь авторизован, проверяем подписку автоматически
+  if (user.value) {
+    console.log("Автоматическая проверка подписки...");
+    await checkSubscription(false); // Без alert для автоматической проверки
+
+    // Устанавливаем периодическую проверку каждые 5 минут
+    const subscriptionCheckInterval = setInterval(async () => {
+      if (user.value) {
+        console.log("Периодическая проверка подписки...");
+        await checkSubscription(false); // Без alert для автоматической проверки
+      } else {
+        // Если пользователь вышел, останавливаем проверку
+        clearInterval(subscriptionCheckInterval);
+      }
+    }, 5 * 60 * 1000); // 5 минут
+
+    // Очищаем интервал при размонтировании компонента
+    onUnmounted(() => {
+      clearInterval(subscriptionCheckInterval);
+    });
   }
 
   // Загружаем UI компоненты
@@ -538,6 +585,8 @@ onMounted(async () => {
   padding: 24px;
   transition: all 0.3s ease;
   box-shadow: var(--card-shadow);
+  text-decoration: none;
+  display: block;
 
   &:hover {
     transform: translateY(-4px);
@@ -627,6 +676,8 @@ onMounted(async () => {
   text-align: center;
   transition: all 0.3s ease;
   box-shadow: var(--card-shadow);
+  text-decoration: none;
+  display: block;
 
   &:hover {
     transform: translateY(-4px);
@@ -836,6 +887,27 @@ onMounted(async () => {
 
   .projects-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+// Hover эффекты для карточек
+.material-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.tutorial-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
   }
 }
 </style>

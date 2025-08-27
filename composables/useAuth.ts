@@ -19,7 +19,7 @@ export const useAuth = () => {
   const token = ref<string | null>(null);
   const loading = ref(false);
 
-  // Инициализация из localStorage
+  // Инициализация из localStorage и cookies
   const initAuth = async () => {
     if (process.client) {
       const savedToken = localStorage.getItem("auth_token");
@@ -35,6 +35,9 @@ export const useAuth = () => {
         token.value = savedToken;
         user.value = JSON.parse(savedUser);
 
+        // Также сохраняем в cookies для серверного доступа
+        document.cookie = `auth_token=${savedToken}; path=/; max-age=86400; SameSite=Strict`;
+
         console.log("🔐 useAuth: Состояние аутентификации восстановлено", {
           user: user.value,
           token: token.value ? "***" : null,
@@ -44,21 +47,10 @@ export const useAuth = () => {
             : null,
         });
 
-        // Обновляем данные пользователя с сервера
-        try {
-          await refreshUser();
-          console.log("🔐 useAuth: Данные пользователя обновлены с сервера");
-        } catch (error) {
-          console.error(
-            "🔐 useAuth: Ошибка обновления данных пользователя:",
-            error
-          );
-          // Если не удалось обновить данные, возможно токен истек
-          if (error.status === 401) {
-            console.log("🔐 useAuth: Токен истек, очищаем данные");
-            logout();
-          }
-        }
+        // Не обновляем данные пользователя сразу, чтобы избежать дублирующих запросов
+        console.log(
+          "🔐 useAuth: Состояние аутентификации восстановлено из localStorage"
+        );
       } else {
         console.log("🔐 useAuth: Нет сохраненных данных аутентификации");
       }
@@ -86,11 +78,15 @@ export const useAuth = () => {
         user.value = response.user;
         token.value = response.token;
 
-        // Сохраняем в localStorage
+        // Сохраняем в localStorage и cookies
         if (process.client) {
           localStorage.setItem("auth_token", response.token);
           localStorage.setItem("auth_user", JSON.stringify(response.user));
-          console.log("🔐 useAuth: Токен сохранен в localStorage:", {
+
+          // Также сохраняем в cookies для серверного доступа
+          document.cookie = `auth_token=${response.token}; path=/; max-age=86400; SameSite=Strict`;
+
+          console.log("🔐 useAuth: Токен сохранен в localStorage и cookies:", {
             tokenLength: response.token.length,
             tokenPreview: response.token.substring(0, 20) + "...",
           });
@@ -118,6 +114,10 @@ export const useAuth = () => {
     if (process.client) {
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
+
+      // Также удаляем из cookies
+      document.cookie =
+        "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }
   };
 

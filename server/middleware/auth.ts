@@ -1,11 +1,17 @@
 import { prisma } from "../utils/prisma";
 
 export default defineEventHandler(async (event) => {
+  console.log("🔒 [Auth Middleware] === MIDDLEWARE ВЫЗВАН ===");
   const path = getRequestURL(event).pathname;
   const method = getMethod(event);
 
   console.log(`🔒 [Auth Middleware] === НАЧАЛО ОБРАБОТКИ ===`);
   console.log(`🔒 [Auth Middleware] ${method} ${path}`);
+  console.log(`🔒 [Auth Middleware] Event type:`, event.node.req.url);
+  console.log(
+    `🔒 [Auth Middleware] Full URL:`,
+    getRequestURL(event).toString()
+  );
 
   // Пропускаем публичные маршруты
   const publicRoutes = [
@@ -16,6 +22,10 @@ export default defineEventHandler(async (event) => {
     "/api/analytics/track",
     "/api/test-auth",
     "/api/health",
+    "/api/ui-components", // GET запрос для получения UI компонентов
+    "/api/tutorials", // GET запрос для получения списка туториалов
+    "/api/materials", // GET запрос для получения списка материалов
+    "/api/telegram/check-subscription", // Проверка подписки на Telegram
   ];
 
   // Проверяем, является ли маршрут публичным
@@ -24,13 +34,79 @@ export default defineEventHandler(async (event) => {
   // Также проверяем GET запросы к проектам (публичные)
   const isPublicProjectRoute = path === "/api/projects" && method === "GET";
 
+  // Проверяем GET запросы к туториалам (публичные)
+  const isPublicTutorialRoute = path === "/api/tutorials" && method === "GET";
+
+  // Проверяем GET запросы к материалам (публичные)
+  const isPublicMaterialRoute = path === "/api/materials" && method === "GET";
+
   // Проверяем, является ли это операцией с проектами, требующей аутентификации
   const isProjectOperation =
     path.startsWith("/api/projects/") && method !== "GET";
   const isProjectCreate = path === "/api/projects" && method === "POST";
 
+  // Проверяем, является ли это операцией с UI компонентами, требующей аутентификации
+  const isUiComponentOperation =
+    path.startsWith("/api/ui-components/") && method !== "GET";
+  const isUiComponentCreate =
+    path === "/api/ui-components" && method === "POST";
+
+  // Проверяем, является ли это операцией с туториалами, требующей аутентификации
+  const isTutorialOperation =
+    path.startsWith("/api/tutorials/") && method !== "GET";
+  const isTutorialCreate = path === "/api/tutorials" && method === "POST";
+
+  // Проверяем, является ли это операцией с материалами, требующей аутентификации
+  const isMaterialOperation =
+    path.startsWith("/api/materials/") && method !== "GET";
+  const isMaterialCreate = path === "/api/materials" && method === "POST";
+  
+  // Проверяем скачивание PDF (требует аутентификации)
+  const isMaterialDownload = path.includes("/download-pdf");
+
+  console.log(`🔒 [Auth Middleware] UI Component checks:`, {
+    path,
+    method,
+    startsWithUiComponents: path.startsWith("/api/ui-components/"),
+    isUiComponentOperation,
+    isUiComponentCreate,
+  });
+
+  console.log(`🔒 [Auth Middleware] Tutorial checks:`, {
+    path,
+    method,
+    startsWithTutorials: path.startsWith("/api/tutorials/"),
+    isTutorialOperation,
+    isTutorialCreate,
+  });
+
+  console.log(`🔒 [Auth Middleware] Material checks:`, {
+    path,
+    method,
+    startsWithMaterials: path.startsWith("/api/materials/"),
+    isMaterialOperation,
+    isMaterialCreate,
+  });
+
   const shouldSkipAuth =
-    (isPublicRoute && !isProjectCreate) || isPublicProjectRoute;
+    (isPublicRoute &&
+      !isProjectCreate &&
+      !isUiComponentCreate &&
+      !isTutorialCreate &&
+      !isMaterialCreate) ||
+    isPublicProjectRoute ||
+    isPublicTutorialRoute ||
+    isPublicMaterialRoute;
+
+  // Дополнительная проверка для компонентов, требующих аутентификации
+  const requiresAuth =
+    isUiComponentOperation ||
+    isUiComponentCreate ||
+    isTutorialOperation ||
+    isTutorialCreate ||
+    isMaterialOperation ||
+    isMaterialCreate ||
+    isMaterialDownload;
 
   console.log(`🔒 [Auth Middleware] ${method} ${path}`);
   console.log(
@@ -43,14 +119,47 @@ export default defineEventHandler(async (event) => {
     `🔒 [Auth Middleware] Is public project route:`,
     isPublicProjectRoute
   );
+  console.log(
+    `🔒 [Auth Middleware] Is public tutorial route:`,
+    isPublicTutorialRoute
+  );
+  console.log(
+    `🔒 [Auth Middleware] Is public material route:`,
+    isPublicMaterialRoute
+  );
   console.log(`🔒 [Auth Middleware] Is project operation:`, isProjectOperation);
   console.log(`🔒 [Auth Middleware] Is project create:`, isProjectCreate);
+  console.log(
+    `🔒 [Auth Middleware] Is UI component operation:`,
+    isUiComponentOperation
+  );
+  console.log(
+    `🔒 [Auth Middleware] Is UI component create:`,
+    isUiComponentCreate
+  );
   console.log(`🔒 [Auth Middleware] Should skip auth:`, shouldSkipAuth);
+  console.log(`🔒 [Auth Middleware] Auth skip details:`, {
+    isPublicRoute,
+    isProjectCreate,
+    isUiComponentCreate,
+    isTutorialCreate,
+    isMaterialCreate,
+    isPublicProjectRoute,
+    isPublicTutorialRoute,
+    isPublicMaterialRoute,
+    shouldSkipAuth,
+    requiresAuth,
+  });
 
   // Пропускаем публичные маршруты
   if (shouldSkipAuth) {
     console.log(`🔒 [Auth Middleware] Пропускаем публичный маршрут: ${path}`);
     return;
+  }
+
+  // Принудительно требуем аутентификацию для компонентов
+  if (requiresAuth) {
+    console.log(`🔒 [Auth Middleware] Требуется аутентификация для: ${path}`);
   }
 
   // Пропускаем GET запросы к статическим файлам и ресурсам
@@ -85,8 +194,9 @@ export default defineEventHandler(async (event) => {
     return;
   }
 
-  // Проверяем токен
-  const authHeader = getHeader(event, "authorization");
+  // Проверяем токен (пробуем оба варианта регистра)
+  const authHeader =
+    getHeader(event, "authorization") || getHeader(event, "Authorization");
   console.log("🔒 Server Middleware: Проверка токена для", path);
   console.log(
     "🔒 Server Middleware: Authorization header:",
@@ -96,7 +206,31 @@ export default defineEventHandler(async (event) => {
   // Выводим все заголовки для отладки
   const allHeaders = getHeaders(event);
   console.log("🔒 Server Middleware: Все заголовки:", Object.keys(allHeaders));
+  console.log("🔒 Server Middleware: Все заголовки (значения):", allHeaders);
   console.log("🔒 Server Middleware: Authorization header value:", authHeader);
+  console.log(
+    "🔒 Server Middleware: Authorization header starts with Bearer:",
+    authHeader?.startsWith("Bearer ")
+  );
+
+  // Дополнительная отладка для понимания проблемы с заголовками
+  console.log("🔒 Server Middleware: === ДОПОЛНИТЕЛЬНАЯ ОТЛАДКА ===");
+  console.log(
+    "🔒 Server Middleware: Event node req headers:",
+    event.node.req.headers
+  );
+  console.log(
+    "🔒 Server Middleware: Event node req rawHeaders:",
+    event.node.req.rawHeaders
+  );
+  console.log(
+    "🔒 Server Middleware: getHeader('authorization'):",
+    getHeader(event, "authorization")
+  );
+  console.log(
+    "🔒 Server Middleware: getHeader('Authorization'):",
+    getHeader(event, "Authorization")
+  );
 
   // Для операций с проектами требуем аутентификацию
   if (isProjectOperation || isProjectCreate) {
@@ -105,8 +239,34 @@ export default defineEventHandler(async (event) => {
     );
   }
 
+  // Для операций с UI компонентами требуем аутентификацию
+  if (isUiComponentOperation || isUiComponentCreate) {
+    console.log(
+      "🔒 Server Middleware: Операция с UI компонентами требует аутентификации"
+    );
+  }
+
+  // Для операций с туториалами требуем аутентификацию
+  if (isTutorialOperation || isTutorialCreate) {
+    console.log(
+      "🔒 Server Middleware: Операция с туториалами требует аутентификации"
+    );
+  }
+
+  // Для операций с материалами требуем аутентификацию
+  if (isMaterialOperation || isMaterialCreate) {
+    console.log(
+      "🔒 Server Middleware: Операция с материалами требует аутентификации"
+    );
+  }
+
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     console.log("🔒 Server Middleware: Нет токена или неправильный формат");
+    console.log("🔒 Server Middleware: authHeader:", authHeader);
+    console.log(
+      "🔒 Server Middleware: startsWith Bearer:",
+      authHeader?.startsWith("Bearer ")
+    );
     throw createError({
       statusCode: 401,
       statusMessage: "Unauthorized",
@@ -130,12 +290,38 @@ export default defineEventHandler(async (event) => {
       throw new Error("Empty token");
     }
 
-    const decoded = JSON.parse(Buffer.from(token, "base64").toString());
+    console.log("🔒 Server Middleware: Попытка декодирования токена...");
+    console.log(
+      "🔒 Server Middleware: Токен для декодирования:",
+      token.substring(0, 50) + "..."
+    );
+    console.log("🔒 Server Middleware: Длина токена:", token.length);
+
+    let decoded;
+    try {
+      decoded = JSON.parse(Buffer.from(token, "base64").toString());
+      console.log("🔒 Server Middleware: Декодирование успешно");
+    } catch (decodeError) {
+      console.error(
+        "🔒 Server Middleware: Ошибка декодирования токена:",
+        decodeError
+      );
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Invalid token format",
+      });
+    }
     console.log("🔒 Server Middleware: Токен декодирован:", {
       userId: decoded.userId,
       exp: decoded.exp,
     });
     console.log("🔒 Server Middleware: Полный декодированный токен:", decoded);
+
+    // Проверяем, что токен содержит все необходимые поля
+    console.log("🔒 Server Middleware: Проверка полей токена:");
+    console.log("  - userId:", decoded.userId);
+    console.log("  - exp:", decoded.exp);
+    console.log("  - isAdmin:", decoded.isAdmin);
 
     // Проверяем структуру токена
     if (!decoded.userId || !decoded.exp) {
@@ -150,6 +336,11 @@ export default defineEventHandler(async (event) => {
       currentTime,
       "Время истечения:",
       decoded.exp
+    );
+    console.log(
+      "🔒 Server Middleware: Разница времени:",
+      decoded.exp - currentTime,
+      "секунд"
     );
 
     if (decoded.exp < currentTime) {
@@ -189,6 +380,30 @@ export default defineEventHandler(async (event) => {
 
     // Проверяем права администратора для админских API маршрутов
     if (path.startsWith("/api/admin") && !user.isAdmin) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Admin access required",
+      });
+    }
+
+    // Проверяем права администратора для операций с UI компонентами
+    if ((isUiComponentOperation || isUiComponentCreate) && !user.isAdmin) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Admin access required",
+      });
+    }
+
+    // Проверяем права администратора для операций с туториалами
+    if ((isTutorialOperation || isTutorialCreate) && !user.isAdmin) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Admin access required",
+      });
+    }
+
+    // Проверяем права администратора для операций с материалами
+    if ((isMaterialOperation || isMaterialCreate) && !user.isAdmin) {
       throw createError({
         statusCode: 403,
         statusMessage: "Admin access required",

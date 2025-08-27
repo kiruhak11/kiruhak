@@ -126,13 +126,6 @@
                 <div class="code-tabs">
                   <button
                     type="button"
-                    :class="{ active: activeTab === 'code' }"
-                    @click="activeTab = 'code'"
-                  >
-                    Полный код
-                  </button>
-                  <button
-                    type="button"
                     :class="{ active: activeTab === 'html' }"
                     @click="activeTab = 'html'"
                   >
@@ -154,43 +147,31 @@
                   </button>
                 </div>
 
-                <!-- Полный код -->
-                <textarea
-                  v-if="activeTab === 'code'"
-                  v-model="form.code"
-                  rows="20"
-                  placeholder="Вставьте полный код компонента (HTML + CSS + JS)..."
-                  class="code-textarea"
-                ></textarea>
-
                 <!-- HTML код -->
                 <textarea
                   v-if="activeTab === 'html'"
-                  v-model="htmlCode"
+                  v-model="form.html"
                   rows="15"
-                  placeholder="HTML код будет извлечен автоматически..."
+                  placeholder="Вставьте HTML код компонента..."
                   class="code-textarea"
-                  readonly
                 ></textarea>
 
                 <!-- CSS код -->
                 <textarea
                   v-if="activeTab === 'css'"
-                  v-model="cssCode"
+                  v-model="form.css"
                   rows="15"
-                  placeholder="CSS код будет извлечен автоматически..."
+                  placeholder="Вставьте CSS код компонента..."
                   class="code-textarea"
-                  readonly
                 ></textarea>
 
                 <!-- JavaScript код -->
                 <textarea
                   v-if="activeTab === 'js'"
-                  v-model="jsCode"
+                  v-model="form.js"
                   rows="15"
-                  placeholder="JavaScript код будет извлечен автоматически..."
+                  placeholder="Вставьте JavaScript код компонента..."
                   class="code-textarea"
-                  readonly
                 ></textarea>
               </div>
             </div>
@@ -212,7 +193,7 @@
           <h3>Превью компонента</h3>
           <div class="preview-container">
             <div class="preview-frame">
-              <div v-html="form.code" class="component-preview"></div>
+              <div v-html="combinedCode" class="component-preview"></div>
             </div>
           </div>
         </div>
@@ -260,7 +241,9 @@ const form = ref({
   name: "",
   description: "",
   category: "",
-  code: "",
+  html: "",
+  css: "",
+  js: "",
   preview: "",
   tags: [] as string[],
   order: 0,
@@ -268,39 +251,36 @@ const form = ref({
 });
 
 const tagsInput = ref("");
-const activeTab = ref("code");
+const activeTab = ref("html");
 const saving = ref(false);
 
 // Вычисляемые свойства
 const isEditing = computed(() => !!props.component);
 
-// Извлечение частей кода для отображения
-const htmlCode = computed(() => {
-  if (!form.value.code) return "";
+// Объединенный код для превью
+const combinedCode = computed(() => {
+  const html = form.value.html || "";
+  const css = form.value.css || "";
+  const js = form.value.js || "";
 
-  // Удаляем CSS и JS из кода, оставляем только HTML
-  return form.value.code
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-    .trim();
-});
+  if (!html && !css && !js) return "";
 
-const cssCode = computed(() => {
-  if (!form.value.code) return "";
+  let combined = "";
 
-  // Извлекаем CSS из тегов <style>
-  const styleMatch = form.value.code.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
-  return styleMatch ? styleMatch[1] : "";
-});
+  // Добавляем CSS в head
+  if (css) {
+    combined += `<style>${css}</style>`;
+  }
 
-const jsCode = computed(() => {
-  if (!form.value.code) return "";
+  // Добавляем HTML
+  combined += html;
 
-  // Извлекаем JavaScript из тегов <script>
-  const scriptMatch = form.value.code.match(
-    /<script[^>]*>([\s\S]*?)<\/script>/i
-  );
-  return scriptMatch ? scriptMatch[1] : "";
+  // Добавляем JavaScript в конец
+  if (js) {
+    combined += `<script>${js}</script>`;
+  }
+  
+  return combined;
 });
 
 // Методы
@@ -320,7 +300,12 @@ const removeTag = (tagToRemove: string) => {
 const handleSubmit = async () => {
   saving.value = true;
   try {
-    await emit("save", form.value);
+    // Объединяем код перед отправкой
+    const componentData = {
+      ...form.value,
+      code: combinedCode.value,
+    };
+    await emit("save", componentData);
   } finally {
     saving.value = false;
   }
@@ -329,11 +314,45 @@ const handleSubmit = async () => {
 // Инициализация формы при редактировании
 onMounted(() => {
   if (props.component) {
+    // Парсим старый формат кода, если он есть
+    let html = "";
+    let css = "";
+    let js = "";
+
+    // Используем новые поля, если они есть, иначе парсим старый код
+    if (props.component.html || props.component.css || props.component.js) {
+      html = props.component.html || "";
+      css = props.component.css || "";
+      js = props.component.js || "";
+    } else if (props.component.code) {
+      const code = props.component.code;
+      
+      // Извлекаем CSS из тегов <style>
+      const styleMatch = code.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+      if (styleMatch) {
+        css = styleMatch[1];
+      }
+
+      // Извлекаем JavaScript из тегов <script>
+      const scriptMatch = code.match(/<script[^>]*>([\s\S]*?)<\/script>/i);
+      if (scriptMatch) {
+        js = scriptMatch[1];
+      }
+
+      // Удаляем CSS и JS из кода, оставляем только HTML
+      html = code
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+        .trim();
+    }
+
     form.value = {
       name: props.component.name,
       description: props.component.description || "",
       category: props.component.category,
-      code: props.component.code || "",
+      html: html,
+      css: css,
+      js: js,
       preview: props.component.preview || "",
       tags: [...props.component.tags],
       order: props.component.order,
@@ -543,11 +562,6 @@ watch(tagsInput, updateTags);
   font-size: 0.9rem;
   line-height: 1.5;
   background: var(--background-color) !important;
-
-  &[readonly] {
-    background: var(--background-color-secondary) !important;
-    color: var(--color-text-secondary);
-  }
 }
 
 .preview-container {

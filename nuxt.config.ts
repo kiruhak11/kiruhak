@@ -86,6 +86,12 @@ export default defineNuxtConfig({
     prerender: {
       routes: ["/", "/projects", "/contact"],
     },
+    cors: {
+      origin: "*",
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    },
   },
   runtimeConfig: {
     telegramToken: "6122558496:AAEXwnP3E4uIk5sSSNzD-13vQK6A4ybCBFI",
