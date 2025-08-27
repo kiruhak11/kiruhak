@@ -18,6 +18,19 @@ useSeoMeta({
   ogType: "website",
   twitterCard: "summary_large_image",
 });
+
+// Добавляем аналитику Kiruhak
+useHead({
+  script: [
+    {
+      innerHTML: 'window.KIRUHAK_SITE_ID = "cmete8lh50001ricjc8r3e5ql";',
+    },
+    {
+      src: "https://kiruhak11.ru/analytics.js",
+      async: true,
+    },
+  ],
+});
 </script>
 
 <style lang="scss" src="~/assets/styles/index.scss"></style>

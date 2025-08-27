@@ -119,6 +119,23 @@
     // Отслеживаем время на странице
     trackTimeOnPage();
 
+    // Отслеживаем обновления страницы (refresh)
+    window.addEventListener("beforeunload", function () {
+      // Отправляем данные о том, что страница была обновлена
+      navigator.sendBeacon(
+        ANALYTICS_URL,
+        JSON.stringify({
+          siteId: SITE_ID,
+          page: window.location.pathname + window.location.search,
+          referrer: document.referrer || null,
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString(),
+          sessionId: getSessionId(),
+          event: "page_refresh",
+        })
+      );
+    });
+
     // Для SPA - отслеживаем изменения URL
     if (window.history && window.history.pushState) {
       const originalPushState = window.history.pushState;
