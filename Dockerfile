@@ -1,5 +1,5 @@
 # Используем официальный Node.js образ
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 # Устанавливаем зависимости только при необходимости
 FROM base AS deps
