@@ -15,22 +15,16 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Захардкоженные настройки бота
-    const botToken = process.env.TELEGRAM_BOT_TOKEN; // Замените на ваш токен
-    const channelUsername = "web_kiruhak11";
+    // Настройки Telegram бота из конфига
+    const config = useRuntimeConfig();
+    const botToken = config.telegramToken;
+    const channelUsername = config.channelUsername;
 
-    console.log("🔧 Конфигурация:", {
-      botToken: botToken ? "***" : "НЕ НАСТРОЕН",
-      channelUsername,
-    });
-
-    if (!botToken || botToken === "YOUR_BOT_TOKEN_HERE") {
-      console.error(
-        "Токен бота не настроен - замените YOUR_BOT_TOKEN_HERE на реальный токен"
-      );
+    if (!botToken) {
+      console.error("❌ Токен бота не настроен в конфиге");
       return {
         success: false,
-        error: "Ошибка конфигурации бота - замените токен в коде",
+        error: "Ошибка конфигурации бота",
       };
     }
 
