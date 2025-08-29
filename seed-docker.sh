@@ -9,19 +9,19 @@ if ! docker info > /dev/null 2>&1; then
 fi
 
 # Проверяем, что контейнер с базой данных запущен
-if ! docker ps | grep -q "postgres"; then
+if ! docker ps | grep -q "kiruhak_postgres"; then
     echo "❌ Контейнер с PostgreSQL не найден. Запустите docker-compose up -d"
     exit 1
 fi
 
 echo "📦 Устанавливаем зависимости..."
-npm install
+docker-compose exec app npm install
 
 echo "🔄 Применяем миграции..."
-npx prisma migrate deploy
+docker-compose exec app npx prisma migrate deploy
 
 echo "🌱 Заполняем базу данных тестовыми данными..."
-npx prisma db seed
+docker-compose exec app npx prisma db seed
 
 echo "✅ База данных успешно заполнена!"
 echo ""
