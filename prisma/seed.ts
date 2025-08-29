@@ -184,6 +184,7 @@ async function main() {
       name: "Кнопка с градиентом",
       description: "Современная кнопка с градиентным фоном и анимацией",
       category: "buttons",
+      code: `<button class="gradient-button">Нажми меня</button>`,
       html: `<button class="gradient-button">Нажми меня</button>`,
       css: `.gradient-button {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -208,6 +209,11 @@ async function main() {
       name: "Карточка с тенью",
       description: "Карточка с красивой тенью и hover эффектом",
       category: "cards",
+      code: `<div class="shadow-card">
+  <h3>Заголовок карточки</h3>
+  <p>Описание карточки с красивым дизайном</p>
+  <button class="card-button">Действие</button>
+</div>`,
       html: `<div class="shadow-card">
   <h3>Заголовок карточки</h3>
   <p>Описание карточки с красивым дизайном</p>
@@ -242,6 +248,10 @@ async function main() {
       name: "Анимированный инпут",
       description: "Поле ввода с анимированной подсказкой",
       category: "inputs",
+      code: `<div class="input-container">
+  <input type="text" id="animated-input" required>
+  <label for="animated-input">Ваше имя</label>
+</div>`,
       html: `<div class="input-container">
   <input type="text" id="animated-input" required>
   <label for="animated-input">Ваше имя</label>
