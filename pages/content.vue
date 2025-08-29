@@ -175,6 +175,7 @@
               <h3>
                 <GradientText variant="success">UI Компоненты</GradientText>
               </h3>
+
               <div class="ui-components-grid">
                 <div
                   v-for="component in uiComponents"
@@ -182,11 +183,12 @@
                   class="ui-component-card"
                 >
                   <div class="component-preview">
-                    <div v-if="component.preview" class="preview-image">
-                      <img :src="component.preview" :alt="component.name" />
-                    </div>
-                    <div v-else class="preview-placeholder">
-                      <div v-html="component.code" class="component-demo"></div>
+                    <div class="preview-placeholder">
+                      <div
+                        v-html="component.code"
+                        class="component-demo"
+                        :style="getComponentStyles(component)"
+                      ></div>
                     </div>
                   </div>
                   <div class="component-info">
@@ -321,12 +323,22 @@ const checkSubscription = async (showAlert = true) => {
 // Загрузка UI компонентов
 const loadUiComponents = async () => {
   try {
+    console.log("🔄 Загружаем UI компоненты...");
     const response = await $fetch("/api/ui-components");
+    console.log("📡 Ответ API UI компонентов:", response);
+
     if (response.success) {
       uiComponents.value = response.components;
+      console.log(
+        "✅ UI компоненты загружены:",
+        uiComponents.value.length,
+        "штук"
+      );
+    } else {
+      console.error("❌ Ошибка в ответе API:", response.error);
     }
   } catch (error) {
-    console.error("Ошибка загрузки UI компонентов:", error);
+    console.error("❌ Ошибка загрузки UI компонентов:", error);
   }
 };
 
@@ -344,24 +356,48 @@ const closeCodeModal = () => {
   selectedComponent.value = null;
 };
 
+// Функция для получения стилей компонента
+const getComponentStyles = (component) => {
+  if (!component.css) return {};
+
+  // Создаем уникальный класс для компонента
+  const componentClass = `component-${component.id}`;
+
+  // Добавляем стили в head документа
+  if (!document.getElementById(componentClass)) {
+    const style = document.createElement("style");
+    style.id = componentClass;
+    style.textContent = component.css;
+    document.head.appendChild(style);
+  }
+
+  return {};
+};
+
 // Проверяем подписку при загрузке страницы
 onMounted(async () => {
+  console.log("🚀 Страница content загружена");
+
   // Инициализируем аутентификацию
   const { user, initAuth } = useAuth();
+  console.log("👤 Пользователь до инициализации:", user.value);
 
   if (!user.value) {
+    console.log("🔄 Инициализируем аутентификацию...");
     await initAuth();
   }
 
+  console.log("👤 Пользователь после инициализации:", user.value);
+
   // Если пользователь авторизован, проверяем подписку автоматически
   if (user.value) {
-    console.log("Автоматическая проверка подписки...");
+    console.log("✅ Пользователь авторизован, проверяем подписку...");
     await checkSubscription(false); // Без alert для автоматической проверки
 
     // Устанавливаем периодическую проверку каждые 5 минут
     const subscriptionCheckInterval = setInterval(async () => {
       if (user.value) {
-        console.log("Периодическая проверка подписки...");
+        console.log("🔄 Периодическая проверка подписки...");
         await checkSubscription(false); // Без alert для автоматической проверки
       } else {
         // Если пользователь вышел, останавливаем проверку
@@ -373,9 +409,12 @@ onMounted(async () => {
     onUnmounted(() => {
       clearInterval(subscriptionCheckInterval);
     });
+  } else {
+    console.log("❌ Пользователь не авторизован");
   }
 
   // Загружаем UI компоненты
+  console.log("🔄 Загружаем UI компоненты...");
   await loadUiComponents();
 });
 </script>
@@ -772,6 +811,23 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 20px;
+
+  // Стили для кнопок
+  button {
+    margin: 0;
+  }
+
+  // Стили для карточек
+  .shadow-card {
+    margin: 0;
+  }
+
+  // Стили для инпутов
+  .input-container {
+    margin: 0;
+    width: 100%;
+  }
 }
 
 .component-info {
