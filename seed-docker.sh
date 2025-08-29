@@ -15,13 +15,13 @@ if ! docker ps | grep -q "kiruhak_postgres"; then
 fi
 
 echo "📦 Устанавливаем зависимости..."
-docker-compose exec app npm install
+docker compose exec app npm install
 
 echo "🔄 Применяем миграции..."
-docker-compose exec app npx prisma migrate deploy
+docker compose exec app npx prisma migrate deploy
 
 echo "🌱 Заполняем базу данных тестовыми данными..."
-docker-compose exec app npx prisma db seed
+docker compose exec app npx prisma db seed
 
 echo "✅ База данных успешно заполнена!"
 echo ""
