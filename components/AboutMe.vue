@@ -44,7 +44,7 @@
         </h2>
         <p>Соберём решение под задачи бизнеса: быстро, прозрачно, безопасно</p>
         <div class="cta-buttons">
-          <button class="cta-button primary" @click="$emit('openOrderModal')">
+          <button class="cta-button primary" @click="handleOrderClick">
             <svg
               width="20"
               height="20"
@@ -76,10 +76,7 @@
             </svg>
             Заказать сайт
           </button>
-          <button
-            class="cta-button secondary"
-            @click="$emit('openDonationModal')"
-          >
+          <button class="cta-button secondary" @click="showOrderModal">
             <svg
               width="20"
               height="20"
@@ -98,14 +95,27 @@
       </div>
     </div>
   </div>
+
+  <OrderModal :show="showOrderModal" @close="showOrderModal = false" />
+
+  <DonationModal :show="showDonationModal" @close="showDonationModal = false" />
 </template>
 
 <script setup>
 import GradientText from "./GradientText.vue";
 import AnimatedSkillIcon from "./AnimatedSkillIcon.vue";
-defineEmits(["openOrderModal", "openDonationModal"]);
+
+const emit = defineEmits(["openOrderModal", "openDonationModal"]);
 
 const time = ref(new Date().toLocaleTimeString());
+
+const handleOrderClick = () => {
+  emit("openOrderModal");
+};
+
+const handleDonationClick = () => {
+  emit("openDonationModal");
+};
 </script>
 
 <style lang="scss" scoped>

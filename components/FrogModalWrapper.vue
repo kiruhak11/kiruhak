@@ -32,8 +32,10 @@ const props = defineProps({
 // Используем только props для определения состояния
 const isModalOpen = computed(() => props.isOpen);
 
+const emit = defineEmits(["close"]);
+
 const handleClose = () => {
-  $emit("close");
+  emit("close");
 };
 
 const positionClass = computed(() => {
@@ -42,8 +44,6 @@ const positionClass = computed(() => {
     "position-bottom": props.mobilePosition === "BOTTOM",
   };
 });
-
-defineEmits(["close"]);
 </script>
 
 <style lang="scss" scoped>

@@ -13,7 +13,7 @@
             Проектирование, разработка и поддержка сайтов и веб‑сервисов
           </p>
           <div class="hero-buttons">
-            <button class="hero-button primary" @click="setModal(OrderModal)">
+            <button class="hero-button primary" @click="handleOrderClick">
               <svg
                 width="20"
                 height="20"
@@ -45,10 +45,7 @@
               </svg>
               Заказать сайт
             </button>
-            <button
-              class="hero-button secondary"
-              @click="setModal(DonationModal)"
-            >
+            <button class="hero-button secondary" @click="handleDonationClick">
               <svg
                 width="20"
                 height="20"
@@ -77,8 +74,8 @@
 
         <!-- About Me Section -->
         <AboutMe
-          @openOrderModal="setModal(OrderModal)"
-          @openDonationModal="setModal(DonationModal)"
+          @openOrderModal="handleAboutMeOrderClick"
+          @openDonationModal="handleAboutMeDonationClick"
         />
 
         <!-- Projects Section -->
@@ -186,6 +183,13 @@
           @close="showDiscountModal = false"
           @submit="handleDiscountSubmit"
         />
+
+        <OrderModal :show="showOrderModal" @close="showOrderModal = false" />
+
+        <DonationModal
+          :show="showDonationModal"
+          @close="showDonationModal = false"
+        />
       </div>
     </main>
   </NuxtLayout>
@@ -207,10 +211,7 @@ import ProjectModal from "~/components/ProjectModal.vue";
 import ProjectCard from "~/components/ProjectCard.vue";
 import DiscountWheel from "~/components/DiscountWheel.vue";
 import DiscountContactModal from "~/components/DiscountContactModal.vue";
-import { useFrogModal } from "~/composables/useFrogModal";
 import { useProjects } from "~/composables/useProjects";
-
-const { setModal } = useFrogModal();
 const {
   projects,
   loading: projectsLoading,
@@ -246,6 +247,29 @@ const openProjectModal = (project) => {
 };
 const closeProjectModal = () => {
   selectedProject.value = null;
+};
+
+const showOrderModal = ref(false);
+const showDonationModal = ref(false);
+
+const handleOrderClick = () => {
+  console.log("Order button clicked");
+  showOrderModal.value = true;
+};
+
+const handleDonationClick = () => {
+  console.log("Donation button clicked");
+  showDonationModal.value = true;
+};
+
+const handleAboutMeOrderClick = () => {
+  console.log("AboutMe order button clicked");
+  showOrderModal.value = true;
+};
+
+const handleAboutMeDonationClick = () => {
+  console.log("AboutMe donation button clicked");
+  showDonationModal.value = true;
 };
 
 onMounted(() => {

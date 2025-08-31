@@ -122,7 +122,7 @@
             бизнесу расти
           </p>
           <div class="cta-buttons">
-            <button class="cta-button primary" @click="setModal(OrderModal)">
+            <button class="cta-button primary" @click="handleOrderClick">
               <svg
                 width="20"
                 height="20"
@@ -154,10 +154,7 @@
               </svg>
               Заказать сайт
             </button>
-            <button
-              class="cta-button secondary"
-              @click="setModal(DonationModal)"
-            >
+            <button class="cta-button secondary" @click="handleDonationClick">
               <svg
                 width="20"
                 height="20"
@@ -267,6 +264,14 @@ const openProjectModal = (project: any) => {
 };
 const closeProjectModal = () => {
   selectedProject.value = null;
+};
+
+const handleOrderClick = () => {
+  setModal(OrderModal);
+};
+
+const handleDonationClick = () => {
+  setModal(DonationModal);
 };
 </script>
 

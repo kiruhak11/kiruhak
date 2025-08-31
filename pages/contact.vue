@@ -369,7 +369,7 @@
             </h2>
             <p>Давайте запустим эффективный веб‑проект вместе</p>
             <div class="cta-buttons">
-              <button class="cta-button primary" @click="setModal(OrderModal)">
+              <button class="cta-button primary" @click="handleOrderClick">
                 <svg
                   width="20"
                   height="20"
@@ -401,10 +401,7 @@
                 </svg>
                 Заказать сайт
               </button>
-              <button
-                class="cta-button secondary"
-                @click="setModal(DonationModal)"
-              >
+              <button class="cta-button secondary" @click="handleDonationClick">
                 <svg
                   width="20"
                   height="20"
@@ -424,16 +421,30 @@
         </div>
       </div>
     </main>
+
+    <OrderModal :show="showOrderModal" @close="showOrderModal = false" />
+
+    <DonationModal
+      :show="showDonationModal"
+      @close="showDonationModal = false"
+    />
   </NuxtLayout>
 </template>
 
 <script setup lang="ts">
 import GradientText from "~/components/GradientText.vue";
-import DonationModal from "~/components/DonationModal.vue";
 import OrderModal from "~/components/OrderModal.vue";
-import { useFrogModal } from "~/composables/useFrogModal";
 
-const { setModal } = useFrogModal();
+const showOrderModal = ref(false);
+const showDonationModal = ref(false);
+
+const handleOrderClick = () => {
+  showOrderModal.value = true;
+};
+
+const handleDonationClick = () => {
+  showDonationModal.value = true;
+};
 </script>
 
 <style lang="scss" scoped>
