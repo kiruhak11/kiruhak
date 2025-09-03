@@ -117,6 +117,7 @@ h2 {
 }
 
 .stat-number {
+  color: var(--color-text);
   font-size: 2.5rem;
   font-weight: 700;
   line-height: 1;

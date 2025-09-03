@@ -403,7 +403,6 @@ const formatTime = (seconds) => {
 <style lang="scss" scoped>
 .analytics-page {
   padding: 2rem 0;
-
   .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -419,6 +418,7 @@ const formatTime = (seconds) => {
 
     .header-left {
       h1 {
+        color: var(--color-text);
         font-size: 2.5rem;
         margin-bottom: 0.5rem;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -427,7 +427,7 @@ const formatTime = (seconds) => {
       }
 
       p {
-        color: var(--text-muted);
+        color: var(--color-text);
         font-size: 1.1rem;
         margin: 0;
       }
@@ -476,7 +476,7 @@ const formatTime = (seconds) => {
 
           .user-name {
             font-weight: 600;
-            color: var(--text-color);
+            color: var(--color-text);
             margin-bottom: 0.25rem;
             white-space: nowrap;
             overflow: hidden;
@@ -493,7 +493,7 @@ const formatTime = (seconds) => {
         .logout-btn {
           background: transparent;
           border: 1px solid var(--border-color);
-          color: var(--text-color);
+          color: var(--color-text);
           padding: 0.5rem 1rem;
           border-radius: 6px;
           cursor: pointer;
@@ -530,7 +530,7 @@ const formatTime = (seconds) => {
 
   h2 {
     margin-bottom: 1.5rem;
-    color: var(--text-color);
+    color: var(--color-text);
   }
 
   .form-group {
@@ -539,7 +539,7 @@ const formatTime = (seconds) => {
     label {
       display: block;
       margin-bottom: 0.5rem;
-      color: var(--text-color);
+      color: var(--color-text);
       font-weight: 500;
     }
 
@@ -550,7 +550,7 @@ const formatTime = (seconds) => {
       border: 1px solid var(--border-color);
       border-radius: 8px;
       background: var(--background-color);
-      color: var(--text-color);
+      color: var(--color-text);
 
       &:focus {
         outline: none;
@@ -584,13 +584,13 @@ const formatTime = (seconds) => {
 .sites-list {
   h2 {
     margin-bottom: 1.5rem;
-    color: var(--text-color);
+    color: var(--color-text);
   }
 
   .no-sites {
     text-align: center;
     padding: 3rem;
-    color: var(--text-muted);
+    color: var(--color-text);
   }
 
   .sites-grid {
@@ -615,7 +615,7 @@ const formatTime = (seconds) => {
     .site-info {
       h3 {
         margin-bottom: 0.5rem;
-        color: var(--text-color);
+        color: var(--color-text);
       }
 
       .domain {
@@ -625,7 +625,7 @@ const formatTime = (seconds) => {
       }
 
       .description {
-        color: var(--text-muted);
+        color: var(--color-text);
         font-size: 0.9rem;
       }
     }
@@ -642,12 +642,12 @@ const formatTime = (seconds) => {
           display: block;
           font-size: 1.5rem;
           font-weight: bold;
-          color: var(--text-color);
+          color: var(--color-text);
         }
 
         .stat-label {
           font-size: 0.8rem;
-          color: var(--text-muted);
+          color: var(--color-text);
         }
       }
     }
@@ -656,7 +656,7 @@ const formatTime = (seconds) => {
       .btn-secondary {
         background: transparent;
         border: 1px solid var(--border-color);
-        color: var(--text-color);
+        color: var(--color-text);
         padding: 0.5rem 1rem;
         border-radius: 6px;
         cursor: pointer;
@@ -674,7 +674,7 @@ const formatTime = (seconds) => {
 
   h2 {
     margin-bottom: 1.5rem;
-    color: var(--text-color);
+    color: var(--color-text);
   }
 
   .period-selector {
@@ -686,7 +686,7 @@ const formatTime = (seconds) => {
       padding: 0.5rem 1rem;
       border: 1px solid var(--border-color);
       background: transparent;
-      color: var(--text-color);
+      color: var(--color-text);
       border-radius: 6px;
       cursor: pointer;
 
@@ -717,14 +717,14 @@ const formatTime = (seconds) => {
 
       h3 {
         margin-bottom: 1rem;
-        color: var(--text-muted);
+        color: var(--color-text);
         font-size: 0.9rem;
       }
 
       .stat-value {
         font-size: 2rem;
         font-weight: bold;
-        color: var(--text-color);
+        color: var(--color-text);
       }
     }
   }
@@ -737,7 +737,7 @@ const formatTime = (seconds) => {
 
     h3 {
       margin-bottom: 1rem;
-      color: var(--text-color);
+      color: var(--color-text);
     }
 
     .pages-list,
@@ -755,12 +755,12 @@ const formatTime = (seconds) => {
 
         .page-path,
         .source-domain {
-          color: var(--text-color);
+          color: var(--color-text);
         }
 
         .page-visits,
         .source-visits {
-          color: var(--text-muted);
+          color: var(--color-text);
           font-weight: 500;
         }
       }
@@ -791,7 +791,7 @@ const formatTime = (seconds) => {
 
     h3 {
       margin-bottom: 1rem;
-      color: var(--text-color);
+      color: var(--color-text);
     }
 
     .code-block {
@@ -824,7 +824,7 @@ const formatTime = (seconds) => {
 
     .close-btn {
       background: var(--border-color);
-      color: var(--text-color);
+      color: var(--color-text);
       border: none;
       padding: 0.75rem 1.5rem;
       border-radius: 6px;
