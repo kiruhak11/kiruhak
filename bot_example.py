@@ -10,15 +10,18 @@ import asyncio
 import schedule
 import time
 from datetime import datetime, timedelta
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 
 import os
+
+# Импортируем обработчик модерации
+from bot_moderation import handle_component_callback
 
 # Конфигурация
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "6122558496:AAEXwnP3E4uIk5sSSNzD-13vQK6A4ybCBFI")
 API_URL = os.getenv("API_URL", "http://app:3015/api/auth/create-account")
-CHANNEL_ID = os.getenv("CHANNEL_ID", "@your_channel")  # ID вашего канала
+CHANNEL_ID = os.getenv("CHANNEL_ID", "@webmonke")  # ID вашего канала
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", "123456789")  # ID админа для статистики
 
 # Глобальная переменная для хранения приложения бота
@@ -398,22 +401,18 @@ def main():
         bot_app.add_handler(CommandHandler("start", start_command))
         bot_app.add_handler(CommandHandler("help", help_command))
         bot_app.add_handler(CommandHandler("stats", stats_command))
+        bot_app.add_handler(CallbackQueryHandler(handle_component_callback))
         bot_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
         
         # Добавляем обработчик ошибок
         bot_app.add_error_handler(error_handler)
         
-        # Запускаем планировщик статистики в отдельном потоке
-        import threading
-        stats_thread = threading.Thread(target=schedule_daily_stats, daemon=True)
-        stats_thread.start()
-        
         # Запускаем бота
         print("✅ Улучшенный бот запущен!")
-        print("📊 Ежедневная статистика будет отправляться в 09:00")
+        print("📊 Бот готов к приему команд")
         bot_app.run_polling(
-            poll_interval=1,
-            drop_pending_updates=True
+            drop_pending_updates=True,
+            allowed_updates=["message", "callback_query"]
         )
     except Exception as e:
         print(f"❌ Ошибка запуска бота: {e}")

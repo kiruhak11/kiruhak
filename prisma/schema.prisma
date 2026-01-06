@@ -53,6 +53,8 @@ model User {
   tutorialProgress TutorialProgress[]
   materialRatings MaterialRating[]
   materialDownloads MaterialDownload[]
+  uiComponents UiComponent[]
+  uiComponentViews UiComponentView[]
 
   @@map("users")
 }
@@ -103,22 +105,43 @@ model Transaction {
 }
 
 model UiComponent {
-  id          String   @id @default(cuid())
-  name        String   // Название компонента
-  description String?  // Описание
-  category    String   // Категория (buttons, inputs, cards, etc.)
-  code        String   // HTML/CSS/JS код компонента (для обратной совместимости)
-  html        String?  // HTML код компонента
-  css         String?  // CSS код компонента
-  js          String?  // JavaScript код компонента
-  preview     String?  // URL превью изображения
-  tags        String[] // Теги для поиска
-  isActive    Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String   // Название компонента
+  description    String?  // Описание
+  category       String   // Категория (buttons, inputs, cards, etc.)
+  code           String   // HTML/CSS/JS код компонента (для обратной совместимости)
+  html           String?  // HTML код компонента
+  css            String?  // CSS код компонента
+  js             String?  // JavaScript код компонента
+  preview        String?  // URL превью изображения
+  tags           String[] // Теги для поиска
+  isActive       Boolean  @default(true)
+  order          Int      @default(0)
+  authorId       String?  // ID автора (если пользовательский)
+  moderationStatus String @default("approved") // pending, approved, rejected
+  rejectionReason String? // Причина отклонения
+  viewCount      Int      @default(0) // Количество просмотров
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  author User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  views  UiComponentView[]
 
   @@map("ui_components")
+}
+
+model UiComponentView {
+  id            String   @id @default(cuid())
+  componentId   String
+  userId        String?  // ID пользователя (если авторизован)
+  ip            String?  // IP адрес
+  userAgent     String?  // User agent
+  viewedAt      DateTime @default(now())
+
+  component UiComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("ui_component_views")
 }
 
 model Tutorial {

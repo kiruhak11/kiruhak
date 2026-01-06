@@ -68,7 +68,20 @@
               </span>
             </div>
 
-            <div class="tutorial-progress" v-if="tutorial.progress">
+            <!-- Значок завершения -->
+            <div v-if="tutorial.isCompleted" class="completed-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <div class="completed-info">
+                <span class="completed-text">Пройдено</span>
+                <span v-if="tutorial.testScore !== null" class="test-score">
+                  Тест: {{ tutorial.testScore }}%
+                </span>
+              </div>
+            </div>
+
+            <div class="tutorial-progress" v-else-if="tutorial.progress">
               <div class="progress-bar">
                 <div
                   class="progress-fill"
@@ -80,8 +93,10 @@
               >
             </div>
 
-            <button class="tutorial-button">
-              {{ tutorial.progress ? "Продолжить" : "Начать туториал" }}
+            <button :class="['tutorial-button', { completed: tutorial.isCompleted }]">
+              <span v-if="tutorial.isCompleted">✓ Пройдено</span>
+              <span v-else-if="tutorial.progress">Продолжить</span>
+              <span v-else>Начать туториал</span>
             </button>
           </div>
         </div>
@@ -99,31 +114,114 @@
             </div>
 
             <div class="modal-body">
-              <div class="tutorial-content">
-                <div v-html="selectedTutorial.content"></div>
+              <!-- Индикатор шагов -->
+              <div class="steps-indicator" v-if="selectedTutorial.steps && selectedTutorial.steps.length > 0">
+                <div class="step-progress">
+                  <span class="step-text">
+                    Шаг {{ currentStep }} из {{ selectedTutorial.steps.length }}
+                  </span>
+                  <div class="step-bar">
+                    <div
+                      class="step-fill"
+                      :style="{ width: (currentStep / selectedTutorial.steps.length * 100) + '%' }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Контент текущего шага -->
+              <div class="tutorial-content" v-if="!showTest">
+                <div v-if="currentStepData">
+                  <h3>{{ currentStepData.title }}</h3>
+                  <div v-html="currentStepData.content"></div>
+                </div>
+                <div v-else-if="!selectedTutorial.steps || selectedTutorial.steps.length === 0">
+                  <p>Контент туториала не загружен. Пожалуйста, попробуйте позже.</p>
+                </div>
+              </div>
+
+              <!-- Тест -->
+              <div class="tutorial-test" v-else>
+                <h3>Проверочный тест</h3>
+                <p class="test-description">
+                  Ответьте на вопросы, чтобы завершить туториал
+                </p>
+
+                <div
+                  v-for="(question, qIndex) in selectedTutorial.testQuestions"
+                  :key="question.id"
+                  class="test-question"
+                >
+                  <p class="question-text">
+                    {{ qIndex + 1 }}. {{ question.question }}
+                  </p>
+                  <div class="question-answers">
+                    <label
+                      v-for="answer in question.answers"
+                      :key="answer.id"
+                      class="answer-option"
+                    >
+                      <input
+                        v-if="question.type === 'single'"
+                        type="radio"
+                        :name="'question-' + question.id"
+                        :value="answer.id"
+                        v-model="testAnswers[question.id]"
+                      />
+                      <input
+                        v-else-if="question.type === 'multiple'"
+                        type="checkbox"
+                        :value="answer.id"
+                        v-model="testAnswers[question.id]"
+                      />
+                      <span>{{ answer.answer }}</span>
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <div class="tutorial-navigation">
                 <button
-                  v-if="currentStep > 1"
+                  v-if="!showTest && currentStep > 1"
                   @click="previousStep"
                   class="nav-button prev"
                 >
                   ← Назад
                 </button>
                 <button
-                  v-if="currentStep < selectedTutorial.steps.length"
+                  v-if="!showTest && selectedTutorial.steps && currentStep < selectedTutorial.steps.length"
                   @click="nextStep"
                   class="nav-button next"
                 >
                   Далее →
                 </button>
                 <button
-                  v-else
+                  v-else-if="!showTest && selectedTutorial.steps && currentStep === selectedTutorial.steps.length && hasTest"
+                  @click="startTest"
+                  class="nav-button next"
+                >
+                  Пройти тест →
+                </button>
+                <button
+                  v-else-if="!showTest && selectedTutorial.steps && currentStep === selectedTutorial.steps.length"
                   @click="completeTutorial"
                   class="nav-button complete"
                 >
                   Завершить
+                </button>
+                <button
+                  v-if="showTest"
+                  @click="backToSteps"
+                  class="nav-button prev"
+                >
+                  ← К шагам
+                </button>
+                <button
+                  v-if="showTest"
+                  @click="submitTest"
+                  class="nav-button complete"
+                >
+                  Завершить туториал
                 </button>
               </div>
             </div>
@@ -149,6 +247,22 @@ const testScore = ref(0);
 const showTest = ref(false);
 const testAnswers = ref({});
 
+// Инициализация auth
+const { user, initAuth, isAuthenticated } = useAuth();
+
+// Computed для текущего шага
+const currentStepData = computed(() => {
+  if (!selectedTutorial.value || !selectedTutorial.value.steps || selectedTutorial.value.steps.length === 0) {
+    return null;
+  }
+  return selectedTutorial.value.steps[currentStep.value - 1];
+});
+
+// Computed для проверки наличия теста
+const hasTest = computed(() => {
+  return selectedTutorial.value?.testQuestions && selectedTutorial.value.testQuestions.length > 0;
+});
+
 // Типы
 interface Tutorial {
   id: string;
@@ -173,12 +287,23 @@ const loading = ref(true);
 const loadTutorials = async () => {
   try {
     loading.value = true;
-    const response = await $fetch("/api/tutorials");
+    const { getAuthHeaders } = useApi();
+    
+    const response = await $fetch("/api/tutorials", {
+      headers: getAuthHeaders(),
+    });
+    
     if (response.success && "tutorials" in response) {
       tutorials.value = response.tutorials.map((tutorial: any) => ({
         ...tutorial,
         icon: getTutorialIcon(tutorial.category),
+        progress: tutorial.progress || 0,
+        isCompleted: tutorial.isCompleted || false,
+        testScore: tutorial.testScore || null,
       }));
+      
+      console.log("📚 Загружено туториалов:", tutorials.value.length);
+      console.log("✅ Завершенных:", tutorials.value.filter(t => t.isCompleted).length);
     }
   } catch (error) {
     console.error("Ошибка загрузки туториалов:", error);
@@ -220,14 +345,96 @@ const getDifficultyText = (difficulty: string) => {
   return texts[difficulty] || difficulty;
 };
 
-const openTutorial = (tutorial: Tutorial) => {
-  selectedTutorial.value = tutorial;
-  currentStep.value = 1;
+const openTutorial = async (tutorial: Tutorial) => {
+  try {
+    const { getAuthHeaders } = useApi();
+    
+    // Загружаем полные данные туториала с шагами
+    const response = await $fetch(`/api/tutorials/${tutorial.id}`, {
+      headers: getAuthHeaders(),
+    });
+    
+    if (response.success && response.tutorial) {
+      selectedTutorial.value = {
+        ...response.tutorial,
+        icon: getTutorialIcon(response.tutorial.category),
+      };
+      currentStep.value = 1;
+      console.log("📚 Туториал загружен:", selectedTutorial.value);
+      console.log("📝 Количество шагов:", selectedTutorial.value.steps?.length);
+    } else {
+      alert("Не удалось загрузить туториал");
+    }
+  } catch (error) {
+    console.error("Ошибка загрузки туториала:", error);
+    alert("Ошибка загрузки туториала");
+  }
 };
 
 const closeTutorial = () => {
   selectedTutorial.value = null;
   currentStep.value = 1;
+  showTest.value = false;
+  testAnswers.value = {};
+};
+
+const startTest = () => {
+  console.log("🧪 Начало теста");
+  showTest.value = true;
+  // Инициализируем ответы
+  if (selectedTutorial.value?.testQuestions) {
+    selectedTutorial.value.testQuestions.forEach((question) => {
+      if (question.type === 'multiple') {
+        testAnswers.value[question.id] = [];
+      } else {
+        testAnswers.value[question.id] = null;
+      }
+    });
+  }
+};
+
+const backToSteps = () => {
+  showTest.value = false;
+};
+
+const submitTest = () => {
+  // Подсчитываем результат
+  if (!selectedTutorial.value?.testQuestions) {
+    completeTutorial();
+    return;
+  }
+
+  let correctAnswers = 0;
+  const totalQuestions = selectedTutorial.value.testQuestions.length;
+
+  selectedTutorial.value.testQuestions.forEach((question) => {
+    const userAnswer = testAnswers.value[question.id];
+    const correctAnswerIds = question.answers
+      .filter((a) => a.isCorrect)
+      .map((a) => a.id);
+
+    if (question.type === 'single') {
+      if (correctAnswerIds.includes(userAnswer)) {
+        correctAnswers++;
+      }
+    } else if (question.type === 'multiple') {
+      const userAnswerArray = Array.isArray(userAnswer) ? userAnswer : [];
+      const isCorrect =
+        userAnswerArray.length === correctAnswerIds.length &&
+        userAnswerArray.every((id) => correctAnswerIds.includes(id));
+      if (isCorrect) {
+        correctAnswers++;
+      }
+    }
+  });
+
+  const scorePercentage = Math.round((correctAnswers / totalQuestions) * 100);
+  testScore.value = scorePercentage;
+
+  console.log(`🎯 Результат теста: ${correctAnswers}/${totalQuestions} (${scorePercentage}%)`);
+
+  // Завершаем туториал с результатом теста
+  completeTutorial();
 };
 
 const nextStep = () => {
@@ -247,17 +454,23 @@ const previousStep = () => {
 
 const completeTutorial = async () => {
   try {
-    const { user } = useAuth();
+    console.log("🎯 Попытка завершения туториала");
+    console.log("👤 Пользователь:", user.value);
+    console.log("🔐 Авторизован:", isAuthenticated.value);
 
-    if (!user.value) {
+    if (!isAuthenticated.value || !user.value) {
       alert("Необходимо войти в аккаунт для завершения туториала");
+      navigateTo('/login');
       return;
     }
 
+    const { getAuthHeaders } = useApi();
+    
     const response = await $fetch(
       `/api/tutorials/${selectedTutorial.value.id}/complete`,
       {
         method: "POST",
+        headers: getAuthHeaders(),
         body: {
           userId: user.value.id,
           testScore: testScore.value,
@@ -272,18 +485,22 @@ const completeTutorial = async () => {
       );
       if (tutorial) {
         tutorial.progress = 100;
+        tutorial.isCompleted = true;
       }
 
       closeTutorial();
       alert(
-        `Поздравляем! Вы завершили туториал и получили ${response.reward} рублей!`
+        `Поздравляем! Вы завершили туториал${response.reward ? ` и получили ${response.reward} рублей!` : '!'}`
       );
+      
+      // Перезагружаем туториалы
+      await loadTutorials();
     } else {
       alert(response.error || "Ошибка завершения туториала");
     }
   } catch (error) {
     console.error("Ошибка завершения туториала:", error);
-    alert("Ошибка завершения туториала");
+    alert("Ошибка завершения туториала. Проверьте консоль для подробностей.");
   }
 };
 
@@ -294,8 +511,14 @@ const IconTypeScript = { template: "<div>🔵</div>" };
 const IconPerformance = { template: "<div>⚡</div>" };
 
 // Загружаем туториалы при монтировании
-onMounted(() => {
-  loadTutorials();
+onMounted(async () => {
+  await initAuth();
+  await loadTutorials();
+  console.log("🔐 Состояние авторизации:", {
+    isAuthenticated: isAuthenticated.value,
+    user: user.value?.firstName,
+    isAdmin: user.value?.isAdmin,
+  });
 });
 </script>
 
@@ -482,6 +705,38 @@ onMounted(() => {
   color: var(--color-text-secondary);
 }
 
+.completed-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+
+  svg {
+    flex-shrink: 0;
+  }
+
+  .completed-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .completed-text {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .test-score {
+      font-size: 0.85rem;
+      opacity: 0.9;
+    }
+  }
+}
+
 .tutorial-button {
   background: var(--color-accent);
   color: white;
@@ -496,6 +751,14 @@ onMounted(() => {
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  &.completed {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    
+    &:hover {
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+    }
   }
 }
 
@@ -563,9 +826,42 @@ onMounted(() => {
   padding: 32px;
 }
 
-.tutorial-content {
-  margin-bottom: 32px;
+.steps-indicator {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-color);
+}
 
+.step-progress {
+  .step-text {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .step-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--background-color-secondary);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .step-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-accent), #764ba2);
+    transition: width 0.3s ease;
+  }
+}
+
+.tutorial-content,
+.tutorial-test {
+  margin-bottom: 32px;
+}
+
+.tutorial-content {
   h3 {
     color: var(--color-text);
     margin-bottom: 16px;
@@ -618,6 +914,76 @@ onMounted(() => {
     font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
     font-size: 0.9rem;
     line-height: 1.5;
+  }
+}
+
+// Стили для теста
+.tutorial-test {
+  h3 {
+    color: var(--color-text);
+    margin-bottom: 12px;
+    font-size: 1.5rem;
+  }
+
+  .test-description {
+    color: var(--color-text-secondary);
+    margin-bottom: 32px;
+  }
+}
+
+.test-question {
+  background: var(--background-color-secondary);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color);
+
+  .question-text {
+    color: var(--color-text);
+    font-weight: 600;
+    margin-bottom: 16px;
+    font-size: 1.05rem;
+    line-height: 1.6;
+  }
+}
+
+.question-answers {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.answer-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--background-color);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: var(--color-accent);
+    background: rgba(102, 126, 234, 0.05);
+  }
+
+  input {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  span {
+    color: var(--color-text);
+    line-height: 1.5;
+  }
+
+  &:has(input:checked) {
+    border-color: var(--color-accent);
+    background: rgba(102, 126, 234, 0.1);
   }
 }
 

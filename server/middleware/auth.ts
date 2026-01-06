@@ -1,32 +1,32 @@
 import { prisma } from "../utils/prisma";
 
 export default defineEventHandler(async (event) => {
-  console.log("🔒 [Auth Middleware] === MIDDLEWARE ВЫЗВАН ===");
   const path = getRequestURL(event).pathname;
   const method = getMethod(event);
 
-  console.log(`🔒 [Auth Middleware] === НАЧАЛО ОБРАБОТКИ ===`);
-  console.log(`🔒 [Auth Middleware] ${method} ${path}`);
-  console.log(`🔒 [Auth Middleware] Event type:`, event.node.req.url);
-  console.log(
-    `🔒 [Auth Middleware] Full URL:`,
-    getRequestURL(event).toString()
-  );
+  // Логируем только в режиме разработки
+  const isDev = process.env.NODE_ENV !== "production";
+  if (isDev) {
+    console.log(`🔒 [Auth Middleware] ${method} ${path}`);
+  }
 
   // Пропускаем публичные маршруты
   const publicRoutes = [
     "/api/auth/telegram",
     "/api/auth/login",
     "/api/auth/create-account",
+    "/api/telegram", // Telegram бот webhook
     "/api/projects", // GET запрос для получения списка проектов
     "/api/analytics/track",
-    "/api/test-auth",
     "/api/health",
     "/api/ui-components", // GET запрос для получения UI компонентов
     "/api/tutorials", // GET запрос для получения списка туториалов
     "/api/materials", // GET запрос для получения списка материалов
     "/api/telegram/check-subscription", // Проверка подписки на Telegram
   ];
+  
+  // Маршруты для бота (используют свою аутентификацию через секретный ключ)
+  const isBotModeration = path.includes("/bot-moderate");
 
   // Проверяем, является ли маршрут публичным
   const isPublicRoute = publicRoutes.includes(path);
@@ -35,10 +35,14 @@ export default defineEventHandler(async (event) => {
   const isPublicProjectRoute = path === "/api/projects" && method === "GET";
 
   // Проверяем GET запросы к туториалам (публичные)
-  const isPublicTutorialRoute = path === "/api/tutorials" && method === "GET";
+  const isPublicTutorialRoute = 
+    (path === "/api/tutorials" && method === "GET") ||
+    (path.startsWith("/api/tutorials/") && method === "GET");
 
   // Проверяем GET запросы к материалам (публичные)
-  const isPublicMaterialRoute = path === "/api/materials" && method === "GET";
+  const isPublicMaterialRoute = 
+    (path === "/api/materials" && method === "GET") ||
+    (path.startsWith("/api/materials/") && method === "GET");
 
   // Проверяем, является ли это операцией с проектами, требующей аутентификации
   const isProjectOperation =
@@ -61,32 +65,29 @@ export default defineEventHandler(async (event) => {
     path.startsWith("/api/materials/") && method !== "GET";
   const isMaterialCreate = path === "/api/materials" && method === "POST";
   
-  // Проверяем скачивание PDF (требует аутентификации)
+  // Проверяем скачивание PDF (требует аутентификации, но не админа)
   const isMaterialDownload = path.includes("/download-pdf");
+  
+  // Проверяем оценку материала (требует аутентификации, но не админа)
+  const isMaterialRating = path.includes("/rate");
 
-  console.log(`🔒 [Auth Middleware] UI Component checks:`, {
-    path,
-    method,
-    startsWithUiComponents: path.startsWith("/api/ui-components/"),
-    isUiComponentOperation,
-    isUiComponentCreate,
-  });
+  // Логируем только в режиме разработки
+  if (isDev) {
+    console.log(`🔒 [Auth Middleware] UI Component checks:`, {
+      isUiComponentOperation,
+      isUiComponentCreate,
+    });
 
-  console.log(`🔒 [Auth Middleware] Tutorial checks:`, {
-    path,
-    method,
-    startsWithTutorials: path.startsWith("/api/tutorials/"),
-    isTutorialOperation,
-    isTutorialCreate,
-  });
+    console.log(`🔒 [Auth Middleware] Tutorial checks:`, {
+      isTutorialOperation,
+      isTutorialCreate,
+    });
 
-  console.log(`🔒 [Auth Middleware] Material checks:`, {
-    path,
-    method,
-    startsWithMaterials: path.startsWith("/api/materials/"),
-    isMaterialOperation,
-    isMaterialCreate,
-  });
+    console.log(`🔒 [Auth Middleware] Material checks:`, {
+      isMaterialOperation,
+      isMaterialCreate,
+    });
+  }
 
   const shouldSkipAuth =
     (isPublicRoute &&
@@ -96,10 +97,13 @@ export default defineEventHandler(async (event) => {
       !isMaterialCreate) ||
     isPublicProjectRoute ||
     isPublicTutorialRoute ||
-    isPublicMaterialRoute;
+    isPublicMaterialRoute ||
+    isBotModeration;
 
   // Дополнительная проверка для компонентов, требующих аутентификации
   const requiresAuth =
+    isProjectOperation ||
+    isProjectCreate ||
     isUiComponentOperation ||
     isUiComponentCreate ||
     isTutorialOperation ||
@@ -108,57 +112,23 @@ export default defineEventHandler(async (event) => {
     isMaterialCreate ||
     isMaterialDownload;
 
-  console.log(`🔒 [Auth Middleware] ${method} ${path}`);
-  console.log(
-    `🔒 [Auth Middleware] Path starts with /api/:`,
-    path.startsWith("/api/")
-  );
-  console.log(`🔒 [Auth Middleware] Public routes:`, publicRoutes);
-  console.log(`🔒 [Auth Middleware] Is public route:`, isPublicRoute);
-  console.log(
-    `🔒 [Auth Middleware] Is public project route:`,
-    isPublicProjectRoute
-  );
-  console.log(
-    `🔒 [Auth Middleware] Is public tutorial route:`,
-    isPublicTutorialRoute
-  );
-  console.log(
-    `🔒 [Auth Middleware] Is public material route:`,
-    isPublicMaterialRoute
-  );
-  console.log(`🔒 [Auth Middleware] Is project operation:`, isProjectOperation);
-  console.log(`🔒 [Auth Middleware] Is project create:`, isProjectCreate);
-  console.log(
-    `🔒 [Auth Middleware] Is UI component operation:`,
-    isUiComponentOperation
-  );
-  console.log(
-    `🔒 [Auth Middleware] Is UI component create:`,
-    isUiComponentCreate
-  );
-  console.log(`🔒 [Auth Middleware] Should skip auth:`, shouldSkipAuth);
-  console.log(`🔒 [Auth Middleware] Auth skip details:`, {
-    isPublicRoute,
-    isProjectCreate,
-    isUiComponentCreate,
-    isTutorialCreate,
-    isMaterialCreate,
-    isPublicProjectRoute,
-    isPublicTutorialRoute,
-    isPublicMaterialRoute,
-    shouldSkipAuth,
-    requiresAuth,
-  });
+  // Логируем детали только в режиме разработки
+  if (isDev) {
+    console.log(`🔒 [Auth Middleware] Auth check:`, {
+      shouldSkipAuth,
+      requiresAuth,
+      isPublicRoute,
+    });
+  }
 
   // Пропускаем публичные маршруты
   if (shouldSkipAuth) {
-    console.log(`🔒 [Auth Middleware] Пропускаем публичный маршрут: ${path}`);
+    if (isDev) console.log(`🔒 [Auth Middleware] Публичный маршрут: ${path}`);
     return;
   }
 
   // Принудительно требуем аутентификацию для компонентов
-  if (requiresAuth) {
+  if (requiresAuth && isDev) {
     console.log(`🔒 [Auth Middleware] Требуется аутентификация для: ${path}`);
   }
 
@@ -182,7 +152,6 @@ export default defineEventHandler(async (event) => {
     path === "/" ||
     path === "/login" ||
     path === "/auth-callback" ||
-    path === "/test-auth" ||
     path.startsWith("/projects") ||
     path.startsWith("/contact")
   ) {
@@ -197,76 +166,19 @@ export default defineEventHandler(async (event) => {
   // Проверяем токен (пробуем оба варианта регистра)
   const authHeader =
     getHeader(event, "authorization") || getHeader(event, "Authorization");
-  console.log("🔒 Server Middleware: Проверка токена для", path);
-  console.log(
-    "🔒 Server Middleware: Authorization header:",
-    authHeader ? "present" : "missing"
-  );
-
-  // Выводим все заголовки для отладки
-  const allHeaders = getHeaders(event);
-  console.log("🔒 Server Middleware: Все заголовки:", Object.keys(allHeaders));
-  console.log("🔒 Server Middleware: Все заголовки (значения):", allHeaders);
-  console.log("🔒 Server Middleware: Authorization header value:", authHeader);
-  console.log(
-    "🔒 Server Middleware: Authorization header starts with Bearer:",
-    authHeader?.startsWith("Bearer ")
-  );
-
-  // Дополнительная отладка для понимания проблемы с заголовками
-  console.log("🔒 Server Middleware: === ДОПОЛНИТЕЛЬНАЯ ОТЛАДКА ===");
-  console.log(
-    "🔒 Server Middleware: Event node req headers:",
-    event.node.req.headers
-  );
-  console.log(
-    "🔒 Server Middleware: Event node req rawHeaders:",
-    event.node.req.rawHeaders
-  );
-  console.log(
-    "🔒 Server Middleware: getHeader('authorization'):",
-    getHeader(event, "authorization")
-  );
-  console.log(
-    "🔒 Server Middleware: getHeader('Authorization'):",
-    getHeader(event, "Authorization")
-  );
-
-  // Для операций с проектами требуем аутентификацию
-  if (isProjectOperation || isProjectCreate) {
+  
+  if (isDev) {
+    console.log("🔒 [Auth Middleware] Проверка токена для", path);
     console.log(
-      "🔒 Server Middleware: Операция с проектами требует аутентификации"
-    );
-  }
-
-  // Для операций с UI компонентами требуем аутентификацию
-  if (isUiComponentOperation || isUiComponentCreate) {
-    console.log(
-      "🔒 Server Middleware: Операция с UI компонентами требует аутентификации"
-    );
-  }
-
-  // Для операций с туториалами требуем аутентификацию
-  if (isTutorialOperation || isTutorialCreate) {
-    console.log(
-      "🔒 Server Middleware: Операция с туториалами требует аутентификации"
-    );
-  }
-
-  // Для операций с материалами требуем аутентификацию
-  if (isMaterialOperation || isMaterialCreate) {
-    console.log(
-      "🔒 Server Middleware: Операция с материалами требует аутентификации"
+      "🔒 [Auth Middleware] Authorization header:",
+      authHeader ? "present" : "missing"
     );
   }
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    console.log("🔒 Server Middleware: Нет токена или неправильный формат");
-    console.log("🔒 Server Middleware: authHeader:", authHeader);
-    console.log(
-      "🔒 Server Middleware: startsWith Bearer:",
-      authHeader?.startsWith("Bearer ")
-    );
+    if (isDev) {
+      console.log("🔒 [Auth Middleware] Нет токена или неправильный формат");
+    }
     throw createError({
       statusCode: 401,
       statusMessage: "Unauthorized",
@@ -274,77 +186,49 @@ export default defineEventHandler(async (event) => {
   }
 
   const token = authHeader.substring(7);
-  console.log(
-    "🔒 Server Middleware: Токен получен:",
-    token.substring(0, 20) + "..."
-  );
-  console.log("🔒 Server Middleware: Длина токена:", token.length);
+  if (isDev) {
+    console.log("🔒 [Auth Middleware] Токен получен, длина:", token.length);
+  }
 
   try {
     // Декодируем токен (в реальном проекте используйте библиотеку для JWT)
-    console.log("🔒 Server Middleware: Декодирование токена...");
+    if (isDev) {
+      console.log("🔒 [Auth Middleware] Декодирование токена...");
+    }
 
     // Проверяем, что токен не пустой
     if (!token || token.trim() === "") {
-      console.log("🔒 Server Middleware: Токен пустой");
       throw new Error("Empty token");
     }
-
-    console.log("🔒 Server Middleware: Попытка декодирования токена...");
-    console.log(
-      "🔒 Server Middleware: Токен для декодирования:",
-      token.substring(0, 50) + "..."
-    );
-    console.log("🔒 Server Middleware: Длина токена:", token.length);
 
     let decoded;
     try {
       decoded = JSON.parse(Buffer.from(token, "base64").toString());
-      console.log("🔒 Server Middleware: Декодирование успешно");
     } catch (decodeError) {
-      console.error(
-        "🔒 Server Middleware: Ошибка декодирования токена:",
-        decodeError
-      );
+      if (isDev) {
+        console.error("🔒 [Auth Middleware] Ошибка декодирования токена");
+      }
       throw createError({
         statusCode: 401,
         statusMessage: "Invalid token format",
       });
     }
-    console.log("🔒 Server Middleware: Токен декодирован:", {
-      userId: decoded.userId,
-      exp: decoded.exp,
-    });
-    console.log("🔒 Server Middleware: Полный декодированный токен:", decoded);
 
-    // Проверяем, что токен содержит все необходимые поля
-    console.log("🔒 Server Middleware: Проверка полей токена:");
-    console.log("  - userId:", decoded.userId);
-    console.log("  - exp:", decoded.exp);
-    console.log("  - isAdmin:", decoded.isAdmin);
+    if (isDev) {
+      console.log("🔒 [Auth Middleware] Токен декодирован для userId:", decoded.userId);
+    }
 
     // Проверяем структуру токена
     if (!decoded.userId || !decoded.exp) {
-      console.log("🔒 Server Middleware: Неверная структура токена:", decoded);
       throw new Error("Invalid token structure");
     }
 
     // Проверяем срок действия токена
     const currentTime = Math.floor(Date.now() / 1000);
-    console.log(
-      "🔒 Server Middleware: Текущее время:",
-      currentTime,
-      "Время истечения:",
-      decoded.exp
-    );
-    console.log(
-      "🔒 Server Middleware: Разница времени:",
-      decoded.exp - currentTime,
-      "секунд"
-    );
-
     if (decoded.exp < currentTime) {
-      console.log("🔒 Server Middleware: Токен истек");
+      if (isDev) {
+        console.log("🔒 [Auth Middleware] Токен истек");
+      }
       throw createError({
         statusCode: 401,
         statusMessage: "Token expired",
@@ -352,31 +236,26 @@ export default defineEventHandler(async (event) => {
     }
 
     // Получаем пользователя из базы данных
-    console.log(
-      "🔒 Server Middleware: Поиск пользователя с ID:",
-      decoded.userId
-    );
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
     });
 
     if (!user) {
-      console.log("🔒 Server Middleware: Пользователь не найден");
+      if (isDev) {
+        console.log("🔒 [Auth Middleware] Пользователь не найден");
+      }
       throw createError({
         statusCode: 401,
         statusMessage: "User not found",
       });
     }
 
-    console.log("🔒 Server Middleware: Пользователь найден:", user.firstName);
+    if (isDev) {
+      console.log("🔒 [Auth Middleware] Аутентификация успешна для:", user.firstName);
+    }
 
     // Добавляем пользователя в контекст запроса
     event.context.user = user;
-
-    console.log(
-      "🔒 Server Middleware: Аутентификация успешна для пользователя:",
-      user.firstName
-    );
 
     // Проверяем права администратора для админских API маршрутов
     if (path.startsWith("/api/admin") && !user.isAdmin) {
@@ -403,22 +282,24 @@ export default defineEventHandler(async (event) => {
     }
 
     // Проверяем права администратора для операций с материалами
-    if ((isMaterialOperation || isMaterialCreate) && !user.isAdmin) {
+    // Исключаем оценку и скачивание - они доступны всем авторизованным пользователям
+    if ((isMaterialOperation || isMaterialCreate) && !isMaterialRating && !isMaterialDownload && !user.isAdmin) {
       throw createError({
         statusCode: 403,
         statusMessage: "Admin access required",
       });
     }
 
-    console.log("🔒 Server Middleware: === КОНЕЦ ОБРАБОТКИ ===");
+    // Проверяем права администратора для операций с проектами
+    if ((isProjectOperation || isProjectCreate) && !user.isAdmin) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Admin access required",
+      });
+    }
   } catch (error) {
-    console.error("🔒 Server Middleware: Ошибка аутентификации:", error);
-    if (error instanceof Error) {
-      console.error(
-        "🔒 Server Middleware: Тип ошибки:",
-        error.constructor.name
-      );
-      console.error("🔒 Server Middleware: Сообщение:", error.message);
+    if (isDev) {
+      console.error("🔒 [Auth Middleware] Ошибка аутентификации:", error instanceof Error ? error.message : error);
     }
     throw createError({
       statusCode: 401,

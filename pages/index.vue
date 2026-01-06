@@ -64,7 +64,7 @@
         </div>
 
         <!-- Discount Section -->
-        <div v-if="!hasSubmittedDiscount" class="discount-section">
+        <div class="discount-section">
           <h2 class="section-title">Специальное предложение</h2>
           <p class="section-description">
             Получите скидку 15% на разработку первого сайта

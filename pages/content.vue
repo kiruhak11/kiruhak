@@ -49,7 +49,7 @@
                   <IconTg />
                 </div>
                 <div class="channel-details">
-                  <h3>@web_kiruhak11</h3>
+                  <h3>@webmonke</h3>
                   <p>Эксклюзивный контент по веб-разработке</p>
                 </div>
               </div>
@@ -66,7 +66,7 @@
             <div class="subscription-steps">
               <h3>Как получить доступ:</h3>
               <ol>
-                <li>Подпишитесь на канал <strong>@web_kiruhak11</strong></li>
+                <li>Подпишитесь на канал <strong>@webmonke</strong></li>
                 <li>Нажмите кнопку "Проверить подписку"</li>
                 <li>Получите доступ к эксклюзивному контенту</li>
               </ol>
@@ -177,10 +177,13 @@
               </h3>
 
               <div class="ui-components-grid">
+                <!-- Два случайных компонента -->
                 <div
-                  v-for="component in uiComponents"
+                  v-for="component in randomTwoComponents"
                   :key="component.id"
                   class="ui-component-card"
+                  @click="navigateTo('/ui-components')"
+                  style="cursor: pointer"
                 >
                   <div class="component-preview">
                     <div class="preview-placeholder">
@@ -200,26 +203,29 @@
                       <span class="category-badge">{{
                         component.category
                       }}</span>
-                      <span class="order-number">#{{ component.order }}</span>
-                    </div>
-                    <div class="component-tags">
-                      <span
-                        v-for="tag in component.tags.slice(0, 3)"
-                        :key="tag"
-                        class="tag"
+                      <span class="view-count"
+                        >👁 {{ component.viewCount || 0 }}</span
                       >
-                        {{ tag }}
-                      </span>
-                      <span v-if="component.tags.length > 3" class="tag-more">
-                        +{{ component.tags.length - 3 }}
-                      </span>
                     </div>
-                    <button
-                      class="component-button"
-                      @click="openCodeModal(component)"
-                    >
-                      Просмотреть код
-                    </button>
+                  </div>
+                </div>
+
+                <!-- Карточка-призыв к действию -->
+                <div
+                  class="ui-component-card cta-component-card"
+                  @click="navigateTo('/ui-components')"
+                >
+                  <div class="cta-component-content">
+                    <div class="cta-icon">🎨</div>
+                    <h4 class="cta-title">Получить больше компонентов</h4>
+                    <p class="cta-description">
+                      Нажми на меня, чтобы увидеть полную коллекцию UI
+                      компонентов
+                    </p>
+                    <div class="cta-stats-badge">
+                      {{ uiComponents.length }}+ компонентов
+                    </div>
+                    <div class="cta-arrow">→</div>
                   </div>
                 </div>
               </div>
@@ -239,7 +245,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import GradientText from "~/components/GradientText.vue";
 import CodeModal from "~/components/CodeModal.vue";
 
@@ -249,6 +255,30 @@ const checking = ref(false);
 
 // UI компоненты
 const uiComponents = ref([]);
+
+// Два случайных компонента
+const randomTwoComponents = computed(() => {
+  console.log("🎲 Всего компонентов:", uiComponents.value.length);
+
+  if (uiComponents.value.length === 0) {
+    console.log("⚠️ Нет компонентов для отображения");
+    return [];
+  }
+
+  if (uiComponents.value.length <= 2) {
+    console.log("📊 Компонентов 2 или меньше, показываем все");
+    return uiComponents.value;
+  }
+
+  // Получаем 2 случайных компонента
+  const shuffled = [...uiComponents.value].sort(() => 0.5 - Math.random());
+  const selected = shuffled.slice(0, 2);
+  console.log(
+    "✅ Выбрано 2 случайных компонента:",
+    selected.map((c) => c.name)
+  );
+  return selected;
+});
 
 // Проверка подписки на Telegram канал
 const checkSubscription = async (showAlert = true) => {
@@ -267,12 +297,6 @@ const checkSubscription = async (showAlert = true) => {
       throw new Error("Пользователь не авторизован");
     }
 
-    console.log("🔍 Проверка подписки для пользователя:", {
-      id: user.value.id,
-      telegramId: user.value.telegramId,
-      username: user.value.username,
-    });
-
     // Проверяем подписку через API
     const response = await $fetch("/api/telegram/check-subscription", {
       method: "POST",
@@ -282,32 +306,23 @@ const checkSubscription = async (showAlert = true) => {
       },
     });
 
-    console.log("📡 Ответ API проверки подписки:", response);
-
     if (response.success && response.isSubscribed) {
       isSubscribed.value = true;
       // Сохраняем статус в localStorage
       localStorage.setItem("telegram_subscribed", "true");
-      console.log("✅ Подписка подтверждена");
     } else {
       isSubscribed.value = false;
       localStorage.removeItem("telegram_subscribed");
-      console.log("❌ Пользователь не подписан на канал", {
-        success: response.success,
-        isSubscribed: response.isSubscribed,
-        error: response.error,
-        memberStatus: response.memberStatus,
-      });
 
       // Показываем сообщение об ошибке только если это не автоматическая проверка
       if (showAlert) {
         alert(
-          "Вы не подписаны на канал @web_kiruhak11. Пожалуйста, подпишитесь и попробуйте снова."
+          "Вы не подписаны на канал @webmonke. Пожалуйста, подпишитесь и попробуйте снова."
         );
       }
     }
   } catch (error) {
-    console.error("❌ Ошибка проверки подписки:", error);
+    console.error("Ошибка проверки подписки:", error);
     isSubscribed.value = false;
     localStorage.removeItem("telegram_subscribed");
 
@@ -323,19 +338,20 @@ const checkSubscription = async (showAlert = true) => {
 // Загрузка UI компонентов
 const loadUiComponents = async () => {
   try {
-    console.log("🔄 Загружаем UI компоненты...");
+    console.log("🔄 Начинаем загрузку UI компонентов...");
     const response = await $fetch("/api/ui-components");
-    console.log("📡 Ответ API UI компонентов:", response);
+    console.log("📦 Получен ответ:", response);
 
     if (response.success) {
-      uiComponents.value = response.components;
-      console.log(
-        "✅ UI компоненты загружены:",
-        uiComponents.value.length,
-        "штук"
-      );
-    } else {
-      console.error("❌ Ошибка в ответе API:", response.error);
+      uiComponents.value = response.components || [];
+      console.log("🎨 Загружено компонентов:", uiComponents.value.length);
+
+      if (uiComponents.value.length > 0) {
+        console.log(
+          "📋 Примеры:",
+          uiComponents.value.slice(0, 3).map((c) => c.name)
+        );
+      }
     }
   } catch (error) {
     console.error("❌ Ошибка загрузки UI компонентов:", error);
@@ -376,28 +392,20 @@ const getComponentStyles = (component) => {
 
 // Проверяем подписку при загрузке страницы
 onMounted(async () => {
-  console.log("🚀 Страница content загружена");
-
   // Инициализируем аутентификацию
   const { user, initAuth } = useAuth();
-  console.log("👤 Пользователь до инициализации:", user.value);
 
   if (!user.value) {
-    console.log("🔄 Инициализируем аутентификацию...");
     await initAuth();
   }
 
-  console.log("👤 Пользователь после инициализации:", user.value);
-
   // Если пользователь авторизован, проверяем подписку автоматически
   if (user.value) {
-    console.log("✅ Пользователь авторизован, проверяем подписку...");
     await checkSubscription(false); // Без alert для автоматической проверки
 
     // Устанавливаем периодическую проверку каждые 5 минут
     const subscriptionCheckInterval = setInterval(async () => {
       if (user.value) {
-        console.log("🔄 Периодическая проверка подписки...");
         await checkSubscription(false); // Без alert для автоматической проверки
       } else {
         // Если пользователь вышел, останавливаем проверку
@@ -409,12 +417,9 @@ onMounted(async () => {
     onUnmounted(() => {
       clearInterval(subscriptionCheckInterval);
     });
-  } else {
-    console.log("❌ Пользователь не авторизован");
   }
 
   // Загружаем UI компоненты
-  console.log("🔄 Загружаем UI компоненты...");
   await loadUiComponents();
 });
 </script>
@@ -912,6 +917,129 @@ onMounted(async () => {
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   }
+}
+
+// Стили для CTA карточки компонента
+.cta-component-card {
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.1),
+    rgba(118, 75, 162, 0.1)
+  );
+  border: 2px dashed var(--color-accent) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(102, 126, 234, 0.1),
+      transparent
+    );
+    transition: left 0.5s ease;
+  }
+
+  &:hover {
+    background: linear-gradient(
+      135deg,
+      rgba(102, 126, 234, 0.15),
+      rgba(118, 75, 162, 0.15)
+    );
+    transform: translateY(-6px) scale(1.02);
+
+    &:before {
+      left: 100%;
+    }
+
+    .cta-arrow {
+      transform: translateX(10px) scale(1.2);
+    }
+
+    .cta-icon {
+      transform: scale(1.1) rotate(5deg);
+    }
+  }
+}
+
+.cta-component-content {
+  text-align: center;
+  padding: 40px 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.cta-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  animation: float 3s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+.cta-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  color: var(--color-text);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.cta-description {
+  color: var(--color-text-secondary);
+  margin: 0 0 24px 0;
+  line-height: 1.6;
+  font-size: 1.05rem;
+}
+
+.cta-stats-badge {
+  display: inline-block;
+  padding: 8px 20px;
+  background: var(--gradient-primary);
+  color: white;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.cta-arrow {
+  font-size: 2rem;
+  color: var(--color-accent);
+  transition: all 0.3s ease;
+  font-weight: bold;
+}
+
+.view-count {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 // Анимации

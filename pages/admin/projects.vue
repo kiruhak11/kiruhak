@@ -46,10 +46,63 @@
               ✏️ Редактировать
             </button>
             <button
-              @click="handleDeleteProject(project.id)"
+              @click="handleDeleteProject(project.id, project.title)"
               class="delete-button"
             >
               🗑️ Удалить
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delete Confirmation Modal -->
+      <div
+        v-if="showDeleteModal"
+        class="modal-overlay"
+        @click="cancelDelete"
+      >
+        <div class="modal-content delete-modal" @click.stop>
+          <div class="delete-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="64"
+              height="64"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 6h18" />
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+              <line x1="10" y1="11" x2="10" y2="17" />
+              <line x1="14" y1="11" x2="14" y2="17" />
+            </svg>
+          </div>
+          <h2>Удалить проект?</h2>
+          <p class="delete-message">
+            Вы уверены, что хотите удалить проект
+            <strong>"{{ deletingProjectTitle }}"</strong>?
+          </p>
+          <p class="delete-warning">Это действие нельзя будет отменить.</p>
+          <div class="delete-actions">
+            <button
+              type="button"
+              @click="cancelDelete"
+              class="cancel-button"
+              :disabled="submitting"
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              @click="confirmDelete"
+              class="confirm-delete-button"
+              :disabled="submitting"
+            >
+              {{ submitting ? "Удаление..." : "Да, удалить" }}
             </button>
           </div>
         </div>
@@ -203,8 +256,11 @@ const {
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
+const showDeleteModal = ref(false);
 const submitting = ref(false);
 const editingProject = ref(null);
+const deletingProjectId = ref(null);
+const deletingProjectTitle = ref("");
 
 const form = ref({
   title: "",
@@ -301,10 +357,42 @@ const submitProject = async () => {
   }
 };
 
-const handleDeleteProject = async (id) => {
-  if (confirm("Вы уверены, что хотите удалить этот проект?")) {
-    await deleteProject(id);
+const handleDeleteProject = (id, title) => {
+  console.log("🗑️ Открытие модалки удаления проекта с ID:", id);
+  deletingProjectId.value = id;
+  deletingProjectTitle.value = title;
+  showDeleteModal.value = true;
+};
+
+const confirmDelete = async () => {
+  const id = deletingProjectId.value;
+  console.log("🗑️ Подтверждено удаление проекта с ID:", id);
+  
+  try {
+    console.log("🔄 Отправка запроса на удаление...");
+    submitting.value = true;
+    const result = await deleteProject(id);
+    
+    if (result) {
+      console.log("✅ Проект успешно удален");
+      showDeleteModal.value = false;
+      deletingProjectId.value = null;
+      deletingProjectTitle.value = "";
+    } else {
+      console.error("❌ Не удалось удалить проект");
+    }
+  } catch (err) {
+    console.error("❌ Ошибка при удалении проекта:", err);
+  } finally {
+    submitting.value = false;
   }
+};
+
+const cancelDelete = () => {
+  console.log("❌ Удаление отменено пользователем");
+  showDeleteModal.value = false;
+  deletingProjectId.value = null;
+  deletingProjectTitle.value = "";
 };
 </script>
 
@@ -565,6 +653,106 @@ const handleDeleteProject = async (id) => {
 .submit-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Delete Modal Styles */
+.delete-modal {
+  max-width: 450px;
+  text-align: center;
+}
+
+.delete-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1.5rem;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #dc2626;
+  animation: pulse-delete 2s ease-in-out infinite;
+}
+
+@keyframes pulse-delete {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 15px rgba(220, 38, 38, 0);
+  }
+}
+
+.delete-modal h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+  color: var(--color-text);
+}
+
+.delete-message {
+  margin: 0 0 1rem 0;
+  color: var(--color-text);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.delete-message strong {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.delete-warning {
+  margin: 0 0 2rem 0;
+  color: #dc2626;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.75rem;
+  background: #fee2e2;
+  border-radius: 8px;
+}
+
+.delete-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.confirm-delete-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.confirm-delete-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+}
+
+.confirm-delete-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.delete-modal .cancel-button {
+  background: var(--background-secondary);
+  color: var(--color-text);
+  border: 1px solid var(--border-color);
+}
+
+.delete-modal .cancel-button:hover:not(:disabled) {
+  background: var(--background-color);
+  transform: translateY(-2px);
 }
 
 @media (max-width: 768px) {

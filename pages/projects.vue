@@ -182,7 +182,7 @@ import ProjectModal from "~/components/ProjectModal.vue";
 import DonationModal from "~/components/DonationModal.vue";
 import OrderModal from "~/components/OrderModal.vue";
 import { useProjects } from "~/composables/useProjects";
-import { useFrogModal } from "~/composables/useFrogModal";
+import { useFrogModal } from "#imports";
 
 const { setModal } = useFrogModal();
 

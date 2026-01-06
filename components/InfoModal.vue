@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { useFrogModal } from "~/composables/useFrogModal";
+import { useFrogModal } from "#imports";
 
 const props = defineProps({
   title: {

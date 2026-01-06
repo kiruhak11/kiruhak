@@ -181,7 +181,7 @@
 import { ref, watch } from "vue";
 import SuccessModal from "~/components/SuccessModal.vue";
 import InfoModal from "~/components/InfoModal.vue";
-import { useFrogModal } from "~/composables/useFrogModal";
+import { useFrogModal } from "#imports";
 
 const props = defineProps<{
   show: boolean;

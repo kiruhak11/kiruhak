@@ -193,10 +193,6 @@
 
 <script setup>
 // Импортируем composables
-const { message } = useTest();
-console.log("Test composable:", message);
-
-// Восстанавливаем useAuth
 const {
   user,
   token,

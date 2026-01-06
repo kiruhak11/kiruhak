@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir -r bot_requirements.txt
 
 # Копируем код бота
 COPY bot_example.py ./bot.py
+COPY bot_moderation.py ./bot_moderation.py
 
 # Создаем пользователя для безопасности
 RUN addgroup --system --gid 1001 botuser

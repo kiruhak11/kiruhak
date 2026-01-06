@@ -15,11 +15,6 @@ export default defineEventHandler(async (event) => {
         order: "asc",
       },
       include: {
-        steps: {
-          orderBy: {
-            order: "asc",
-          },
-        },
         userProgress: user
           ? {
               where: {
@@ -27,16 +22,10 @@ export default defineEventHandler(async (event) => {
               },
             }
           : false,
-        testQuestions: {
-          include: {
-            answers: {
-              orderBy: {
-                order: "asc",
-              },
-            },
-          },
-          orderBy: {
-            order: "asc",
+        _count: {
+          select: {
+            steps: true,
+            testQuestions: true,
           },
         },
       },
@@ -45,22 +34,28 @@ export default defineEventHandler(async (event) => {
     // Вычисляем прогресс для каждого туториала
     const tutorialsWithProgress = tutorials.map((tutorial) => {
       const progress = tutorial.userProgress?.[0];
-      const totalSteps = tutorial.steps.length;
-      const completedSteps = progress
-        ? progress.completed
-          ? totalSteps
-          : 0
-        : 0;
+      const isCompleted = progress?.completed || false;
+      const progressPercentage = isCompleted ? 100 : 0;
 
-      const progressPercentage =
-        totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+      console.log(`📚 Туториал "${tutorial.title}": завершен=${isCompleted}, userId=${user?.id || 'guest'}`);
 
       return {
-        ...tutorial,
+        id: tutorial.id,
+        title: tutorial.title,
+        description: tutorial.description,
+        difficulty: tutorial.difficulty,
+        category: tutorial.category,
+        duration: tutorial.duration,
+        features: tutorial.features,
+        order: tutorial.order,
+        isActive: tutorial.isActive,
+        createdAt: tutorial.createdAt,
+        updatedAt: tutorial.updatedAt,
         progress: progressPercentage,
-        isCompleted: progress?.completed || false,
+        isCompleted: isCompleted,
         testScore: progress?.testScore || null,
-        userProgress: progress || null,
+        stepsCount: tutorial._count.steps,
+        testQuestionsCount: tutorial._count.testQuestions,
       };
     });
 

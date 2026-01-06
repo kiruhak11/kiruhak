@@ -2,7 +2,11 @@
   "use strict";
 
   // Конфигурация
-  const ANALYTICS_URL = "https://kiruhak11.ru/api/analytics/track";
+  // Определяем URL API в зависимости от окружения
+  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const ANALYTICS_URL = isDev 
+    ? "http://localhost:3000/api/analytics/track" 
+    : "https://kiruhak11.ru/api/analytics/track";
   const SITE_ID = window.KIRUHAK_SITE_ID || "your-site-id"; // Получаем из глобальной переменной
 
   // Генерируем уникальный session ID

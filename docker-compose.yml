@@ -49,7 +49,7 @@ services:
       REDIS_URL: redis://redis:6379
       # Telegram настройки
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME:-web_kiruhak11}
+      TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME:-webmonke}
       # Другие переменные окружения
       NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost:3015}
     ports:
@@ -88,6 +88,8 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME}
       API_URL: http://app:3015/api/auth/telegram
+      API_BASE_URL: http://host.docker.internal:3000
+      BOT_SECRET: ${BOT_SECRET:-your-secret-key-change-me}
     depends_on:
       app:
         condition: service_healthy

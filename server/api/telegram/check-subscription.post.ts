@@ -1,14 +1,13 @@
 import { prisma } from "../../utils/prisma";
 
 export default defineEventHandler(async (event) => {
+  const isDev = process.env.NODE_ENV !== "production";
+  
   try {
     const body = await readBody(event);
     const { userId, telegramId } = body;
 
-    console.log("🔍 Проверка подписки:", { userId, telegramId });
-
     if (!userId && !telegramId) {
-      console.log("❌ Отсутствуют userId или telegramId");
       return {
         success: false,
         error: "Необходим userId или telegramId",
@@ -21,7 +20,7 @@ export default defineEventHandler(async (event) => {
     const channelUsername = config.channelUsername;
 
     if (!botToken) {
-      console.error("❌ Токен бота не настроен в конфиге");
+      if (isDev) console.error("Токен бота не настроен в конфиге");
       return {
         success: false,
         error: "Ошибка конфигурации бота",
@@ -40,19 +39,6 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log(
-      "👤 Найден пользователь:",
-      user
-        ? {
-            id: user.id,
-            telegramId: user.telegramId,
-            username: user.username,
-            firstName: user.firstName,
-            lastName: user.lastName,
-          }
-        : "НЕ НАЙДЕН"
-    );
-
     if (!user) {
       return {
         success: false,
@@ -68,12 +54,6 @@ export default defineEventHandler(async (event) => {
         user_id: user.telegramId,
       };
 
-      console.log("📡 Запрос к Telegram API:", {
-        url: telegramApiUrl,
-        chat_id: `@${channelUsername}`,
-        user_id: user.telegramId,
-      });
-
       const response = await fetch(telegramApiUrl, {
         method: "POST",
         headers: {
@@ -83,10 +63,9 @@ export default defineEventHandler(async (event) => {
       });
 
       const data = await response.json();
-      console.log("📡 Ответ Telegram API:", data);
 
       if (!data.ok) {
-        console.error("❌ Ошибка Telegram API:", data);
+        if (isDev) console.error("Ошибка Telegram API:", data.description);
         return {
           success: false,
           error: "Ошибка проверки подписки",
@@ -99,12 +78,6 @@ export default defineEventHandler(async (event) => {
         member.status
       );
 
-      console.log("📊 Статус подписки:", {
-        status: member.status,
-        isSubscribed,
-        user: member.user,
-      });
-
       // Сохраняем статус подписки в базе данных
       await prisma.user.update({
         where: { id: user.id },
@@ -113,8 +86,6 @@ export default defineEventHandler(async (event) => {
           subscriptionCheckedAt: new Date(),
         },
       });
-
-      console.log("💾 Статус подписки сохранен в БД");
 
       return {
         success: true,
@@ -129,7 +100,7 @@ export default defineEventHandler(async (event) => {
         },
       };
     } catch (telegramError) {
-      console.error("❌ Ошибка при проверке подписки:", telegramError);
+      if (isDev) console.error("Ошибка при проверке подписки:", telegramError);
       return {
         success: false,
         error: "Ошибка соединения с Telegram",
@@ -137,7 +108,7 @@ export default defineEventHandler(async (event) => {
       };
     }
   } catch (error) {
-    console.error("❌ Общая ошибка проверки подписки:", error);
+    if (isDev) console.error("Общая ошибка проверки подписки:", error);
     return {
       success: false,
       error: "Внутренняя ошибка сервера",

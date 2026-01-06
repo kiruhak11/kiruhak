@@ -19,6 +19,7 @@ export const useProjects = () => {
   const projects = ref<Project[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const { getAuthHeaders } = useApi();
 
   const fetchProjects = async () => {
     loading.value = true;
@@ -58,26 +59,11 @@ export const useProjects = () => {
     error.value = null;
 
     try {
-      console.log(`🔐 useProjects: Создание проекта с данными:`, projectData);
-
-      // Получаем токен напрямую
-      let headers = {};
-      if (process.client) {
-        const token = localStorage.getItem("auth_token");
-        if (token) {
-          headers = { Authorization: `Bearer ${token}` };
-          console.log(`🔐 useProjects: Добавлен токен к запросу создания`);
-        } else {
-          console.log(`🔐 useProjects: Токен не найден для создания`);
-        }
-      }
-
       const response = await $fetch("/api/projects", {
         method: "POST",
         body: projectData,
-        headers,
+        headers: getAuthHeaders(),
       });
-      console.log(`🔐 useProjects: Проект успешно создан`);
       await fetchProjects(); // Обновляем список
       return response;
     } catch (err) {
@@ -86,7 +72,6 @@ export const useProjects = () => {
       // Проверяем тип ошибки
       if (err.status === 401) {
         error.value = "Ошибка аутентификации. Пожалуйста, войдите в систему.";
-        console.log("🔐 useProjects: 401 ошибка при создании проекта");
       } else if (err.status === 403) {
         error.value = "Недостаточно прав для создания проекта.";
       } else {
@@ -104,29 +89,11 @@ export const useProjects = () => {
     error.value = null;
 
     try {
-      console.log(
-        `🔐 useProjects: Обновление проекта ${id} с данными:`,
-        projectData
-      );
-
-      // Получаем токен напрямую
-      let headers = {};
-      if (process.client) {
-        const token = localStorage.getItem("auth_token");
-        if (token) {
-          headers = { Authorization: `Bearer ${token}` };
-          console.log(`🔐 useProjects: Добавлен токен к запросу обновления`);
-        } else {
-          console.log(`🔐 useProjects: Токен не найден для обновления`);
-        }
-      }
-
       const response = await $fetch(`/api/projects/${id}`, {
         method: "PUT",
         body: projectData,
-        headers,
+        headers: getAuthHeaders(),
       });
-      console.log(`🔐 useProjects: Проект ${id} успешно обновлен`);
       await fetchProjects(); // Обновляем список
       return response;
     } catch (err) {
@@ -135,19 +102,6 @@ export const useProjects = () => {
       // Проверяем тип ошибки
       if (err.status === 401) {
         error.value = "Ошибка аутентификации. Пожалуйста, войдите в систему.";
-        console.log("🔐 useProjects: 401 ошибка - возможно токен истек");
-
-        // Проверяем, есть ли токен в localStorage
-        if (process.client) {
-          const token = localStorage.getItem("auth_token");
-          if (!token) {
-            console.log("🔐 useProjects: Токен отсутствует в localStorage");
-          } else {
-            console.log(
-              "🔐 useProjects: Токен есть в localStorage, но сервер его не принимает"
-            );
-          }
-        }
       } else if (err.status === 403) {
         error.value = "Недостаточно прав для обновления проекта.";
       } else {
@@ -165,25 +119,10 @@ export const useProjects = () => {
     error.value = null;
 
     try {
-      console.log(`🔐 useProjects: Удаление проекта ${id}`);
-
-      // Получаем токен напрямую
-      let headers = {};
-      if (process.client) {
-        const token = localStorage.getItem("auth_token");
-        if (token) {
-          headers = { Authorization: `Bearer ${token}` };
-          console.log(`🔐 useProjects: Добавлен токен к запросу удаления`);
-        } else {
-          console.log(`🔐 useProjects: Токен не найден для удаления`);
-        }
-      }
-
       await $fetch(`/api/projects/${id}`, {
         method: "DELETE",
-        headers,
+        headers: getAuthHeaders(),
       });
-      console.log(`🔐 useProjects: Проект ${id} успешно удален`);
       await fetchProjects(); // Обновляем список
       return true;
     } catch (err) {
@@ -192,19 +131,6 @@ export const useProjects = () => {
       // Проверяем тип ошибки
       if (err.status === 401) {
         error.value = "Ошибка аутентификации. Пожалуйста, войдите в систему.";
-        console.log("🔐 useProjects: 401 ошибка - возможно токен истек");
-
-        // Проверяем, есть ли токен в localStorage
-        if (process.client) {
-          const token = localStorage.getItem("auth_token");
-          if (!token) {
-            console.log("🔐 useProjects: Токен отсутствует в localStorage");
-          } else {
-            console.log(
-              "🔐 useProjects: Токен есть в localStorage, но сервер его не принимает"
-            );
-          }
-        }
       } else if (err.status === 403) {
         error.value = "Недостаточно прав для удаления проекта.";
       } else {

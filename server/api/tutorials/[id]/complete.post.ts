@@ -4,9 +4,19 @@ const prisma = new PrismaClient();
 
 export default defineEventHandler(async (event) => {
   try {
+    // Проверяем аутентификацию
+    const user = event.context.user;
+    if (!user) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Unauthorized - Authentication required",
+      });
+    }
+
     const tutorialId = getRouterParam(event, "id");
     const body = await readBody(event);
-    const { userId, testScore } = body;
+    const { testScore } = body;
+    const userId = user.id; // Используем ID из контекста, а не из body для безопасности
 
     // Проверяем, не завершал ли пользователь уже этот туториал
     const existingProgress = await prisma.tutorialProgress.findFirst({
@@ -26,7 +36,10 @@ export default defineEventHandler(async (event) => {
     // Создаем или обновляем прогресс
     const progress = await prisma.tutorialProgress.upsert({
       where: {
-        id: existingProgress?.id || "new",
+        tutorialId_userId: {
+          tutorialId,
+          userId,
+        },
       },
       update: {
         completed: true,
@@ -42,18 +55,34 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    // Начисляем 25 рублей за завершение туториала
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (user) {
-      await prisma.user.update({
+    // Начисляем 25 рублей за завершение туториала (только если это первое завершение)
+    if (!existingProgress || !existingProgress.completed) {
+      const user = await prisma.user.findUnique({
         where: { id: userId },
-        data: {
-          balance: user.balance + 25,
-        },
       });
+
+      if (user) {
+        const rewardAmount = 2500; // 25 рублей в копейках
+        
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            balance: user.balance + rewardAmount,
+          },
+        });
+
+        // Создаем запись о транзакции
+        await prisma.transaction.create({
+          data: {
+            userId,
+            type: "credit",
+            amount: rewardAmount,
+            description: `Награда за завершение туториала "${tutorialId}"`,
+          },
+        });
+        
+        console.log(`💰 Пользователю ${userId} начислено ${rewardAmount / 100} рублей за туториал`);
+      }
     }
 
     return {

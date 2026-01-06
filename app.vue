@@ -26,7 +26,7 @@ useHead({
       innerHTML: 'window.KIRUHAK_SITE_ID = "cmetglx3f0001ri3lsfzyscli";',
     },
     {
-      src: "https://kiruhak11.ru/analytics.js",
+      src: process.env.NODE_ENV === 'production' ? "https://kiruhak11.ru/analytics.js" : "/analytics.js",
       async: true,
     },
   ],

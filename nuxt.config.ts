@@ -18,12 +18,10 @@ export default defineNuxtConfig({
     },
   },
   robots: {
-    rules: [
-      { userAgent: "*", allow: "/" },
-      { userAgent: "*", disallow: ["/success", "/error"] },
-    ],
-    sitemap: "https://kiruhak11.ru/sitemap.xml",
-    host: "https://kiruhak11.ru",
+    UserAgent: "*",
+    Allow: "/",
+    Disallow: ["/success", "/error"],
+    Sitemap: "https://kiruhak11.ru/sitemap.xml",
   },
   googleFonts: {
     families: {
@@ -86,22 +84,31 @@ export default defineNuxtConfig({
     prerender: {
       routes: ["/", "/projects", "/contact"],
     },
-    cors: {
-      origin: "*",
-      credentials: true,
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    routeRules: {
+      "/api/**": {
+        cors: true,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+          "Access-Control-Allow-Credentials": "true",
+        },
+      },
     },
   },
   runtimeConfig: {
     telegramToken: "6122558496:AAEXwnP3E4uIk5sSSNzD-13vQK6A4ybCBFI",
     telegramChatId: "502773482",
-    channelUsername: "web_kiruhak11",
+    channelUsername: "webmonke",
+    botSecret: process.env.BOT_SECRET || "my-super-secret-bot-key-1767717027",
     public: {
       // Публичные переменные, если нужны
     },
   },
   vite: {
+    server: {
+      allowedHosts: ["host.docker.internal", "localhost", "127.0.0.1"],
+    },
     css: {
       preprocessorOptions: {
         scss: {
