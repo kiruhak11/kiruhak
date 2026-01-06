@@ -56,7 +56,7 @@
             </div>
 
             <button
-              @click="checkSubscription"
+              @click="() => checkSubscription(true)"
               class="check-button"
               :disabled="checking"
             >
@@ -238,7 +238,7 @@
     <!-- Модалка для отображения кода -->
     <CodeModal
       :is-open="showCodeModal"
-      :component="selectedComponent"
+      :component="selectedComponent || undefined"
       @close="closeCodeModal"
     />
   </NuxtLayout>
@@ -249,12 +249,25 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import GradientText from "~/components/GradientText.vue";
 import CodeModal from "~/components/CodeModal.vue";
 
+// Типы
+interface UiComponent {
+  id: string;
+  name: string;
+  code: string;
+  html: string | null;
+  css: string | null;
+  javascript: string | null;
+  description: string | null;
+  category: string;
+  viewCount: number;
+}
+
 // Состояние подписки
 const isSubscribed = ref(false);
 const checking = ref(false);
 
 // UI компоненты
-const uiComponents = ref([]);
+const uiComponents = ref<UiComponent[]>([]);
 
 // Два случайных компонента
 const randomTwoComponents = computed(() => {
@@ -298,7 +311,13 @@ const checkSubscription = async (showAlert = true) => {
     }
 
     // Проверяем подписку через API
-    const response = await $fetch("/api/telegram/check-subscription", {
+    const response = await $fetch<{ 
+      success: boolean; 
+      isSubscribed?: boolean; 
+      error?: string;
+      telegramError?: string;
+      memberStatus?: string;
+    }>("/api/telegram/check-subscription", {
       method: "POST",
       body: {
         userId: user.value.id,
@@ -339,11 +358,11 @@ const checkSubscription = async (showAlert = true) => {
 const loadUiComponents = async () => {
   try {
     console.log("🔄 Начинаем загрузку UI компонентов...");
-    const response = await $fetch("/api/ui-components");
+    const response = await $fetch<{ success: boolean; components?: UiComponent[]; error?: string }>("/api/ui-components");
     console.log("📦 Получен ответ:", response);
 
-    if (response.success) {
-      uiComponents.value = response.components || [];
+    if (response.success && response.components) {
+      uiComponents.value = response.components;
       console.log("🎨 Загружено компонентов:", uiComponents.value.length);
 
       if (uiComponents.value.length > 0) {
@@ -360,9 +379,9 @@ const loadUiComponents = async () => {
 
 // Модалка для отображения кода
 const showCodeModal = ref(false);
-const selectedComponent = ref(null);
+const selectedComponent = ref<UiComponent | null>(null);
 
-const openCodeModal = (component) => {
+const openCodeModal = (component: UiComponent) => {
   selectedComponent.value = component;
   showCodeModal.value = true;
 };
@@ -373,7 +392,7 @@ const closeCodeModal = () => {
 };
 
 // Функция для получения стилей компонента
-const getComponentStyles = (component) => {
+const getComponentStyles = (component: UiComponent) => {
   if (!component.css) return {};
 
   // Создаем уникальный класс для компонента

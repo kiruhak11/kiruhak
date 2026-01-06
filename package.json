@@ -55,7 +55,8 @@
     "stylelint-config-recommended-vue": "latest",
     "stylelint-config-standard-scss": "^13.1.0",
     "stylelint-order": "^6.0.4",
-    "tsx": "^4.20.4"
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.3"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

@@ -18,10 +18,8 @@ export default defineNuxtConfig({
     },
   },
   robots: {
-    UserAgent: "*",
-    Allow: "/",
-    Disallow: ["/success", "/error"],
-    Sitemap: "https://kiruhak11.ru/sitemap.xml",
+    disallow: ["/success", "/error"],
+    sitemap: "https://kiruhak11.ru/sitemap.xml",
   },
   googleFonts: {
     families: {
