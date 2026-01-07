@@ -311,9 +311,9 @@ const checkSubscription = async (showAlert = true) => {
     }
 
     // Проверяем подписку через API
-    const response = await $fetch<{ 
-      success: boolean; 
-      isSubscribed?: boolean; 
+    const response = await $fetch<{
+      success: boolean;
+      isSubscribed?: boolean;
       error?: string;
       telegramError?: string;
       memberStatus?: string;
@@ -358,7 +358,11 @@ const checkSubscription = async (showAlert = true) => {
 const loadUiComponents = async () => {
   try {
     console.log("🔄 Начинаем загрузку UI компонентов...");
-    const response = await $fetch<{ success: boolean; components?: UiComponent[]; error?: string }>("/api/ui-components");
+    const response = await $fetch<{
+      success: boolean;
+      components?: UiComponent[];
+      error?: string;
+    }>("/api/ui-components");
     console.log("📦 Получен ответ:", response);
 
     if (response.success && response.components) {
