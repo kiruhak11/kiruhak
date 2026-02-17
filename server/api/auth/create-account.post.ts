@@ -1,8 +1,23 @@
 import { prisma } from "../../utils/prisma";
 import { randomBytes } from "crypto";
+import { hashPassword } from "../../utils/password";
 
 export default defineEventHandler(async (event) => {
   try {
+    const config = useRuntimeConfig();
+    const isDev = process.env.NODE_ENV !== "production";
+
+    // Ограничиваем вызов endpoint внешним секретом в production.
+    if (!isDev) {
+      const secret = getHeader(event, "x-bot-secret");
+      if (!config.botSecret || secret !== config.botSecret) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: "Forbidden",
+        });
+      }
+    }
+
     const body = await readBody(event);
     const { telegramId, firstName, lastName, username } = body;
 
@@ -27,9 +42,13 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Генерируем логин и пароль
-    const login = `user_${Math.random().toString(36).substring(2, 8)}`;
-    const password = randomBytes(4).toString("hex"); // 8 символов
+    // Генерируем уникальный логин и пароль
+    let login = `user_${randomBytes(4).toString("hex")}`;
+    while (await prisma.user.findUnique({ where: { login } })) {
+      login = `user_${randomBytes(4).toString("hex")}`;
+    }
+    const password = randomBytes(6).toString("base64url"); // отправляем пользователю
+    const passwordHash = hashPassword(password);
 
     // Создаем пользователя
     const user = await prisma.user.create({
@@ -40,7 +59,7 @@ export default defineEventHandler(async (event) => {
         lastName: lastName || null,
         photoUrl: null,
         login: login,
-        password: password, // В реальном проекте нужно хешировать
+        password: passwordHash,
         balance: 15000, // 150 рублей в копейках
         isAdmin: false,
       },
@@ -64,7 +83,7 @@ export default defineEventHandler(async (event) => {
         firstName: user.firstName,
         lastName: user.lastName,
         login: user.login,
-        password: user.password, // Отправляем пароль в боте
+        password,
         balance: user.balance,
       },
     };

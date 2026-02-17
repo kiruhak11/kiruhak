@@ -49,7 +49,7 @@
                   <IconTg />
                 </div>
                 <div class="channel-details">
-                  <h3>@webmonke</h3>
+                  <h3>{{ displayChannelUsername }}</h3>
                   <p>Эксклюзивный контент по веб-разработке</p>
                 </div>
               </div>
@@ -66,7 +66,9 @@
             <div class="subscription-steps">
               <h3>Как получить доступ:</h3>
               <ol>
-                <li>Подпишитесь на канал <strong>@webmonke</strong></li>
+                <li>
+                  Подпишитесь на канал <strong>{{ displayChannelUsername }}</strong>
+                </li>
                 <li>Нажмите кнопку "Проверить подписку"</li>
                 <li>Получите доступ к эксклюзивному контенту</li>
               </ol>
@@ -187,11 +189,13 @@
                 >
                   <div class="component-preview">
                     <div class="preview-placeholder">
-                      <div
-                        v-html="component.code"
-                        class="component-demo"
-                        :style="getComponentStyles(component)"
-                      ></div>
+                      <iframe
+                        class="component-demo-frame"
+                        :srcdoc="getComponentPreview(component)"
+                        sandbox="allow-scripts"
+                        frameborder="0"
+                        loading="lazy"
+                      ></iframe>
                     </div>
                   </div>
                   <div class="component-info">
@@ -256,7 +260,7 @@ interface UiComponent {
   code: string;
   html: string | null;
   css: string | null;
-  javascript: string | null;
+  js: string | null;
   description: string | null;
   category: string;
   viewCount: number;
@@ -265,32 +269,29 @@ interface UiComponent {
 // Состояние подписки
 const isSubscribed = ref(false);
 const checking = ref(false);
+const subscriptionCheckInterval = ref<ReturnType<typeof setInterval> | null>(null);
+const runtimeConfig = useRuntimeConfig();
+const rawChannelUsername = (runtimeConfig.public.channelUsername as string) || "";
+const displayChannelUsername = rawChannelUsername.startsWith("@")
+  ? rawChannelUsername
+  : `@${rawChannelUsername || "channel"}`;
 
 // UI компоненты
 const uiComponents = ref<UiComponent[]>([]);
 
 // Два случайных компонента
 const randomTwoComponents = computed(() => {
-  console.log("🎲 Всего компонентов:", uiComponents.value.length);
-
   if (uiComponents.value.length === 0) {
-    console.log("⚠️ Нет компонентов для отображения");
     return [];
   }
 
   if (uiComponents.value.length <= 2) {
-    console.log("📊 Компонентов 2 или меньше, показываем все");
     return uiComponents.value;
   }
 
   // Получаем 2 случайных компонента
   const shuffled = [...uiComponents.value].sort(() => 0.5 - Math.random());
-  const selected = shuffled.slice(0, 2);
-  console.log(
-    "✅ Выбрано 2 случайных компонента:",
-    selected.map((c) => c.name)
-  );
-  return selected;
+  return shuffled.slice(0, 2);
 });
 
 // Проверка подписки на Telegram канал
@@ -300,6 +301,7 @@ const checkSubscription = async (showAlert = true) => {
   try {
     // Используем данные из useAuth вместо прямого запроса
     const { user, initAuth } = useAuth();
+    const { apiFetch } = useApi();
 
     // Инициализируем аутентификацию, если данные еще не загружены
     if (!user.value) {
@@ -311,18 +313,15 @@ const checkSubscription = async (showAlert = true) => {
     }
 
     // Проверяем подписку через API
-    const response = await $fetch<{
+    const response = await apiFetch<{
       success: boolean;
       isSubscribed?: boolean;
+      channelUsername?: string;
       error?: string;
       telegramError?: string;
       memberStatus?: string;
     }>("/api/telegram/check-subscription", {
       method: "POST",
-      body: {
-        userId: user.value.id,
-        telegramId: user.value.telegramId,
-      },
     });
 
     if (response.success && response.isSubscribed) {
@@ -336,7 +335,7 @@ const checkSubscription = async (showAlert = true) => {
       // Показываем сообщение об ошибке только если это не автоматическая проверка
       if (showAlert) {
         alert(
-          "Вы не подписаны на канал @webmonke. Пожалуйста, подпишитесь и попробуйте снова."
+          `Вы не подписаны на канал ${displayChannelUsername}. Пожалуйста, подпишитесь и попробуйте снова.`
         );
       }
     }
@@ -357,27 +356,17 @@ const checkSubscription = async (showAlert = true) => {
 // Загрузка UI компонентов
 const loadUiComponents = async () => {
   try {
-    console.log("🔄 Начинаем загрузку UI компонентов...");
     const response = await $fetch<{
       success: boolean;
       components?: UiComponent[];
       error?: string;
     }>("/api/ui-components");
-    console.log("📦 Получен ответ:", response);
 
     if (response.success && response.components) {
       uiComponents.value = response.components;
-      console.log("🎨 Загружено компонентов:", uiComponents.value.length);
-
-      if (uiComponents.value.length > 0) {
-        console.log(
-          "📋 Примеры:",
-          uiComponents.value.slice(0, 3).map((c) => c.name)
-        );
-      }
     }
   } catch (error) {
-    console.error("❌ Ошибка загрузки UI компонентов:", error);
+    console.error("Ошибка загрузки UI компонентов:", error);
   }
 };
 
@@ -385,32 +374,31 @@ const loadUiComponents = async () => {
 const showCodeModal = ref(false);
 const selectedComponent = ref<UiComponent | null>(null);
 
-const openCodeModal = (component: UiComponent) => {
-  selectedComponent.value = component;
-  showCodeModal.value = true;
-};
-
 const closeCodeModal = () => {
   showCodeModal.value = false;
   selectedComponent.value = null;
 };
 
-// Функция для получения стилей компонента
-const getComponentStyles = (component: UiComponent) => {
-  if (!component.css) return {};
-
-  // Создаем уникальный класс для компонента
-  const componentClass = `component-${component.id}`;
-
-  // Добавляем стили в head документа
-  if (!document.getElementById(componentClass)) {
-    const style = document.createElement("style");
-    style.id = componentClass;
-    style.textContent = component.css;
-    document.head.appendChild(style);
-  }
-
-  return {};
+const getComponentPreview = (component: UiComponent) => {
+  const html = component.html || component.code || "";
+  const css = component.css || "";
+  const js = component.js || "";
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { margin: 0; padding: 8px; font-family: Arial, sans-serif; }
+          ${css}
+        </style>
+      </head>
+      <body>
+        ${html}
+        ${js ? `<script>${js}<\/script>` : ""}
+      </body>
+    </html>
+  `;
 };
 
 // Проверяем подписку при загрузке страницы
@@ -427,23 +415,28 @@ onMounted(async () => {
     await checkSubscription(false); // Без alert для автоматической проверки
 
     // Устанавливаем периодическую проверку каждые 5 минут
-    const subscriptionCheckInterval = setInterval(async () => {
+    subscriptionCheckInterval.value = setInterval(async () => {
       if (user.value) {
         await checkSubscription(false); // Без alert для автоматической проверки
       } else {
         // Если пользователь вышел, останавливаем проверку
-        clearInterval(subscriptionCheckInterval);
+        if (subscriptionCheckInterval.value) {
+          clearInterval(subscriptionCheckInterval.value);
+          subscriptionCheckInterval.value = null;
+        }
       }
     }, 5 * 60 * 1000); // 5 минут
-
-    // Очищаем интервал при размонтировании компонента
-    onUnmounted(() => {
-      clearInterval(subscriptionCheckInterval);
-    });
   }
 
   // Загружаем UI компоненты
   await loadUiComponents();
+});
+
+onUnmounted(() => {
+  if (subscriptionCheckInterval.value) {
+    clearInterval(subscriptionCheckInterval.value);
+    subscriptionCheckInterval.value = null;
+  }
 });
 </script>
 
@@ -833,29 +826,11 @@ onMounted(async () => {
   padding: 20px;
 }
 
-.component-demo {
+.component-demo-frame {
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-
-  // Стили для кнопок
-  button {
-    margin: 0;
-  }
-
-  // Стили для карточек
-  .shadow-card {
-    margin: 0;
-  }
-
-  // Стили для инпутов
-  .input-container {
-    margin: 0;
-    width: 100%;
-  }
+  border: 0;
+  background: white;
 }
 
 .component-info {

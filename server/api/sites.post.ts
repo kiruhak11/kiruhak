@@ -3,7 +3,9 @@ import { prisma } from "../utils/prisma";
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
-    const { name, domain, description } = body;
+    const name = String(body?.name || "").trim();
+    const domain = String(body?.domain || "").trim().toLowerCase();
+    const description = body?.description ? String(body.description).trim() : "";
 
     // Получаем пользователя из контекста (добавлено middleware)
     const user = event.context.user;
@@ -22,52 +24,75 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Проверяем баланс (100 рублей = 10000 копеек)
+    if (name.length > 100) {
+      return {
+        success: false,
+        error: "name is too long",
+      };
+    }
+
+    if (!/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i.test(domain)) {
+      return {
+        success: false,
+        error: "Invalid domain format",
+      };
+    }
+
+    // Списываем стоимость сайта атомарно.
     const siteCost = 10000;
-    if (user.balance < siteCost) {
-      return {
-        success: false,
-        error: "Insufficient balance",
-        required: siteCost,
-        current: user.balance,
-      };
-    }
+    const site = await prisma.$transaction(async (tx) => {
+      const existingSite = await tx.site.findUnique({
+        where: { domain },
+      });
+      if (existingSite) {
+        throw createError({
+          statusCode: 409,
+          statusMessage: "Site with this domain already exists",
+        });
+      }
 
-    // Проверяем, не существует ли уже сайт с таким доменом
-    const existingSite = await prisma.site.findUnique({
-      where: { domain },
-    });
+      const updated = await tx.user.updateMany({
+        where: {
+          id: user.id,
+          balance: { gte: siteCost },
+        },
+        data: {
+          balance: { decrement: siteCost },
+        },
+      });
 
-    if (existingSite) {
-      return {
-        success: false,
-        error: "Site with this domain already exists",
-      };
-    }
+      if (updated.count === 0) {
+        throw createError({
+          statusCode: 402,
+          statusMessage: "Insufficient balance",
+        });
+      }
 
-    // Создаем новый сайт и списываем средства
-    const [site] = await prisma.$transaction([
-      prisma.site.create({
+      const createdSite = await tx.site.create({
         data: {
           name,
           domain,
-          description: description || null,
+          description: description ? description.slice(0, 500) : null,
           userId: user.id,
         },
-      }),
-      prisma.user.update({
-        where: { id: user.id },
-        data: { balance: user.balance - siteCost },
-      }),
-      prisma.transaction.create({
+      });
+
+      await tx.transaction.create({
         data: {
           userId: user.id,
           type: "debit",
           amount: siteCost,
           description: `Создание сайта: ${name}`,
         },
-      }),
-    ]);
+      });
+
+      return createdSite;
+    });
+
+    const freshUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { balance: true },
+    });
 
     return {
       success: true,
@@ -78,10 +103,12 @@ export default defineEventHandler(async (event) => {
         description: site.description,
         trackingCode: generateTrackingCode(site.id),
       },
-      newBalance: user.balance - siteCost,
+      newBalance: freshUser?.balance ?? 0,
     };
   } catch (error) {
-    console.error("Error creating site:", error);
+    if ((error as { statusCode?: number })?.statusCode) {
+      throw error;
+    }
     throw createError({
       statusCode: 500,
       statusMessage: "Failed to create site",

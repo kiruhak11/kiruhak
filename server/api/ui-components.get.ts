@@ -4,10 +4,15 @@ export default defineEventHandler(async (event) => {
   try {
     const user = event.context.user;
     const query = getQuery(event);
-    const { category, search, limit = "50" } = query;
+    const category = typeof query.category === "string" ? query.category.trim() : "";
+    const search = typeof query.search === "string" ? query.search.trim() : "";
+    const rawLimit = Number(query.limit || 50);
+    const limit = Number.isFinite(rawLimit)
+      ? Math.min(Math.max(Math.floor(rawLimit), 1), 100)
+      : 50;
 
     // Строим фильтры
-    const where: any = {
+    const where: Record<string, unknown> = {
       OR: [
         { isActive: true },
       ],
@@ -40,7 +45,7 @@ export default defineEventHandler(async (event) => {
     const components = await prisma.uiComponent.findMany({
       where,
       orderBy: [{ order: "asc" }, { createdAt: "desc" }],
-      take: parseInt(limit as string),
+      take: limit,
       include: {
         author: {
           select: {

@@ -133,7 +133,7 @@
               <div class="tutorial-content" v-if="!showTest">
                 <div v-if="currentStepData">
                   <h3>{{ currentStepData.title }}</h3>
-                  <div v-html="currentStepData.content"></div>
+                  <div v-html="sanitizedCurrentStepContent"></div>
                 </div>
                 <div v-else-if="!selectedTutorial.steps || selectedTutorial.steps.length === 0">
                   <p>Контент туториала не загружен. Пожалуйста, попробуйте позже.</p>
@@ -235,6 +235,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import GradientText from "~/components/GradientText.vue";
+import { sanitizeHtml } from "~/util/sanitize-html";
 
 // Фильтры
 const selectedDifficulty = ref("");
@@ -257,6 +258,10 @@ const currentStepData = computed(() => {
   }
   return selectedTutorial.value.steps[currentStep.value - 1];
 });
+
+const sanitizedCurrentStepContent = computed(() =>
+  sanitizeHtml(currentStepData.value?.content || "")
+);
 
 // Computed для проверки наличия теста
 const hasTest = computed(() => {

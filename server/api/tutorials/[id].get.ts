@@ -1,6 +1,5 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../../utils/prisma";
+import { sanitizeHtml } from "../../../util/sanitize-html";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -57,6 +56,10 @@ export default defineEventHandler(async (event) => {
 
     const tutorialWithProgress = {
       ...tutorial,
+      steps: tutorial.steps.map((step) => ({
+        ...step,
+        content: sanitizeHtml(step.content),
+      })),
       progress: progressPercentage,
       isCompleted: progress?.completed || false,
       testScore: progress?.testScore || null,

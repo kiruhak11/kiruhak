@@ -2,8 +2,9 @@ import { prisma } from "../../utils/prisma";
 
 export default defineEventHandler(async (event) => {
   try {
+    const config = useRuntimeConfig();
     const body = await readBody(event);
-    const { amount } = body;
+    const amount = Number(body?.amount);
 
     // Получаем пользователя из контекста (добавлено middleware)
     const user = event.context.user;
@@ -14,11 +15,25 @@ export default defineEventHandler(async (event) => {
       };
     }
 
+    if (!config.allowSelfTopup && !user.isAdmin) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Top-up is disabled",
+      });
+    }
+
     // Валидация суммы
-    if (!amount || amount <= 0) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       return {
         success: false,
         error: "Invalid amount",
+      };
+    }
+
+    if (amount > 100000) {
+      return {
+        success: false,
+        error: "Amount is too large",
       };
     }
 
@@ -29,7 +44,7 @@ export default defineEventHandler(async (event) => {
     const [updatedUser] = await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { balance: user.balance + amountInKopecks },
+        data: { balance: { increment: amountInKopecks } },
       }),
       prisma.transaction.create({
         data: {

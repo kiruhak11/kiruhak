@@ -1,6 +1,5 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../../utils/prisma";
+import { sanitizeHtml } from "../../../util/sanitize-html";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -44,6 +43,7 @@ export default defineEventHandler(async (event) => {
 
     const materialWithStats = {
       ...material,
+      content: sanitizeHtml(material.content),
       avgRating: Math.round(avgRating * 10) / 10,
       downloadCount,
       userRating,

@@ -1,58 +1,30 @@
 import { prisma } from "../../utils/prisma";
 
 export default defineEventHandler(async (event) => {
-  console.log("🔒 API: PUT /api/ui-components/[id] - начало обработки");
-
-  // Проверяем заголовки в API endpoint
-  const headers = getHeaders(event);
-  console.log("🔒 API: Все заголовки:", Object.keys(headers));
-  console.log(
-    "🔒 API: Authorization header (lowercase):",
-    headers.authorization
-  );
-  console.log(
-    "🔒 API: Authorization header (uppercase):",
-    headers.Authorization
-  );
-
   try {
     // Проверяем права администратора
     const user = event.context.user;
-    console.log(
-      "🔒 API: Пользователь в контексте:",
-      user ? "present" : "missing"
-    );
 
     if (!user || !user.isAdmin) {
-      console.log("🔒 API: Нет пользователя или нет прав администратора");
       throw createError({
         statusCode: 403,
         statusMessage: "Admin access required",
       });
     }
 
-    console.log(
-      "🔒 API: Пользователь авторизован:",
-      user.firstName,
-      "isAdmin:",
-      user.isAdmin
-    );
-
     const id = getRouterParam(event, "id");
     const body = await readBody(event);
-    const {
-      name,
-      description,
-      category,
-      code,
-      html,
-      css,
-      js,
-      preview,
-      tags = [],
-      order = 0,
-      isActive = true,
-    } = body;
+    const name = String(body?.name || "").trim();
+    const description = body?.description ? String(body.description).trim() : "";
+    const category = String(body?.category || "").trim();
+    const code = String(body?.code || "");
+    const html = String(body?.html || "");
+    const css = String(body?.css || "");
+    const js = String(body?.js || "");
+    const preview = body?.preview ? String(body.preview).trim() : null;
+    const tags = Array.isArray(body?.tags) ? body.tags : [];
+    const order = Number(body?.order || 0);
+    const isActive = body?.isActive !== undefined ? Boolean(body.isActive) : true;
 
     if (!id) {
       return {
@@ -61,10 +33,17 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    if (!name || !category || !code) {
+    if (!name || !category || !code || !html || !css) {
       return {
         success: false,
-        error: "Необходимо указать название, категорию и код компонента",
+        error: "Необходимо указать название, категорию, code, html и css",
+      };
+    }
+
+    if (name.length > 100 || description.length > 1000) {
+      return {
+        success: false,
+        error: "Слишком длинные поля",
       };
     }
 
@@ -74,28 +53,30 @@ export default defineEventHandler(async (event) => {
         name,
         description,
         category,
-        code: code || "", // Для обратной совместимости
-        html: html || "",
-        css: css || "",
-        js: js || "",
+        code,
+        html,
+        css,
+        js,
         preview,
-        tags: Array.isArray(tags) ? tags : [],
-        order: parseInt(order) || 0,
+        tags: tags.filter((tag) => typeof tag === "string").slice(0, 20),
+        order: Number.isFinite(order) ? Math.max(0, Math.floor(order)) : 0,
         isActive,
         updatedAt: new Date(),
       },
     });
 
-    console.log("🔒 API: Компонент успешно обновлен");
     return {
       success: true,
       component,
     };
   } catch (error) {
-    console.error("🔒 API: Ошибка обновления UI компонента:", error);
-    return {
-      success: false,
-      error: "Ошибка обновления компонента",
-    };
+    if ((error as { statusCode?: number })?.statusCode) {
+      throw error;
+    }
+
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Ошибка обновления компонента",
+    });
   }
 });

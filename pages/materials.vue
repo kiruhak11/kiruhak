@@ -104,7 +104,7 @@
 
             <div class="modal-body">
               <div class="material-content">
-                <div v-html="selectedMaterial.content"></div>
+                <div v-html="sanitizedMaterialContent"></div>
               </div>
 
               <div
@@ -166,6 +166,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from "vue";
 import GradientText from "~/components/GradientText.vue";
+import { sanitizeHtml } from "~/util/sanitize-html";
 
 // Фильтры
 const selectedType = ref("");
@@ -219,6 +220,10 @@ const filteredMaterials = computed(() => {
     return typeMatch && categoryMatch;
   });
 });
+
+const sanitizedMaterialContent = computed(() =>
+  sanitizeHtml(selectedMaterial.value?.content || "")
+);
 
 // Методы
 const getTypeText = (type: string) => {

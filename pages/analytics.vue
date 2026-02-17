@@ -178,7 +178,7 @@
           <p>Добавьте этот код в секцию &lt;head&gt; вашего сайта:</p>
 
           <div class="code-block">
-            <pre><code v-html="selectedSiteForCode?.trackingCode"></code></pre>
+            <pre><code>{{ selectedSiteForCode?.trackingCode }}</code></pre>
             <button @click="copyCode" class="copy-btn">
               {{ copied ? "Скопировано!" : "Копировать" }}
             </button>
@@ -194,34 +194,11 @@
 <script setup>
 // Импортируем composables
 const {
-  user,
-  token,
   isAuthenticated,
-  logout,
-  formattedBalance,
   initAuth,
   refreshUser,
 } = useAuth();
 const router = useRouter();
-
-// Инициализируем аутентификацию
-onMounted(async () => {
-  await initAuth();
-  console.log("🔐 Analytics: Состояние аутентификации:", {
-    isAuthenticated: isAuthenticated.value,
-    hasToken: !!token.value,
-    user: user.value,
-  });
-
-  // Обновляем данные пользователя с сервера при загрузке страницы
-  if (isAuthenticated.value) {
-    await refreshUser();
-    console.log("🔐 Analytics: Данные пользователя обновлены с сервера:", {
-      balance: user.value?.balance,
-      formattedBalance: formattedBalance.value,
-    });
-  }
-});
 
 // Состояние
 const sites = ref([]);
@@ -233,16 +210,18 @@ const loading = ref(false);
 const analytics = ref(null);
 const currentPeriod = ref("7d");
 
-// Загружаем сайты при монтировании
-onMounted(() => {
-  loadSites();
-});
+// Инициализируем аутентификацию и загружаем сайты последовательно
+onMounted(async () => {
+  await initAuth();
 
-// Выход из системы
-const handleLogout = () => {
-  logout();
-  router.push("/login");
-};
+  if (!isAuthenticated.value) {
+    router.push("/login");
+    return;
+  }
+
+  await refreshUser();
+  await loadSites();
+});
 
 // Форма нового сайта
 const newSite = ref({
@@ -261,15 +240,7 @@ const periods = [
 
 // Загрузка сайтов
 const loadSites = async () => {
-  console.log("🔐 Analytics: Загрузка сайтов, состояние аутентификации:", {
-    isAuthenticated: isAuthenticated.value,
-    hasToken: !!token.value,
-  });
-
   if (!isAuthenticated.value) {
-    console.log(
-      "🔐 Analytics: Пользователь не аутентифицирован, перенаправляем на /login"
-    );
     router.push("/login");
     return;
   }
@@ -280,10 +251,7 @@ const loadSites = async () => {
     sites.value = data || [];
   } catch (error) {
     console.error("Error loading sites:", error);
-    if (error.status === 401) {
-      console.log(
-        "🔐 Analytics: Токен недействителен, перенаправляем на /login"
-      );
+    if (error?.statusCode === 401 || error?.status === 401) {
       router.push("/login");
     }
   }
@@ -300,18 +268,12 @@ const addSite = async () => {
     });
 
     if (data?.success) {
-      console.log("✅ Сайт создан успешно:", data.site);
-      console.log("💰 Старый баланс:", user.value.balance);
-      console.log("💰 Новый баланс:", data.newBalance);
-
       sites.value.push(data.site);
       newSite.value = { name: "", domain: "", description: "" };
 
       // Обновляем данные пользователя с сервера
       await refreshUser();
-      console.log("💰 Баланс обновлен через refreshUser:", user.value?.balance);
     } else if (data?.error) {
-      console.error("❌ Ошибка создания сайта:", data.error);
       alert(data.error);
     }
   } catch (error) {
@@ -353,10 +315,10 @@ const changePeriod = async (period) => {
 const showTrackingCode = (site) => {
   const trackingCode = [
     "<!-- Kiruhak Analytics -->",
-    "&lt;script&gt;",
+    "<script>",
     `  window.KIRUHAK_SITE_ID = '${site.id}';`,
-    "&lt;/script&gt;",
-    '&lt;script src="https://kiruhak11.ru/analytics.js"&gt;&lt;/script&gt;',
+    "</script>",
+    '<script src="https://kiruhak11.ru/analytics.js"></script>',
     "<!-- End Kiruhak Analytics -->",
   ].join("\n");
 

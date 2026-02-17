@@ -1,32 +1,42 @@
 import { prisma } from "../../../utils/prisma";
 
+const isDev = process.env.NODE_ENV !== "production";
+
 export default defineEventHandler(async (event) => {
   try {
+    const config = useRuntimeConfig();
     // В dev-режиме пропускаем проверку секретного ключа для упрощения
-    const isDev = process.env.NODE_ENV !== "production";
-    
     if (!isDev) {
       // В production проверяем секретный ключ бота
-      const config = useRuntimeConfig();
       const botSecret = event.node.req.headers["x-bot-secret"];
-      const expectedSecret = config.botSecret || process.env.BOT_SECRET || "your-secret-key-change-me";
+      const expectedSecret = config.botSecret;
+
+      if (!expectedSecret) {
+        throw createError({
+          statusCode: 500,
+          statusMessage: "Bot moderation secret is not configured",
+        });
+      }
 
       if (botSecret !== expectedSecret) {
-        console.error("❌ Неверный секретный ключ бота");
         throw createError({
           statusCode: 403,
           statusMessage: "Forbidden - Invalid bot secret",
         });
       }
-    } else {
-      console.log("🔓 Dev mode: пропускаем проверку секретного ключа");
     }
 
     const componentId = getRouterParam(event, "id");
     const body = await readBody(event);
-    const { action, reason } = body; // action: 'approve' or 'reject'
+    const action = String(body?.action || "");
+    const reason = body?.reason ? String(body.reason).trim() : "";
 
-    console.log(`🤖 Бот модерирует компонент ${componentId}: ${action}`);
+    if (!componentId || !["approve", "reject"].includes(action)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Invalid moderation payload",
+      });
+    }
 
     // Получаем компонент с автором
     const component = await prisma.uiComponent.findUnique({
@@ -59,11 +69,15 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    console.log(`✅ Компонент ${componentId} ${action === "approve" ? "одобрен" : "отклонен"}`);
-
     // Отправляем уведомление автору
     if (component.author?.telegramId) {
-      await notifyAuthor(component.author.telegramId, component.name, action, reason);
+      await notifyAuthor(
+        component.author.telegramId,
+        component.name,
+        action,
+        reason,
+        config.telegramToken
+      );
     }
 
     return {
@@ -74,8 +88,6 @@ export default defineEventHandler(async (event) => {
       },
     };
   } catch (error: any) {
-    console.error("Ошибка модерации компонента:", error);
-    
     // Если это наша ошибка с правильным форматом
     if (error.statusCode) {
       throw error;
@@ -92,12 +104,10 @@ async function notifyAuthor(
   telegramId: string,
   componentName: string,
   action: string,
-  reason?: string
+  reason?: string,
+  botToken?: string
 ) {
-  const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-
-  if (!TELEGRAM_BOT_TOKEN) {
-    console.log("⚠️ TELEGRAM_BOT_TOKEN не настроен");
+  if (!botToken) {
     return;
   }
 
@@ -123,7 +133,7 @@ ${reason ? `<b>Причина:</b> ${reason}` : ""}
 
   try {
     const response = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+      `https://api.telegram.org/bot${botToken}/sendMessage`,
       {
         method: "POST",
         headers: {
@@ -138,13 +148,12 @@ ${reason ? `<b>Причина:</b> ${reason}` : ""}
     );
 
     const data = await response.json();
-    if (data.ok) {
-      console.log(`✅ Уведомление автору отправлено (${action})`);
-    } else {
+    if (!data.ok && isDev) {
       console.error("❌ Ошибка отправки уведомления:", data);
     }
   } catch (error) {
-    console.error("❌ Ошибка отправки в Telegram:", error);
+    if (isDev) {
+      console.error("❌ Ошибка отправки в Telegram:", error);
+    }
   }
 }
-

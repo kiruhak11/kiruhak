@@ -12,23 +12,28 @@ export default defineEventHandler(async (event) => {
     }
 
     const body = await readBody(event);
-    const {
-      name,
-      description,
-      category,
-      code,
-      html,
-      css,
-      js,
-      preview,
-      tags = [],
-      order = 0,
-    } = body;
+    const name = String(body?.name || "").trim();
+    const description = body?.description ? String(body.description).trim() : "";
+    const category = String(body?.category || "").trim();
+    const code = String(body?.code || "");
+    const html = String(body?.html || "");
+    const css = String(body?.css || "");
+    const js = String(body?.js || "");
+    const preview = body?.preview ? String(body.preview).trim() : null;
+    const tags = Array.isArray(body?.tags) ? body.tags : [];
+    const order = Number(body?.order || 0);
 
-    if (!name || !category || !code) {
+    if (!name || !category || !code || !html || !css) {
       return {
         success: false,
-        error: "Необходимо указать название, категорию и код компонента",
+        error: "Необходимо указать название, категорию, code, html и css",
+      };
+    }
+
+    if (name.length > 100 || description.length > 1000) {
+      return {
+        success: false,
+        error: "Слишком длинные поля",
       };
     }
 
@@ -37,13 +42,13 @@ export default defineEventHandler(async (event) => {
         name,
         description,
         category,
-        code: code || "", // Для обратной совместимости
-        html: html || "",
-        css: css || "",
-        js: js || "",
+        code,
+        html,
+        css,
+        js,
         preview,
-        tags: Array.isArray(tags) ? tags : [],
-        order: parseInt(order) || 0,
+        tags: tags.filter((tag) => typeof tag === "string").slice(0, 20),
+        order: Number.isFinite(order) ? Math.max(0, Math.floor(order)) : 0,
       },
     });
 

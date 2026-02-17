@@ -45,13 +45,6 @@
                 >
                   Логин/Пароль
                 </button>
-                <button
-                  @click="loginMode = 'token'"
-                  :class="{ active: loginMode === 'token' }"
-                  class="mode-btn"
-                >
-                  Быстрый токен
-                </button>
               </div>
 
               <!-- Форма логин/пароль -->
@@ -91,31 +84,6 @@
                 </button>
               </form>
 
-              <!-- Форма быстрого токена -->
-              <form
-                v-if="loginMode === 'token'"
-                @submit.prevent="handleTokenLogin"
-                class="login-form"
-              >
-                <div class="form-group">
-                  <label for="token">Токен быстрого входа</label>
-                  <input
-                    id="token"
-                    v-model="loginForm.token"
-                    type="text"
-                    placeholder="Вставьте токен из Telegram бота"
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  class="login-submit-btn"
-                  :disabled="loading"
-                >
-                  {{ loading ? "Вход..." : "Войти по токену" }}
-                </button>
-              </form>
             </div>
 
             <!-- Информация о системе -->
@@ -145,7 +113,6 @@ const router = useRouter();
 // Инициализация аутентификации
 onMounted(async () => {
   await initAuth();
-  console.log("🔐 Страница входа загружена");
 });
 
 // Режим входа
@@ -155,14 +122,10 @@ const loginMode = ref("credentials");
 const loginForm = ref({
   login: "",
   password: "",
-  token: "",
 });
 
 // Обработка входа по логину/паролю
 const handleLogin = async () => {
-  console.log("🔐 Попытка входа по логину/паролю");
-  console.log("Данные формы:", loginForm.value);
-
   if (!loginForm.value.login || !loginForm.value.password) {
     alert("Пожалуйста, заполните все поля");
     return;
@@ -174,11 +137,7 @@ const handleLogin = async () => {
       loginForm.value.password
     );
 
-    console.log("Результат входа:", result);
-
     if (result.success) {
-      console.log("✅ Вход успешен, перенаправляем на /analytics");
-
       // Принудительно обновляем состояние аутентификации
       const { initAuth, refreshUser } = useAuth();
       await initAuth();
@@ -188,61 +147,12 @@ const handleLogin = async () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
       await nextTick();
 
-      // Перенаправляем на аналитику
-      console.log("Перенаправление на /analytics...");
       await navigateTo("/analytics");
     } else {
       alert("Ошибка входа: " + result.error);
     }
   } catch (error) {
     console.error("Ошибка при входе:", error);
-    alert("Произошла ошибка при входе: " + error.message);
-  }
-};
-
-// Обработка входа по токену
-const handleTokenLogin = async () => {
-  console.log("🚀 Попытка входа по токену");
-  console.log("Токен:", loginForm.value.token);
-
-  if (!loginForm.value.token) {
-    alert("Пожалуйста, введите токен");
-    return;
-  }
-
-  // Парсим токен (формат: login:password)
-  const [login, password] = loginForm.value.token.split(":");
-
-  if (!login || !password) {
-    alert("Неверный формат токена. Используйте токен из Telegram бота");
-    return;
-  }
-
-  try {
-    const result = await loginWithCredentials(login, password);
-
-    console.log("Результат входа по токену:", result);
-
-    if (result.success) {
-      console.log("✅ Вход по токену успешен, перенаправляем на /analytics");
-
-      // Принудительно обновляем состояние аутентификации
-      const { initAuth, refreshUser } = useAuth();
-      await initAuth();
-      await refreshUser();
-
-      // Ждем обновления состояния и следующего тика
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      await nextTick();
-
-      // Перенаправляем на аналитику
-      console.log("Перенаправление на /analytics...");
-      await navigateTo("/analytics");
-    } else {
-      alert("Ошибка входа: " + result.error);
-    }
-  } catch (error) {
-    console.error("Ошибка при входе по токену:", error);
     alert("Произошла ошибка при входе: " + error.message);
   }
 };

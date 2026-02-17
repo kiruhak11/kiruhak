@@ -2,6 +2,14 @@ import { prisma } from "../../utils/prisma";
 
 export default defineEventHandler(async (event) => {
   try {
+    const user = event.context.user;
+    if (!user) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Unauthorized",
+      });
+    }
+
     const query = getQuery(event);
     const { siteId, period = "7d" } = query;
 
@@ -12,11 +20,32 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const normalizedPeriod = typeof period === "string" ? period : "7d";
+    const validPeriods = new Set(["1d", "7d", "30d", "90d"]);
+    if (!validPeriods.has(normalizedPeriod)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Invalid period",
+      });
+    }
+
+    const site = await prisma.site.findUnique({
+      where: { id: String(siteId) },
+      select: { id: true, userId: true, isActive: true },
+    });
+
+    if (!site || !site.isActive || site.userId !== user.id) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Site not found",
+      });
+    }
+
     // Вычисляем дату начала периода
     const now = new Date();
     let startDate: Date;
 
-    switch (period) {
+    switch (normalizedPeriod) {
       case "1d":
         startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         break;
@@ -36,7 +65,7 @@ export default defineEventHandler(async (event) => {
     // Получаем общую статистику
     const totalVisits = await prisma.visit.count({
       where: {
-        siteId: String(siteId),
+        siteId: site.id,
         timestamp: {
           gte: startDate,
         },
@@ -47,7 +76,7 @@ export default defineEventHandler(async (event) => {
     const uniqueVisitors = await prisma.visit.groupBy({
       by: ["ip"],
       where: {
-        siteId: String(siteId),
+        siteId: site.id,
         timestamp: {
           gte: startDate,
         },
@@ -58,7 +87,7 @@ export default defineEventHandler(async (event) => {
     const popularPages = await prisma.visit.groupBy({
       by: ["page"],
       where: {
-        siteId: String(siteId),
+        siteId: site.id,
         timestamp: {
           gte: startDate,
         },
@@ -74,29 +103,38 @@ export default defineEventHandler(async (event) => {
       take: 10,
     });
 
-    // Получаем статистику по дням (упрощенная версия)
-    const dailyStats = await prisma.visit.groupBy({
-      by: ['timestamp'],
+    const visitsByDay = await prisma.visit.findMany({
       where: {
-        siteId: String(siteId),
+        siteId: site.id,
         timestamp: {
-          gte: startDate
-        }
+          gte: startDate,
+        },
       },
-      _count: {
-        id: true
+      select: {
+        timestamp: true,
       },
       orderBy: {
-        timestamp: 'desc'
+        timestamp: "desc",
       },
-      take: 30
+      take: 5000,
     });
+
+    const dailyStatsMap = visitsByDay.reduce<Record<string, number>>((acc, visit) => {
+      const dayKey = visit.timestamp.toISOString().slice(0, 10);
+      acc[dayKey] = (acc[dayKey] || 0) + 1;
+      return acc;
+    }, {});
+
+    const dailyStats = Object.entries(dailyStatsMap)
+      .map(([date, visits]) => ({ date, visits }))
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 30);
 
     // Получаем источники трафика
     const trafficSources = await prisma.visit.groupBy({
       by: ["referrer"],
       where: {
-        siteId: String(siteId),
+        siteId: site.id,
         timestamp: {
           gte: startDate,
         },
@@ -116,8 +154,8 @@ export default defineEventHandler(async (event) => {
     });
 
     return {
-      siteId,
-      period,
+      siteId: site.id,
+      period: normalizedPeriod,
       totalVisits,
       uniqueVisitors: uniqueVisitors.length,
       popularPages: popularPages.map((p) => ({
@@ -131,6 +169,9 @@ export default defineEventHandler(async (event) => {
       })),
     };
   } catch (error) {
+    if (error && typeof error === "object" && "statusCode" in error) {
+      throw error;
+    }
     console.error("Error fetching analytics:", error);
     throw createError({
       statusCode: 500,

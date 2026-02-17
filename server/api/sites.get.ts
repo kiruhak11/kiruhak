@@ -16,43 +16,53 @@ export default defineEventHandler(async (event) => {
       orderBy: {
         createdAt: "desc",
       },
-      include: {
-        _count: {
-          select: {
-            visits: true,
-          },
-        },
+      select: {
+        id: true,
+        name: true,
+        domain: true,
+        description: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
-    // Добавляем базовую статистику для каждого сайта
-    const sitesWithStats = await Promise.all(
-      sites.map(async (site) => {
-        const stats = await prisma.visit.groupBy({
-          by: ["ip"],
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const siteIds = sites.map((site) => site.id);
+    const visits = siteIds.length
+      ? await prisma.visit.findMany({
           where: {
-            siteId: site.id,
-            timestamp: {
-              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Последние 7 дней
-            },
+            siteId: { in: siteIds },
+            timestamp: { gte: weekAgo },
           },
-        });
+          select: {
+            siteId: true,
+            ip: true,
+          },
+        })
+      : [];
 
-        return {
-          id: site.id,
-          name: site.name,
-          domain: site.domain,
-          description: site.description,
-          isActive: site.isActive,
-          createdAt: site.createdAt,
-          updatedAt: site.updatedAt,
-          stats: {
-            totalVisits: site._count.visits,
-            uniqueVisitors: stats.length,
-          },
-        };
-      })
+    const statsBySite = visits.reduce<Record<string, { totalVisits: number; ips: Set<string> }>>(
+      (acc, visit) => {
+        if (!acc[visit.siteId]) {
+          acc[visit.siteId] = { totalVisits: 0, ips: new Set() };
+        }
+        acc[visit.siteId].totalVisits += 1;
+        if (visit.ip) {
+          acc[visit.siteId].ips.add(visit.ip);
+        }
+        return acc;
+      },
+      {}
     );
+
+    const sitesWithStats = sites.map((site) => ({
+      ...site,
+      stats: {
+        totalVisits: statsBySite[site.id]?.totalVisits || 0,
+        uniqueVisitors: statsBySite[site.id]?.ips.size || 0,
+      },
+    }));
 
     return sitesWithStats;
   } catch (error) {

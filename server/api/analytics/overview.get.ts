@@ -2,14 +2,37 @@ import { prisma } from "../../utils/prisma";
 
 export default defineEventHandler(async (event) => {
   try {
+    const user = event.context.user;
+    if (!user) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Unauthorized",
+      });
+    }
+
+    if (!user.isAdmin) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Admin access required",
+      });
+    }
+
     const query = getQuery(event);
     const { period = "7d" } = query;
+    const normalizedPeriod = typeof period === "string" ? period : "7d";
+    const validPeriods = new Set(["1d", "7d", "30d", "90d"]);
+    if (!validPeriods.has(normalizedPeriod)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Invalid period",
+      });
+    }
 
     // Вычисляем дату начала периода
     const now = new Date();
     let startDate: Date;
 
-    switch (period) {
+    switch (normalizedPeriod) {
       case "1d":
         startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         break;
@@ -142,7 +165,7 @@ export default defineEventHandler(async (event) => {
     });
 
     return {
-      period,
+      period: normalizedPeriod,
       totalVisits,
       uniqueVisitors: uniqueVisitors.length,
       totalSites,
@@ -165,6 +188,9 @@ export default defineEventHandler(async (event) => {
       })),
     };
   } catch (error) {
+    if (error && typeof error === "object" && "statusCode" in error) {
+      throw error;
+    }
     console.error("Error fetching overview analytics:", error);
     throw createError({
       statusCode: 500,

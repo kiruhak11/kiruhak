@@ -12,21 +12,44 @@ export default defineEventHandler(async (event) => {
     }
 
     const body = await readBody(event);
-    const { name, description, category, html, css, js, tags } = body;
+    const name = String(body?.name || "").trim();
+    const description = body?.description ? String(body.description).trim() : "";
+    const category = String(body?.category || "").trim();
+    const html = String(body?.html || "");
+    const css = String(body?.css || "");
+    const js = String(body?.js || "");
+    const tags = Array.isArray(body?.tags) ? body.tags : [];
 
-    console.log(`🎨 Пользователь ${user.firstName} отправляет компонент: ${name}`);
+    if (!name || !category || !html || !css) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Missing required fields",
+      });
+    }
+    if (name.length > 100 || description.length > 1000) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Input is too long",
+      });
+    }
+    if (html.length > 20000 || css.length > 20000 || js.length > 20000) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Component code is too large",
+      });
+    }
 
     // Создаем компонент со статусом pending
     const component = await prisma.uiComponent.create({
       data: {
         name,
-        description: description || "",
+        description,
         category,
         html,
         css,
-        js: js || "",
+        js,
         code: html, // Для обратной совместимости
-        tags: tags || [],
+        tags: tags.filter((tag) => typeof tag === "string").slice(0, 20),
         authorId: user.id,
         moderationStatus: "pending",
         isActive: false, // Неактивен до модерации
@@ -42,8 +65,6 @@ export default defineEventHandler(async (event) => {
         },
       },
     });
-
-    console.log(`✅ Компонент создан с ID: ${component.id}`);
 
     // Отправляем уведомление админу через телеграм
     try {
@@ -69,11 +90,11 @@ export default defineEventHandler(async (event) => {
 });
 
 async function notifyAdminAboutNewComponent(component: any) {
-  const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-  const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID || "739618149";
+  const config = useRuntimeConfig();
+  const TELEGRAM_BOT_TOKEN = config.telegramToken;
+  const ADMIN_TELEGRAM_ID = config.telegramChatId;
 
-  if (!TELEGRAM_BOT_TOKEN) {
-    console.log("⚠️ TELEGRAM_BOT_TOKEN не настроен");
+  if (!TELEGRAM_BOT_TOKEN || !ADMIN_TELEGRAM_ID) {
     return;
   }
 
@@ -124,14 +145,8 @@ ${component.js ? `<b>JS:</b> ${component.js.length} символов` : ""}
       }
     );
 
-    const data = await response.json();
-    if (data.ok) {
-      console.log("✅ Уведомление админу отправлено");
-    } else {
-      console.error("❌ Ошибка отправки уведомления:", data);
-    }
+    await response.json();
   } catch (error) {
     console.error("❌ Ошибка отправки в Telegram:", error);
   }
 }
-

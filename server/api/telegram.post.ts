@@ -15,6 +15,13 @@ export default defineEventHandler(async (event) => {
     message || "Не указано"
   }`;
 
+  if (!config.telegramToken || !config.telegramChatId) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Telegram integration is not configured",
+    });
+  }
+
   try {
     const response = await fetch(
       `https://api.telegram.org/bot${config.telegramToken}/sendMessage`,
@@ -39,7 +46,7 @@ export default defineEventHandler(async (event) => {
       status: "success",
       message: "Message sent successfully",
     };
-  } catch (error) {
+  } catch {
     throw createError({
       statusCode: 500,
       statusMessage: "Failed to send message",

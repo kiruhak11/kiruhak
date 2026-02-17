@@ -13,9 +13,17 @@ export default defineEventHandler(async (event) => {
 
     const componentId = getRouterParam(event, "id");
     const body = await readBody(event);
-    const { action, rejectionReason } = body; // action: 'approve' or 'reject'
+    const action = String(body?.action || "");
+    const rejectionReason = body?.rejectionReason
+      ? String(body.rejectionReason).trim()
+      : "";
 
-    console.log(`🛡️ Админ ${user.firstName} модерирует компонент ${componentId}: ${action}`);
+    if (!componentId || !["approve", "reject"].includes(action)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Invalid moderation payload",
+      });
+    }
 
     // Получаем компонент с автором
     const component = await prisma.uiComponent.findUnique({
@@ -48,8 +56,6 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    console.log(`✅ Компонент ${componentId} ${action === "approve" ? "одобрен" : "отклонен"}`);
-
     // Отправляем уведомление автору
     if (component.author?.telegramId) {
       await notifyAuthor(component.author.telegramId, component.name, action, rejectionReason);
@@ -74,10 +80,10 @@ async function notifyAuthor(
   action: string,
   rejectionReason?: string
 ) {
-  const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+  const config = useRuntimeConfig();
+  const TELEGRAM_BOT_TOKEN = config.telegramToken;
 
   if (!TELEGRAM_BOT_TOKEN) {
-    console.log("⚠️ TELEGRAM_BOT_TOKEN не настроен");
     return;
   }
 
@@ -118,13 +124,8 @@ ${rejectionReason ? `<b>Причина:</b> ${rejectionReason}` : ""}
     );
 
     const data = await response.json();
-    if (data.ok) {
-      console.log(`✅ Уведомление автору отправлено (${action})`);
-    } else {
-      console.error("❌ Ошибка отправки уведомления:", data);
-    }
+    if (!data.ok) console.error("❌ Ошибка отправки уведомления:", data);
   } catch (error) {
     console.error("❌ Ошибка отправки в Telegram:", error);
   }
 }
-

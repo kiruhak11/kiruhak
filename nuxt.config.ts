@@ -1,7 +1,15 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || "https://kiruhak11.ru";
+const yandexMetrikaId = process.env.YANDEX_METRIKA_ID || "";
+const corsOrigins = (process.env.CORS_ORIGINS || "http://localhost:3000")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const allowAnyOrigin = corsOrigins.includes("*");
+
 export default defineNuxtConfig({
   compatibilityDate: "2024-04-03",
-  devtools: { enabled: true },
+  devtools: { enabled: process.env.NODE_ENV !== "production" },
   modules: [
     "@nuxtjs/device",
     "@nuxtjs/google-fonts",
@@ -19,7 +27,7 @@ export default defineNuxtConfig({
   },
   robots: {
     disallow: ["/success", "/error"],
-    sitemap: "https://kiruhak11.ru/sitemap.xml",
+    sitemap: `${siteUrl}/sitemap.xml`,
   },
   googleFonts: {
     families: {
@@ -28,24 +36,27 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      script: [
-        {
-          innerHTML: ` (function(m,e,t,r,i,k,a){
+      script: yandexMetrikaId
+        ? [
+            {
+              innerHTML: ` (function(m,e,t,r,i,k,a){
         m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
         m[i].l=1*new Date();
         for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
         k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=103812891', 'ym');
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=${yandexMetrikaId}', 'ym');
 
-    ym(103812891, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true});
-    console.log('Yandex Metrika initialized');`,
-        },
-      ],
-      noscript: [
-        {
-          innerHTML: `<div><img src="https://mc.yandex.ru/watch/103812891" style="position:absolute; left:-9999px;" alt="" /></div>`,
-        },
-      ],
+    ym(${yandexMetrikaId}, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true});`,
+            },
+          ]
+        : [],
+      noscript: yandexMetrikaId
+        ? [
+            {
+              innerHTML: `<div><img src="https://mc.yandex.ru/watch/${yandexMetrikaId}" style="position:absolute; left:-9999px;" alt="" /></div>`,
+            },
+          ]
+        : [],
       title: "K-Studio — Веб‑разработка под ключ",
       meta: [
         { charset: "utf-8" },
@@ -76,7 +87,7 @@ export default defineNuxtConfig({
     },
   },
   site: {
-    url: "https://kiruhak11.ru",
+    url: siteUrl,
   },
   nitro: {
     prerender: {
@@ -86,22 +97,30 @@ export default defineNuxtConfig({
       "/api/**": {
         cors: true,
         headers: {
-          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Origin": allowAnyOrigin
+            ? "*"
+            : corsOrigins.join(", "),
           "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
           "Access-Control-Allow-Headers":
             "Content-Type, Authorization, X-Requested-With",
-          "Access-Control-Allow-Credentials": "true",
+          "Access-Control-Allow-Credentials": allowAnyOrigin ? "false" : "true",
         },
       },
     },
   },
   runtimeConfig: {
-    telegramToken: "6122558496:AAEXwnP3E4uIk5sSSNzD-13vQK6A4ybCBFI",
-    telegramChatId: "502773482",
-    channelUsername: "webmonke",
-    botSecret: process.env.BOT_SECRET || "my-super-secret-bot-key-1767717027",
+    telegramToken: process.env.TELEGRAM_BOT_TOKEN || "",
+    telegramChatId: process.env.ADMIN_TELEGRAM_ID || "",
+    channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || "",
+    botSecret: process.env.BOT_SECRET || "",
+    allowSelfTopup: process.env.ALLOW_SELF_TOPUP === "true",
+    authTokenSecret:
+      process.env.AUTH_TOKEN_SECRET ||
+      process.env.BOT_SECRET ||
+      "dev-only-auth-token-secret",
     public: {
-      // Публичные переменные, если нужны
+      siteUrl,
+      channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || "",
     },
   },
   vite: {

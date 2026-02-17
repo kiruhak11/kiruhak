@@ -1,20 +1,21 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../utils/prisma";
+import { sanitizeHtml } from "../../util/sanitize-html";
 
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
-    const {
-      title,
-      description,
-      difficulty,
-      category,
-      duration,
-      features,
-      steps,
-      test,
-    } = body;
+    const title = String(body?.title || "").trim();
+    const description = String(body?.description || "").trim();
+    const difficulty = String(body?.difficulty || "").trim();
+    const category = String(body?.category || "").trim();
+    const duration = String(body?.duration || "").trim();
+    const features = Array.isArray(body?.features) ? body.features : [];
+    const steps = Array.isArray(body?.steps) ? body.steps : [];
+    const test = body?.test || null;
+
+    if (!title || !description || !difficulty || !category || !duration) {
+      return { success: false, error: "Некорректные данные туториала" };
+    }
 
     const tutorial = await prisma.tutorial.create({
       data: {
@@ -23,17 +24,18 @@ export default defineEventHandler(async (event) => {
         difficulty,
         category,
         duration,
-        features: features || [],
+        features: features.filter((item) => typeof item === "string").slice(0, 30),
         test: test || null,
         order: 0,
         isActive: true,
         steps: {
           create:
             steps?.map((step: any, index: number) => ({
-              title: step.title,
-              content: step.content,
+              title: String(step?.title || "").trim(),
+              content: sanitizeHtml(String(step?.content || "")),
               order: index + 1,
-            })) || [],
+            }))
+            .filter((step) => step.title && step.content) || [],
         },
       },
       include: {

@@ -1,7 +1,10 @@
 import { prisma } from "../../utils/prisma";
+import { createAuthToken } from "../../utils/auth-token";
+import { verifyPassword } from "../../utils/password";
 
 export default defineEventHandler(async (event) => {
   try {
+    const config = useRuntimeConfig();
     const body = await readBody(event);
     const { login, password } = body;
 
@@ -25,23 +28,24 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Проверяем пароль (в реальном проекте нужно хешировать)
-    if (user.password !== password) {
+    // Проверяем пароль (поддержка хеша и legacy-формата).
+    if (!verifyPassword(password, user.password)) {
       return {
         success: false,
         error: "Неверный пароль",
       };
     }
 
-    // Создаем JWT токен
-    const token = Buffer.from(
-      JSON.stringify({
+    // Создаем подписанный токен
+    const token = createAuthToken(
+      {
         userId: user.id,
         telegramId: user.telegramId,
         isAdmin: user.isAdmin,
         exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 дней
-      })
-    ).toString("base64");
+      },
+      config.authTokenSecret
+    );
 
     return {
       success: true,

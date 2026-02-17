@@ -1,6 +1,2 @@
-// Плагин отключен - используется composable useApi вместо глобального переопределения $fetch
-export default defineNuxtPlugin(() => {
-  console.log(
-    "🔐 Auth Plugin: Плагин отключен - используется composable useApi"
-  );
-});
+// Заглушка-плагин: авторизация обрабатывается через composable useApi/useAuth.
+export default defineNuxtPlugin(() => {});

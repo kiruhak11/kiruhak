@@ -14,24 +14,14 @@ export const useApi = () => {
     };
   };
 
-  const apiFetch = async (url: string, options: any = {}) => {
+  const apiFetch = async <T>(url: string, options: Record<string, unknown> = {}) => {
     const authHeaders = getAuthHeaders();
     const headers = {
       ...authHeaders,
       ...options.headers,
     };
 
-    console.log("🔐 useApi: Отправка запроса", {
-      url,
-      headers: {
-        ...headers,
-        Authorization: headers.Authorization ? "Bearer ***" : undefined,
-      },
-      hasAuth: !!headers.Authorization,
-      tokenLength: headers.Authorization ? headers.Authorization.length : 0,
-    });
-
-    return await $fetch(url, {
+    return await $fetch<T>(url, {
       ...options,
       headers,
     });

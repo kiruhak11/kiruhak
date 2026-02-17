@@ -294,16 +294,6 @@ const closeModal = () => {
 // Сохранение компонента
 const saveComponent = async (componentData) => {
   try {
-    // Проверяем токен перед отправкой запроса
-    if (process.client) {
-      const token = localStorage.getItem("auth_token");
-      console.log("🔐 UI Components: Токен перед сохранением:", {
-        hasToken: !!token,
-        tokenLength: token ? token.length : 0,
-        tokenPreview: token ? token.substring(0, 20) + "..." : null,
-      });
-    }
-
     if (editingComponent.value) {
       // Обновление
       console.log(
@@ -320,9 +310,6 @@ const saveComponent = async (componentData) => {
       await apiFetch("/api/ui-components", {
         method: "POST",
         body: componentData,
-        headers: {
-          authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-        },
       });
     }
 
@@ -349,37 +336,6 @@ const saveComponent = async (componentData) => {
 
 // Загрузка при монтировании
 onMounted(async () => {
-  console.log("🔐 UI Components: Страница загружена, проверяем аутентификацию");
-
-  // Проверяем токен при загрузке страницы
-  if (process.client) {
-    const token = localStorage.getItem("auth_token");
-    const user = localStorage.getItem("auth_user");
-
-    console.log("🔐 UI Components: Состояние аутентификации при загрузке:", {
-      hasToken: !!token,
-      hasUser: !!user,
-      tokenLength: token ? token.length : 0,
-      tokenPreview: token ? token.substring(0, 20) + "..." : null,
-    });
-
-    if (user) {
-      try {
-        const userData = JSON.parse(user);
-        console.log("🔐 UI Components: Данные пользователя:", {
-          id: userData.id,
-          firstName: userData.firstName,
-          isAdmin: userData.isAdmin,
-        });
-      } catch (error) {
-        console.error(
-          "🔐 UI Components: Ошибка парсинга данных пользователя:",
-          error
-        );
-      }
-    }
-  }
-
   await loadComponents();
 });
 </script>

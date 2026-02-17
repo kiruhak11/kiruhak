@@ -19,15 +19,25 @@ export const useAuth = () => {
   const token = ref<string | null>(null);
   const loading = ref(false);
 
+  const safeParseUser = (raw: string | null): User | null => {
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as User;
+    } catch {
+      return null;
+    }
+  };
+
   // Инициализация из localStorage и cookies
   const initAuth = async () => {
     if (process.client) {
       const savedToken = localStorage.getItem("auth_token");
       const savedUser = localStorage.getItem("auth_user");
+      const parsedUser = safeParseUser(savedUser);
 
-      if (savedToken && savedUser) {
+      if (savedToken && parsedUser) {
         token.value = savedToken;
-        user.value = JSON.parse(savedUser);
+        user.value = parsedUser;
 
         // Также сохраняем в cookies для серверного доступа
         document.cookie = `auth_token=${savedToken}; path=/; max-age=86400; SameSite=Strict`;
@@ -149,11 +159,12 @@ export const useAuth = () => {
     if (process.client) {
       const savedToken = localStorage.getItem("auth_token");
       const savedUser = localStorage.getItem("auth_user");
+      const parsedUser = safeParseUser(savedUser);
 
-      if (savedToken && savedUser) {
+      if (savedToken && parsedUser) {
         // Восстанавливаем состояние
         token.value = savedToken;
-        user.value = JSON.parse(savedUser);
+        user.value = parsedUser;
 
         // Пытаемся обновить данные с сервера
         try {
@@ -173,9 +184,14 @@ export const useAuth = () => {
   const validateToken = () => {
     if (process.client && token.value) {
       try {
-        const decoded = JSON.parse(
-          Buffer.from(token.value, "base64").toString()
-        );
+        const payloadPart = token.value.includes(".")
+          ? token.value.split(".")[0]
+          : token.value;
+        const normalized = payloadPart
+          .replace(/-/g, "+")
+          .replace(/_/g, "/")
+          .padEnd(Math.ceil(payloadPart.length / 4) * 4, "=");
+        const decoded = JSON.parse(atob(normalized));
         const currentTime = Math.floor(Date.now() / 1000);
 
         return {

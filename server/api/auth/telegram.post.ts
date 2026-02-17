@@ -1,27 +1,42 @@
 import { prisma } from "../../utils/prisma";
+import { createAuthToken } from "../../utils/auth-token";
+import { hashPassword } from "../../utils/password";
+import {
+  createHash,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from "node:crypto";
+
+function verifyTelegramAuthData(
+  authData: Record<string, unknown>,
+  botToken: string
+): boolean {
+  const incomingHash = String(authData.hash || "");
+  if (!incomingHash) return false;
+
+  const checkString = Object.keys(authData)
+    .filter((key) => key !== "hash" && authData[key] !== undefined && authData[key] !== null)
+    .sort()
+    .map((key) => `${key}=${authData[key]}`)
+    .join("\n");
+
+  const secret = createHash("sha256").update(botToken).digest();
+  const calculatedHash = createHmac("sha256", secret).update(checkString).digest("hex");
+
+  const incoming = Buffer.from(incomingHash, "hex");
+  const calculated = Buffer.from(calculatedHash, "hex");
+  if (incoming.length !== calculated.length) return false;
+
+  return timingSafeEqual(incoming, calculated);
+}
 
 export default defineEventHandler(async (event) => {
   try {
-    console.log("=== Telegram Auth Start ===");
-    console.log("Environment check:", {
-      DATABASE_URL: process.env.DATABASE_URL ? "present" : "missing",
-      NODE_ENV: process.env.NODE_ENV,
-    });
-
+    const config = useRuntimeConfig();
     const body = await readBody(event);
-    console.log("Received auth data:", body);
     const { id, first_name, last_name, username, photo_url, auth_date, hash } =
       body;
-
-    console.log("Parsed data:", {
-      id,
-      first_name,
-      last_name,
-      username,
-      photo_url,
-      auth_date,
-      hash: hash ? "present" : "missing",
-    });
 
     // Валидация данных от Telegram
     if (!id || !first_name || !auth_date || !hash) {
@@ -31,19 +46,30 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Проверяем подключение к базе данных
-    try {
-      await prisma.$connect();
-      console.log("Database connection: OK");
-    } catch (dbError) {
-      console.error("Database connection failed:", dbError);
+    if (!config.telegramToken) {
       return {
         success: false,
-        error: "Database connection failed",
-        details:
-          dbError instanceof Error ? dbError.message : "Unknown database error",
+        error: "Telegram auth is not configured",
       };
     }
+
+    if (!verifyTelegramAuthData(body, config.telegramToken)) {
+      return {
+        success: false,
+        error: "Invalid Telegram signature",
+      };
+    }
+
+    const authDate = Number(auth_date);
+    const now = Math.floor(Date.now() / 1000);
+    if (!Number.isFinite(authDate) || now - authDate > 24 * 60 * 60) {
+      return {
+        success: false,
+        error: "Telegram auth data expired",
+      };
+    }
+
+    await prisma.$connect();
 
     // Проверяем, существует ли пользователь
     let user = await prisma.user.findUnique({
@@ -61,15 +87,6 @@ export default defineEventHandler(async (event) => {
         counter++;
       }
 
-      console.log("Creating new user with data:", {
-        telegramId: String(id),
-        username: username || null,
-        firstName: first_name,
-        lastName: last_name || null,
-        login: login,
-        balance: 15000,
-      });
-
       try {
         // Создаем нового пользователя
         user = await prisma.user.create({
@@ -80,29 +97,19 @@ export default defineEventHandler(async (event) => {
             lastName: last_name || null,
             photoUrl: photo_url || null,
             login: login,
-            password: `telegram_${id}_${Date.now()}`, // Генерируем временный пароль
+            password: hashPassword(randomBytes(24).toString("base64url")),
             balance: 15000, // 150 рублей в копейках
             isAdmin: false,
           },
         });
 
-        console.log("User created successfully:", user.id);
       } catch (createError) {
-        console.error("User creation failed:", createError);
-        console.error("Create error details:", {
-          message:
-            createError instanceof Error
-              ? createError.message
-              : "Unknown error",
-          code: (createError as any)?.code,
-          meta: (createError as any)?.meta,
-        });
         throw createError;
       }
 
       try {
         // Создаем транзакцию для начального баланса
-        const transaction = await prisma.transaction.create({
+        await prisma.transaction.create({
           data: {
             userId: user.id,
             type: "credit",
@@ -110,12 +117,8 @@ export default defineEventHandler(async (event) => {
             description: "Начальный бонус",
           },
         });
-
-        console.log("Transaction created:", transaction.id);
-      } catch (transactionError) {
-        console.error("Transaction creation failed:", transactionError);
+      } catch {
         // Не прерываем процесс, если транзакция не создалась
-        console.log("Continuing without transaction...");
       }
     } else {
       // Обновляем данные существующего пользователя
@@ -130,23 +133,16 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Создаем JWT токен (в реальном проекте используйте библиотеку для JWT)
-    const token = Buffer.from(
-      JSON.stringify({
+    // Создаем подписанный токен
+    const token = createAuthToken(
+      {
         userId: user.id,
         telegramId: user.telegramId,
         isAdmin: user.isAdmin,
         exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 дней
-      })
-    ).toString("base64");
-
-    console.log("=== Telegram Auth Success ===");
-    console.log("User authenticated:", {
-      id: user.id,
-      telegramId: user.telegramId,
-      firstName: user.firstName,
-      isAdmin: user.isAdmin,
-    });
+      },
+      config.authTokenSecret
+    );
 
     return {
       success: true,
@@ -163,11 +159,7 @@ export default defineEventHandler(async (event) => {
       token,
     };
   } catch (error) {
-    console.error("Telegram auth error:", error);
-    console.error("Error details:", {
-      message: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : "No stack trace",
-    });
+    console.error("Telegram auth error:", error instanceof Error ? error.message : error);
     return {
       success: false,
       error: "Authentication failed",

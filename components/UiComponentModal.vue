@@ -212,7 +212,12 @@
           <h3>Превью компонента</h3>
           <div class="preview-container">
             <div class="preview-frame">
-              <div v-html="form.code" class="component-preview"></div>
+              <iframe
+                :srcdoc="previewDoc"
+                class="component-preview-iframe"
+                frameborder="0"
+                sandbox="allow-scripts"
+              ></iframe>
             </div>
           </div>
         </div>
@@ -302,6 +307,23 @@ const jsCode = computed(() => {
   );
   return scriptMatch ? scriptMatch[1] : "";
 });
+
+const previewDoc = computed(() => `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="UTF-8" />
+      <style>
+        body { margin: 0; padding: 12px; font-family: Arial, sans-serif; }
+      </style>
+    </head>
+    <body>
+      ${htmlCode.value}
+      ${cssCode.value ? `<style>${cssCode.value}</style>` : ""}
+      ${jsCode.value ? `<script>${jsCode.value}<\/script>` : ""}
+    </body>
+  </html>
+`);
 
 // Методы
 const updateTags = () => {
@@ -565,9 +587,11 @@ watch(tagsInput, updateTags);
   min-height: 160px;
 }
 
-.component-preview {
+.component-preview-iframe {
   width: 100%;
-  height: 100%;
+  min-height: 260px;
+  border: 0;
+  background: white;
 }
 
 .checkbox-label {
