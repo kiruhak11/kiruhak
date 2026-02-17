@@ -9,7 +9,8 @@ export default defineEventHandler(async (event) => {
     if (!isDev) {
       // В production проверяем секретный ключ бота
       const botSecret = event.node.req.headers["x-bot-secret"];
-      const expectedSecret = config.botSecret;
+      const expectedSecret =
+        config.botSecret || process.env.BOT_SECRET || process.env.NUXT_BOT_SECRET || "";
 
       if (!expectedSecret) {
         throw createError({

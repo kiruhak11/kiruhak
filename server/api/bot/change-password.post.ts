@@ -8,7 +8,9 @@ export default defineEventHandler(async (event) => {
 
   if (!isDev) {
     const secret = getHeader(event, "x-bot-secret");
-    if (!config.botSecret || secret !== config.botSecret) {
+    const expectedSecret =
+      config.botSecret || process.env.BOT_SECRET || process.env.NUXT_BOT_SECRET || "";
+    if (!expectedSecret || secret !== expectedSecret) {
       throw createError({
         statusCode: 403,
         statusMessage: "Forbidden",
