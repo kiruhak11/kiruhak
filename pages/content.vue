@@ -67,7 +67,8 @@
               <h3>Как получить доступ:</h3>
               <ol>
                 <li>
-                  Подпишитесь на канал <strong>{{ displayChannelUsername }}</strong>
+                  Подпишитесь на канал
+                  <strong>{{ displayChannelUsername }}</strong>
                 </li>
                 <li>Нажмите кнопку "Проверить подписку"</li>
                 <li>Получите доступ к эксклюзивному контенту</li>
@@ -269,13 +270,17 @@ interface UiComponent {
 // Состояние подписки
 const isSubscribed = ref(false);
 const checking = ref(false);
-const subscriptionCheckInterval = ref<ReturnType<typeof setInterval> | null>(null);
+const subscriptionCheckInterval = ref<ReturnType<typeof setInterval> | null>(
+  null,
+);
 const runtimeConfig = useRuntimeConfig();
-const rawChannelUsername = String(runtimeConfig.public.channelUsername || "").trim();
+const rawChannelUsername = String(
+  runtimeConfig.public.channelUsername || "",
+).trim();
 const normalizedChannelUsername =
   !rawChannelUsername ||
-  rawChannelUsername.toLowerCase() === "channel" ||
-  rawChannelUsername.toLowerCase() === "@channel"
+  rawChannelUsername.toLowerCase() === "webmonke" ||
+  rawChannelUsername.toLowerCase() === "@webmonke"
     ? "webmonke"
     : rawChannelUsername.replace(/^@/, "");
 const displayChannelUsername = `@${normalizedChannelUsername}`;
@@ -339,7 +344,7 @@ const checkSubscription = async (showAlert = true) => {
       // Показываем сообщение об ошибке только если это не автоматическая проверка
       if (showAlert) {
         alert(
-          `Вы не подписаны на канал ${displayChannelUsername}. Пожалуйста, подпишитесь и попробуйте снова.`
+          `Вы не подписаны на канал ${displayChannelUsername}. Пожалуйста, подпишитесь и попробуйте снова.`,
         );
       }
     }
