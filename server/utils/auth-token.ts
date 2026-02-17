@@ -5,6 +5,7 @@ export interface AuthTokenPayload {
   telegramId: string;
   isAdmin: boolean;
   exp: number;
+  iat?: number;
 }
 
 function toBase64Url(value: Buffer | string): string {
@@ -55,7 +56,12 @@ function verifySignedToken(
       Buffer.from(fromBase64Url(encodedPayload), "base64").toString("utf8")
     );
 
-    if (!decoded.userId || !decoded.telegramId || typeof decoded.exp !== "number") {
+    if (
+      !decoded.userId ||
+      !decoded.telegramId ||
+      typeof decoded.exp !== "number" ||
+      (decoded.iat !== undefined && typeof decoded.iat !== "number")
+    ) {
       return null;
     }
 
@@ -68,7 +74,12 @@ function verifySignedToken(
 export function decodeLegacyToken(token: string): AuthTokenPayload | null {
   try {
     const decoded = JSON.parse(Buffer.from(token, "base64").toString("utf8"));
-    if (!decoded.userId || !decoded.telegramId || typeof decoded.exp !== "number") {
+    if (
+      !decoded.userId ||
+      !decoded.telegramId ||
+      typeof decoded.exp !== "number" ||
+      (decoded.iat !== undefined && typeof decoded.iat !== "number")
+    ) {
       return null;
     }
     return decoded as AuthTokenPayload;

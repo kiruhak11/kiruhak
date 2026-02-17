@@ -10,7 +10,13 @@ import asyncio
 import schedule
 import time
 from datetime import datetime, timedelta
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import (
+    Update,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    ReplyKeyboardMarkup,
+    KeyboardButton,
+)
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 
 import os
@@ -24,9 +30,60 @@ API_URL = os.getenv("API_URL", "http://app:3015/api/auth/create-account")
 CHANNEL_ID = os.getenv("CHANNEL_ID", "@webmonke")  # ID вашего канала
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", "123456789")  # ID админа для статистики
 BOT_SECRET = os.getenv("BOT_SECRET", "")
+BOT_API_BASE_URL = os.getenv("BOT_API_BASE_URL", "").strip()
+
+if not BOT_API_BASE_URL:
+    if "/api/" in API_URL:
+        BOT_API_BASE_URL = API_URL.split("/api/")[0]
+    else:
+        BOT_API_BASE_URL = "http://app:3015"
 
 # Глобальная переменная для хранения приложения бота
 bot_app = None
+
+MENU_TOPUP = "💰 Пополнить баланс"
+MENU_CHANGE_PASSWORD = "🔐 Сменить пароль"
+MENU_LOGOUT_ALL = "🚪 Завершить сессии"
+MENU_QUICK_LOGIN = "🔑 Быстрый вход"
+MENU_PROFILE = "👤 Профиль"
+
+STATE_KEY = "flow_state"
+STATE_NONE = "none"
+STATE_AWAIT_TOPUP = "await_topup"
+STATE_AWAIT_CURRENT_PASSWORD = "await_current_password"
+STATE_AWAIT_NEW_PASSWORD = "await_new_password"
+TMP_CURRENT_PASSWORD_KEY = "tmp_current_password"
+
+
+def bot_headers():
+    headers = {}
+    if BOT_SECRET:
+        headers["x-bot-secret"] = BOT_SECRET
+    return headers
+
+
+def bot_api_url(path):
+    return f"{BOT_API_BASE_URL.rstrip('/')}{path}"
+
+
+def get_main_menu_markup():
+    return ReplyKeyboardMarkup(
+        [
+            [KeyboardButton(MENU_TOPUP), KeyboardButton(MENU_QUICK_LOGIN)],
+            [KeyboardButton(MENU_CHANGE_PASSWORD), KeyboardButton(MENU_LOGOUT_ALL)],
+            [KeyboardButton(MENU_PROFILE)],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=False,
+    )
+
+
+async def show_main_menu(message):
+    await message.reply_text(
+        "Выберите действие в меню:",
+        reply_markup=get_main_menu_markup(),
+    )
+
 
 async def create_user_account(telegram_id, first_name, last_name, username):
     """Создание аккаунта пользователя через API"""
@@ -38,10 +95,6 @@ async def create_user_account(telegram_id, first_name, last_name, username):
     }
     
     try:
-        headers = {}
-        if BOT_SECRET:
-            headers["x-bot-secret"] = BOT_SECRET
-
         fallback_api_url = API_URL.replace("/api/auth/telegram", "/api/auth/create-account")
         api_candidates = [API_URL]
         if fallback_api_url != API_URL:
@@ -50,7 +103,7 @@ async def create_user_account(telegram_id, first_name, last_name, username):
         result = None
 
         for idx, api_url in enumerate(api_candidates):
-            response = requests.post(api_url, json=data, headers=headers, timeout=10)
+            response = requests.post(api_url, json=data, headers=bot_headers(), timeout=10)
             result = response.json()
 
             # Если попали в telegram-auth endpoint по ошибке, делаем fallback.
@@ -65,43 +118,29 @@ async def create_user_account(telegram_id, first_name, last_name, username):
         if result is None:
             return "❌ Ошибка: пустой ответ от сервера"
         
-        if result["success"]:
-            user = result["user"]
-            
-            # Создаем токен для быстрого входа
-            quick_token = f"{user['login']}:{user['password']}"
-            
-            return f"""
-✅ Аккаунт успешно создан!
+        if result.get("success"):
+            quick_token = result.get("quickToken", "")
+            quick_url = result.get("quickLoginUrl", "")
+            if result.get("existing"):
+                login = result.get("login", "неизвестно")
+                return (
+                    "ℹ️ Аккаунт уже существует.\n\n"
+                    f"🔑 Логин: `{login}`\n"
+                    f"🪙 Токен быстрого входа: `{quick_token}`\n"
+                    f"🌐 Быстрый вход: {quick_url}\n"
+                )
 
-👤 Ваши данные для входа:
-🔑 Логин: `{user['login']}`
-🔐 Пароль: `{user['password']}`
-💰 Баланс: {user['balance'] / 100} ₽
-
-🚀 Быстрый вход:
-`{quick_token}`
-
-🌐 Войдите на сайте: https://kiruhak11.ru/login
-
-📊 После входа вы сможете:
-• Создавать сайты для аналитики
-• Отслеживать посещения
-• Просматривать статистику
-• Управлять своими проектами
-            """
+            user = result.get("user", {})
+            return (
+                "✅ Аккаунт успешно создан!\n\n"
+                f"🔑 Логин: `{user.get('login', '')}`\n"
+                f"🔐 Пароль: `{user.get('password', '')}`\n"
+                f"💰 Баланс: {user.get('balance', 0) / 100} ₽\n\n"
+                f"🪙 Токен быстрого входа: `{quick_token}`\n"
+                f"🌐 Быстрый вход: {quick_url}\n"
+            )
         else:
-            if "уже существует" in result["error"]:
-                return f"""
-ℹ️ Аккаунт уже существует!
-
-🔑 Ваш логин: `{result['login']}`
-🌐 Войдите на сайте: http://localhost:3000/login
-
-Если забыли пароль, обратитесь к администратору.
-                """
-            else:
-                return f"❌ Ошибка: {result['error']}"
+            return f"❌ Ошибка: {result.get('error', 'Неизвестная ошибка')}"
                 
     except requests.exceptions.Timeout:
         return "❌ Ошибка: Превышено время ожидания ответа от сервера"
@@ -111,6 +150,16 @@ async def create_user_account(telegram_id, first_name, last_name, username):
         return f"❌ Ошибка сети: {str(e)}"
     except Exception as e:
         return f"❌ Неожиданная ошибка: {str(e)}"
+
+
+def bot_post(path, payload):
+    response = requests.post(
+        bot_api_url(path),
+        json=payload,
+        headers=bot_headers(),
+        timeout=10,
+    )
+    return response.json()
 
 async def get_channel_stats():
     """Получение статистики канала"""
@@ -306,9 +355,66 @@ def save_current_stats(channel_stats, website_stats):
     except Exception as e:
         print(f"Ошибка сохранения статистики: {e}")
 
+async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data[STATE_KEY] = STATE_NONE
+    context.user_data.pop(TMP_CURRENT_PASSWORD_KEY, None)
+    await show_main_menu(update.message)
+
+
+async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    try:
+        quick = bot_post("/api/bot/quick-login", {"telegramId": str(user.id)})
+        if not quick.get("success"):
+            await update.message.reply_text("❌ Не удалось получить данные аккаунта.")
+            return
+
+        await update.message.reply_text(
+            "👤 Профиль\n\n"
+            f"🔑 Логин: `{quick.get('login', '-')}`\n"
+            f"🪙 Токен быстрого входа: `{quick.get('quickToken', '-')}`\n"
+            f"🌐 Быстрый вход: {quick.get('quickLoginUrl', '-')}",
+        )
+    except Exception as e:
+        await update.message.reply_text(f"❌ Ошибка профиля: {str(e)}")
+
+
+async def quick_login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    try:
+        quick = bot_post("/api/bot/quick-login", {"telegramId": str(user.id)})
+        if not quick.get("success"):
+            await update.message.reply_text("❌ Не удалось сформировать ссылку быстрого входа.")
+            return
+
+        await update.message.reply_text(
+            "🔑 Быстрый вход\n\n"
+            f"🪙 Токен: `{quick.get('quickToken', '-')}`\n"
+            f"🌐 Ссылка: {quick.get('quickLoginUrl', '-')}",
+        )
+    except Exception as e:
+        await update.message.reply_text(f"❌ Ошибка быстрого входа: {str(e)}")
+
+
+async def logout_all_sessions_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    try:
+        result = bot_post("/api/bot/logout-all", {"telegramId": str(user.id)})
+        if result.get("success"):
+            await update.message.reply_text(
+                "✅ Все активные сессии завершены.\n"
+                "Войдите в аккаунт заново на нужных устройствах."
+            )
+        else:
+            await update.message.reply_text("❌ Не удалось завершить сессии.")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Ошибка завершения сессий: {str(e)}")
+
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /start"""
     user = update.effective_user
+    context.user_data[STATE_KEY] = STATE_NONE
+    context.user_data.pop(TMP_CURRENT_PASSWORD_KEY, None)
     
     welcome_message = f"""
 👋 Привет, {user.first_name}!
@@ -336,7 +442,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     
     # Отправляем данные аккаунта
-    await update.message.reply_text(account_message, parse_mode='Markdown')
+    await update.message.reply_text(account_message)
+    await show_main_menu(update.message)
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /help"""
@@ -344,10 +451,12 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 📚 Справка по боту
 
 🔹 /start - Создать аккаунт в системе аналитики
+🔹 /menu - Показать меню действий
 🔹 /help - Показать эту справку
 🔹 /stats - Показать текущую статистику (только для админа)
+🔹 /cancel - Отменить текущий шаг
 
-🌐 Сайт: http://localhost:3000
+🌐 Сайт: https://kiruhak11.ru
 📧 Поддержка: @kiruhak11
 
 После создания аккаунта вы сможете:
@@ -358,6 +467,12 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     
     await update.message.reply_text(help_text)
+
+async def cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data[STATE_KEY] = STATE_NONE
+    context.user_data.pop(TMP_CURRENT_PASSWORD_KEY, None)
+    await update.message.reply_text("Действие отменено.")
+    await show_main_menu(update.message)
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /stats (только для админа)"""
@@ -374,11 +489,112 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик всех сообщений"""
     user = update.effective_user
-    message_text = update.message.text
-    
-    # Если это не команда, создаем аккаунт
-    if not message_text.startswith('/'):
-        await start_command(update, context)
+    message_text = (update.message.text or "").strip()
+    state = context.user_data.get(STATE_KEY, STATE_NONE)
+
+    if message_text == MENU_TOPUP:
+        context.user_data[STATE_KEY] = STATE_AWAIT_TOPUP
+        await update.message.reply_text("Введите сумму пополнения в рублях (например: 150):")
+        return
+
+    if message_text == MENU_CHANGE_PASSWORD:
+        context.user_data[STATE_KEY] = STATE_AWAIT_CURRENT_PASSWORD
+        await update.message.reply_text("Введите текущий пароль:")
+        return
+
+    if message_text == MENU_LOGOUT_ALL:
+        context.user_data[STATE_KEY] = STATE_NONE
+        await logout_all_sessions_command(update, context)
+        await show_main_menu(update.message)
+        return
+
+    if message_text == MENU_QUICK_LOGIN:
+        context.user_data[STATE_KEY] = STATE_NONE
+        await quick_login_command(update, context)
+        await show_main_menu(update.message)
+        return
+
+    if message_text == MENU_PROFILE:
+        context.user_data[STATE_KEY] = STATE_NONE
+        await profile_command(update, context)
+        await show_main_menu(update.message)
+        return
+
+    if state == STATE_AWAIT_TOPUP:
+        raw_amount = message_text.replace(",", ".")
+        try:
+            amount = float(raw_amount)
+            if amount <= 0:
+                raise ValueError("amount <= 0")
+
+            result = bot_post(
+                "/api/bot/topup",
+                {
+                    "telegramId": str(user.id),
+                    "amount": amount,
+                },
+            )
+            if result.get("success"):
+                await update.message.reply_text(
+                    f"✅ Баланс пополнен.\nНовый баланс: {result.get('formattedBalance', '-')}"
+                )
+            else:
+                await update.message.reply_text(
+                    f"❌ Ошибка пополнения: {result.get('error', 'неизвестная ошибка')}"
+                )
+        except Exception:
+            await update.message.reply_text("❌ Неверный формат суммы. Пример: 150")
+
+        context.user_data[STATE_KEY] = STATE_NONE
+        await show_main_menu(update.message)
+        return
+
+    if state == STATE_AWAIT_CURRENT_PASSWORD:
+        if len(message_text) < 1:
+            await update.message.reply_text("❌ Текущий пароль не может быть пустым.")
+            return
+
+        context.user_data[TMP_CURRENT_PASSWORD_KEY] = message_text
+        context.user_data[STATE_KEY] = STATE_AWAIT_NEW_PASSWORD
+        await update.message.reply_text("Введите новый пароль (минимум 8 символов):")
+        return
+
+    if state == STATE_AWAIT_NEW_PASSWORD:
+        current_password = context.user_data.get(TMP_CURRENT_PASSWORD_KEY, "")
+        new_password = message_text
+        if len(new_password) < 8:
+            await update.message.reply_text("❌ Новый пароль должен быть не короче 8 символов.")
+            return
+
+        try:
+            result = bot_post(
+                "/api/bot/change-password",
+                {
+                    "telegramId": str(user.id),
+                    "currentPassword": current_password,
+                    "newPassword": new_password,
+                },
+            )
+            if result.get("success"):
+                await update.message.reply_text(
+                    "✅ Пароль изменен. Все предыдущие сессии завершены."
+                )
+            else:
+                await update.message.reply_text(
+                    f"❌ Ошибка смены пароля: {result.get('error', 'неизвестная ошибка')}"
+                )
+        except Exception as e:
+            await update.message.reply_text(f"❌ Ошибка смены пароля: {str(e)}")
+
+        context.user_data[STATE_KEY] = STATE_NONE
+        context.user_data.pop(TMP_CURRENT_PASSWORD_KEY, None)
+        await show_main_menu(update.message)
+        return
+
+    await update.message.reply_text(
+        "Команда не распознана. Используйте /menu или кнопки ниже."
+    )
+    await show_main_menu(update.message)
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик ошибок"""
@@ -418,6 +634,7 @@ def main():
     
     print("🚀 Запуск улучшенного бота...")
     print(f"🌐 API_URL: {API_URL}")
+    print(f"🌐 BOT_API_BASE_URL: {BOT_API_BASE_URL}")
     if "/api/auth/telegram" in API_URL:
         print("⚠️ API_URL указывает на /api/auth/telegram, будет использован fallback на /api/auth/create-account")
     
@@ -427,6 +644,8 @@ def main():
         
         # Добавляем обработчики
         bot_app.add_handler(CommandHandler("start", start_command))
+        bot_app.add_handler(CommandHandler("menu", menu_command))
+        bot_app.add_handler(CommandHandler("cancel", cancel_command))
         bot_app.add_handler(CommandHandler("help", help_command))
         bot_app.add_handler(CommandHandler("stats", stats_command))
         bot_app.add_handler(CallbackQueryHandler(handle_component_callback))

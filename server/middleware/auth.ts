@@ -1,5 +1,6 @@
 import { prisma } from "../utils/prisma";
 import { verifyAuthToken } from "../utils/auth-token";
+import { getUserSessionsRevokedAt } from "../utils/session-control";
 
 function isStaticAsset(path: string): boolean {
   return (
@@ -15,6 +16,7 @@ function isPublicApiRoute(path: string, method: string): boolean {
   if (path === "/api/auth/telegram" && method === "POST") return true;
   if (path === "/api/auth/login" && method === "POST") return true;
   if (path === "/api/auth/create-account" && method === "POST") return true;
+  if (path.startsWith("/api/bot/") && method === "POST") return true;
   if (path === "/api/telegram" && method === "POST") return true;
   if (path === "/api/analytics/track" && method === "POST") return true;
   if (path === "/api/analytics/track-simple" && method === "POST") return true;
@@ -104,6 +106,18 @@ export default defineEventHandler(async (event) => {
   }
 
   event.context.user = user;
+
+  const revokedAt = await getUserSessionsRevokedAt(user.id);
+  if (revokedAt) {
+    const tokenIssuedAt = typeof decoded.iat === "number" ? decoded.iat : 0;
+    const revokedAtSeconds = Math.floor(revokedAt.getTime() / 1000);
+    if (tokenIssuedAt < revokedAtSeconds) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Session expired",
+      });
+    }
+  }
 
   if (isAdminRoute(path, method) && !user.isAdmin) {
     throw createError({

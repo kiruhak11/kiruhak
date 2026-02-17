@@ -37,12 +37,14 @@ export default defineEventHandler(async (event) => {
     }
 
     // Создаем подписанный токен
+    const issuedAt = Math.floor(Date.now() / 1000);
     const token = createAuthToken(
       {
         userId: user.id,
         telegramId: user.telegramId,
         isAdmin: user.isAdmin,
-        exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 дней
+        iat: issuedAt,
+        exp: issuedAt + 7 * 24 * 60 * 60, // 7 дней
       },
       config.authTokenSecret
     );

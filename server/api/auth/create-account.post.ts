@@ -1,6 +1,34 @@
 import { prisma } from "../../utils/prisma";
 import { randomBytes } from "crypto";
 import { hashPassword } from "../../utils/password";
+import { createAuthToken } from "../../utils/auth-token";
+
+function buildQuickLogin(
+  config: ReturnType<typeof useRuntimeConfig>,
+  targetUser: { id: string; telegramId: string; isAdmin: boolean }
+) {
+  const issuedAt = Math.floor(Date.now() / 1000);
+  const quickToken = createAuthToken(
+    {
+      userId: targetUser.id,
+      telegramId: targetUser.telegramId,
+      isAdmin: targetUser.isAdmin,
+      iat: issuedAt,
+      exp: issuedAt + 15 * 60, // 15 минут
+    },
+    config.authTokenSecret
+  );
+
+  const baseUrl = String(config.public.siteUrl || "https://kiruhak11.ru").replace(
+    /\/$/,
+    ""
+  );
+  const quickLoginUrl = `${baseUrl}/bot-login?token=${encodeURIComponent(
+    quickToken
+  )}`;
+
+  return { quickToken, quickLoginUrl };
+}
 
 export default defineEventHandler(async (event) => {
   try {
@@ -21,7 +49,6 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
     const { telegramId, firstName, lastName, username } = body;
 
-    // Валидация данных
     if (!telegramId || !firstName) {
       return {
         success: false,
@@ -29,43 +56,44 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Проверяем, существует ли пользователь
     const existingUser = await prisma.user.findUnique({
       where: { telegramId: String(telegramId) },
     });
 
     if (existingUser) {
+      const { quickToken, quickLoginUrl } = buildQuickLogin(config, existingUser);
       return {
-        success: false,
-        error: "Пользователь уже существует",
+        success: true,
+        existing: true,
+        message: "Пользователь уже существует",
         login: existingUser.login,
+        quickToken,
+        quickLoginUrl,
       };
     }
 
-    // Генерируем уникальный логин и пароль
     let login = `user_${randomBytes(4).toString("hex")}`;
     while (await prisma.user.findUnique({ where: { login } })) {
       login = `user_${randomBytes(4).toString("hex")}`;
     }
-    const password = randomBytes(6).toString("base64url"); // отправляем пользователю
+
+    const password = randomBytes(6).toString("base64url");
     const passwordHash = hashPassword(password);
 
-    // Создаем пользователя
     const user = await prisma.user.create({
       data: {
         telegramId: String(telegramId),
         username: username || null,
-        firstName: firstName,
+        firstName,
         lastName: lastName || null,
         photoUrl: null,
-        login: login,
+        login,
         password: passwordHash,
-        balance: 15000, // 150 рублей в копейках
+        balance: 15000,
         isAdmin: false,
       },
     });
 
-    // Создаем транзакцию для начального баланса
     await prisma.transaction.create({
       data: {
         userId: user.id,
@@ -75,8 +103,11 @@ export default defineEventHandler(async (event) => {
       },
     });
 
+    const { quickToken, quickLoginUrl } = buildQuickLogin(config, user);
+
     return {
       success: true,
+      existing: false,
       user: {
         id: user.id,
         telegramId: user.telegramId,
@@ -86,6 +117,8 @@ export default defineEventHandler(async (event) => {
         password,
         balance: user.balance,
       },
+      quickToken,
+      quickLoginUrl,
     };
   } catch (error) {
     console.error("Create account error:", error);
