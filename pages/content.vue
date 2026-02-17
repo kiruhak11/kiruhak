@@ -271,10 +271,11 @@ const isSubscribed = ref(false);
 const checking = ref(false);
 const subscriptionCheckInterval = ref<ReturnType<typeof setInterval> | null>(null);
 const runtimeConfig = useRuntimeConfig();
-const rawChannelUsername = (runtimeConfig.public.channelUsername as string) || "";
+const rawChannelUsername =
+  ((runtimeConfig.public.channelUsername as string) || "webmonke").trim();
 const displayChannelUsername = rawChannelUsername.startsWith("@")
   ? rawChannelUsername
-  : `@${rawChannelUsername || "channel"}`;
+  : `@${rawChannelUsername || "webmonke"}`;
 
 // UI компоненты
 const uiComponents = ref<UiComponent[]>([]);

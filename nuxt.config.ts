@@ -111,7 +111,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     telegramToken: process.env.TELEGRAM_BOT_TOKEN || "",
     telegramChatId: process.env.ADMIN_TELEGRAM_ID || "",
-    channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || "",
+    channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || "webmonke",
     botSecret: process.env.BOT_SECRET || "",
     allowSelfTopup: process.env.ALLOW_SELF_TOPUP === "true",
     authTokenSecret:
@@ -120,7 +120,7 @@ export default defineNuxtConfig({
       "dev-only-auth-token-secret",
     public: {
       siteUrl,
-      channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || "",
+      channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || "webmonke",
     },
   },
   vite: {
