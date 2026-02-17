@@ -281,7 +281,7 @@ const normalizedChannelUsername =
   !rawChannelUsername ||
   rawChannelUsername.toLowerCase() === "channel" ||
   rawChannelUsername.toLowerCase() === "@channel"
-    ? "webmonke"
+    ? "webmonkey"
     : rawChannelUsername.replace(/^@/, "");
 const displayChannelUsername = `@${normalizedChannelUsername}`;
 
