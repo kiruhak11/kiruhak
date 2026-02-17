@@ -87,7 +87,7 @@ services:
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME}
-      API_URL: http://app:3015/api/auth/telegram
+      API_URL: http://app:3015/api/auth/create-account
       API_BASE_URL: http://host.docker.internal:3000
       BOT_SECRET: ${BOT_SECRET:-your-secret-key-change-me}
     depends_on:

@@ -23,6 +23,7 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "6122558496:AAEXwnP3E4uIk5sSSNzD-13v
 API_URL = os.getenv("API_URL", "http://app:3015/api/auth/create-account")
 CHANNEL_ID = os.getenv("CHANNEL_ID", "@webmonke")  # ID вашего канала
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", "123456789")  # ID админа для статистики
+BOT_SECRET = os.getenv("BOT_SECRET", "")
 
 # Глобальная переменная для хранения приложения бота
 bot_app = None
@@ -37,7 +38,11 @@ async def create_user_account(telegram_id, first_name, last_name, username):
     }
     
     try:
-        response = requests.post(API_URL, json=data, timeout=10)
+        headers = {}
+        if BOT_SECRET:
+            headers["x-bot-secret"] = BOT_SECRET
+
+        response = requests.post(API_URL, json=data, headers=headers, timeout=10)
         result = response.json()
         
         if result["success"]:
