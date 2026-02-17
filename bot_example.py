@@ -42,8 +42,28 @@ async def create_user_account(telegram_id, first_name, last_name, username):
         if BOT_SECRET:
             headers["x-bot-secret"] = BOT_SECRET
 
-        response = requests.post(API_URL, json=data, headers=headers, timeout=10)
-        result = response.json()
+        fallback_api_url = API_URL.replace("/api/auth/telegram", "/api/auth/create-account")
+        api_candidates = [API_URL]
+        if fallback_api_url != API_URL:
+            api_candidates.append(fallback_api_url)
+
+        result = None
+
+        for idx, api_url in enumerate(api_candidates):
+            response = requests.post(api_url, json=data, headers=headers, timeout=10)
+            result = response.json()
+
+            # Если попали в telegram-auth endpoint по ошибке, делаем fallback.
+            if (
+                result.get("success") is False
+                and result.get("error") in ("Invalid Telegram data", "Invalid Telegram signature")
+                and idx < len(api_candidates) - 1
+            ):
+                continue
+            break
+
+        if result is None:
+            return "❌ Ошибка: пустой ответ от сервера"
         
         if result["success"]:
             user = result["user"]
@@ -397,6 +417,9 @@ def main():
     global bot_app
     
     print("🚀 Запуск улучшенного бота...")
+    print(f"🌐 API_URL: {API_URL}")
+    if "/api/auth/telegram" in API_URL:
+        print("⚠️ API_URL указывает на /api/auth/telegram, будет использован fallback на /api/auth/create-account")
     
     try:
         # Создаем приложение
