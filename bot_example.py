@@ -95,25 +95,7 @@ async def create_user_account(telegram_id, first_name, last_name, username):
     }
     
     try:
-        fallback_api_url = API_URL.replace("/api/auth/telegram", "/api/auth/create-account")
-        api_candidates = [API_URL]
-        if fallback_api_url != API_URL:
-            api_candidates.append(fallback_api_url)
-
-        result = None
-
-        for idx, api_url in enumerate(api_candidates):
-            response = requests.post(api_url, json=data, headers=bot_headers(), timeout=10)
-            result = response.json()
-
-            # Если попали в telegram-auth endpoint по ошибке, делаем fallback.
-            if (
-                result.get("success") is False
-                and result.get("error") in ("Invalid Telegram data", "Invalid Telegram signature")
-                and idx < len(api_candidates) - 1
-            ):
-                continue
-            break
+        result = create_or_fetch_account_payload(telegram_id, first_name, last_name, username)
 
         if result is None:
             return "❌ Ошибка: пустой ответ от сервера"
@@ -150,6 +132,39 @@ async def create_user_account(telegram_id, first_name, last_name, username):
         return f"❌ Ошибка сети: {str(e)}"
     except Exception as e:
         return f"❌ Неожиданная ошибка: {str(e)}"
+
+
+def create_or_fetch_account_payload(telegram_id, first_name, last_name, username):
+    data = {
+        "telegramId": str(telegram_id),
+        "firstName": first_name,
+        "lastName": last_name or "",
+        "username": username or "",
+    }
+
+    fallback_api_url = API_URL.replace("/api/auth/telegram", "/api/auth/create-account")
+    api_candidates = [API_URL]
+    if fallback_api_url != API_URL:
+        api_candidates.append(fallback_api_url)
+
+    result = None
+    for idx, api_url in enumerate(api_candidates):
+        response = requests.post(api_url, json=data, headers=bot_headers(), timeout=10)
+        result = response.json()
+
+        # Если попали в telegram-auth endpoint по ошибке, делаем fallback.
+        if (
+            result.get("success") is False
+            and result.get("error") in ("Invalid Telegram data", "Invalid Telegram signature")
+            and idx < len(api_candidates) - 1
+        ):
+            continue
+        break
+
+    if result is None:
+        raise RuntimeError("Empty API response")
+
+    return result
 
 
 def bot_post(path, payload):
@@ -390,25 +405,24 @@ async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     try:
-        quick = bot_post("/api/bot/quick-login", {"telegramId": str(user.id)})
-        if not quick.get("success") and _get_api_error(quick) == "User not found":
-            ok, account_message = await _ensure_account_exists(user)
-            if not ok:
-                await update.message.reply_text(account_message)
-                return
-            quick = bot_post("/api/bot/quick-login", {"telegramId": str(user.id)})
-
-        if not quick.get("success"):
+        payload = create_or_fetch_account_payload(
+            user.id, user.first_name, user.last_name, user.username
+        )
+        if not payload.get("success"):
             await update.message.reply_text(
-                f"❌ Не удалось получить данные аккаунта: {_get_api_error(quick)}"
+                f"❌ Не удалось получить данные аккаунта: {_get_api_error(payload)}"
             )
             return
 
+        login = payload.get("login") or payload.get("user", {}).get("login", "-")
+        quick_token = payload.get("quickToken", "-")
+        quick_url = payload.get("quickLoginUrl", "-")
+
         await update.message.reply_text(
             "👤 Профиль\n\n"
-            f"🔑 Логин: `{quick.get('login', '-')}`\n"
-            f"🪙 Токен быстрого входа: `{quick.get('quickToken', '-')}`\n"
-            f"🌐 Быстрый вход: {quick.get('quickLoginUrl', '-')}",
+            f"🔑 Логин: `{login}`\n"
+            f"🪙 Токен быстрого входа: `{quick_token}`\n"
+            f"🌐 Быстрый вход: {quick_url}",
         )
     except Exception as e:
         await update.message.reply_text(f"❌ Ошибка профиля: {str(e)}")
@@ -417,24 +431,27 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def quick_login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     try:
-        quick = bot_post("/api/bot/quick-login", {"telegramId": str(user.id)})
-        if not quick.get("success") and _get_api_error(quick) == "User not found":
-            ok, account_message = await _ensure_account_exists(user)
-            if not ok:
-                await update.message.reply_text(account_message)
-                return
-            quick = bot_post("/api/bot/quick-login", {"telegramId": str(user.id)})
-
-        if not quick.get("success"):
+        payload = create_or_fetch_account_payload(
+            user.id, user.first_name, user.last_name, user.username
+        )
+        if not payload.get("success"):
             await update.message.reply_text(
-                f"❌ Не удалось сформировать ссылку быстрого входа: {_get_api_error(quick)}"
+                f"❌ Не удалось сформировать ссылку быстрого входа: {_get_api_error(payload)}"
+            )
+            return
+
+        quick_token = payload.get("quickToken")
+        quick_url = payload.get("quickLoginUrl")
+        if not quick_token or not quick_url:
+            await update.message.reply_text(
+                "❌ API не вернул quickToken/quickLoginUrl. Обнови app до последнего кода."
             )
             return
 
         await update.message.reply_text(
             "🔑 Быстрый вход\n\n"
-            f"🪙 Токен: `{quick.get('quickToken', '-')}`\n"
-            f"🌐 Ссылка: {quick.get('quickLoginUrl', '-')}",
+            f"🪙 Токен: `{quick_token}`\n"
+            f"🌐 Ссылка: {quick_url}",
         )
     except Exception as e:
         await update.message.reply_text(f"❌ Ошибка быстрого входа: {str(e)}")
