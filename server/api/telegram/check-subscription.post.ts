@@ -13,11 +13,17 @@ export default defineEventHandler(async (event) => {
     // Настройки Telegram бота из конфига
     const config = useRuntimeConfig();
     const botToken = config.telegramToken;
-    const rawChannelUsername = String(config.channelUsername || "").trim().toLowerCase();
+    const rawChannelUsername = String(config.channelUsername || "")
+      .trim()
+      .toLowerCase();
     const channelUsername =
-      !rawChannelUsername || rawChannelUsername === "channel" || rawChannelUsername === "@channel"
+      !rawChannelUsername ||
+      rawChannelUsername === "webmonke" ||
+      rawChannelUsername === "@webmonke"
         ? "webmonke"
-        : String(config.channelUsername || "").trim().replace(/^@/, "");
+        : String(config.channelUsername || "")
+            .trim()
+            .replace(/^@/, "");
 
     if (!botToken || !channelUsername) {
       return {
@@ -72,7 +78,7 @@ export default defineEventHandler(async (event) => {
 
       const member = data.result;
       const isSubscribed = ["member", "administrator", "creator"].includes(
-        member.status
+        member.status,
       );
 
       // Сохраняем статус подписки в базе данных
