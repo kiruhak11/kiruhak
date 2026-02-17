@@ -13,7 +13,11 @@ export default defineEventHandler(async (event) => {
     // Настройки Telegram бота из конфига
     const config = useRuntimeConfig();
     const botToken = config.telegramToken;
-    const channelUsername = String(config.channelUsername || "").replace(/^@/, "");
+    const rawChannelUsername = String(config.channelUsername || "").trim().toLowerCase();
+    const channelUsername =
+      !rawChannelUsername || rawChannelUsername === "channel" || rawChannelUsername === "@channel"
+        ? "webmonke"
+        : String(config.channelUsername || "").trim().replace(/^@/, "");
 
     if (!botToken || !channelUsername) {
       return {
