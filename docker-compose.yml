@@ -50,6 +50,8 @@ services:
       # Telegram настройки
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME:-webmonke}
+      BOT_SECRET: ${BOT_SECRET:-your-secret-key-change-me}
+      AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-your-secret-key-change-me}
       # Другие переменные окружения
       NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost:3015}
     ports:

@@ -159,7 +159,33 @@ def bot_post(path, payload):
         headers=bot_headers(),
         timeout=10,
     )
-    return response.json()
+    try:
+        return response.json()
+    except Exception:
+        return {
+            "success": False,
+            "error": f"HTTP {response.status_code}",
+            "statusMessage": "Invalid API response",
+        }
+
+
+def _get_api_error(payload):
+    return (
+        payload.get("error")
+        or payload.get("statusMessage")
+        or payload.get("message")
+        or "Неизвестная ошибка"
+    )
+
+
+async def _ensure_account_exists(telegram_user):
+    account_message = await create_user_account(
+        telegram_id=telegram_user.id,
+        first_name=telegram_user.first_name,
+        last_name=telegram_user.last_name,
+        username=telegram_user.username,
+    )
+    return not account_message.startswith("❌"), account_message
 
 async def get_channel_stats():
     """Получение статистики канала"""
@@ -365,8 +391,17 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     try:
         quick = bot_post("/api/bot/quick-login", {"telegramId": str(user.id)})
+        if not quick.get("success") and _get_api_error(quick) == "User not found":
+            ok, account_message = await _ensure_account_exists(user)
+            if not ok:
+                await update.message.reply_text(account_message)
+                return
+            quick = bot_post("/api/bot/quick-login", {"telegramId": str(user.id)})
+
         if not quick.get("success"):
-            await update.message.reply_text("❌ Не удалось получить данные аккаунта.")
+            await update.message.reply_text(
+                f"❌ Не удалось получить данные аккаунта: {_get_api_error(quick)}"
+            )
             return
 
         await update.message.reply_text(
@@ -383,8 +418,17 @@ async def quick_login_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     user = update.effective_user
     try:
         quick = bot_post("/api/bot/quick-login", {"telegramId": str(user.id)})
+        if not quick.get("success") and _get_api_error(quick) == "User not found":
+            ok, account_message = await _ensure_account_exists(user)
+            if not ok:
+                await update.message.reply_text(account_message)
+                return
+            quick = bot_post("/api/bot/quick-login", {"telegramId": str(user.id)})
+
         if not quick.get("success"):
-            await update.message.reply_text("❌ Не удалось сформировать ссылку быстрого входа.")
+            await update.message.reply_text(
+                f"❌ Не удалось сформировать ссылку быстрого входа: {_get_api_error(quick)}"
+            )
             return
 
         await update.message.reply_text(
@@ -400,13 +444,22 @@ async def logout_all_sessions_command(update: Update, context: ContextTypes.DEFA
     user = update.effective_user
     try:
         result = bot_post("/api/bot/logout-all", {"telegramId": str(user.id)})
+        if not result.get("success") and _get_api_error(result) == "User not found":
+            ok, account_message = await _ensure_account_exists(user)
+            if not ok:
+                await update.message.reply_text(account_message)
+                return
+            result = bot_post("/api/bot/logout-all", {"telegramId": str(user.id)})
+
         if result.get("success"):
             await update.message.reply_text(
                 "✅ Все активные сессии завершены.\n"
                 "Войдите в аккаунт заново на нужных устройствах."
             )
         else:
-            await update.message.reply_text("❌ Не удалось завершить сессии.")
+            await update.message.reply_text(
+                f"❌ Не удалось завершить сессии: {_get_api_error(result)}"
+            )
     except Exception as e:
         await update.message.reply_text(f"❌ Ошибка завершения сессий: {str(e)}")
 
@@ -443,6 +496,11 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Отправляем данные аккаунта
     await update.message.reply_text(account_message)
+    if account_message.startswith("❌"):
+        await update.message.reply_text(
+            "Меню недоступно, пока аккаунт не создан. Исправьте ошибку и отправьте /start снова."
+        )
+        return
     await show_main_menu(update.message)
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
