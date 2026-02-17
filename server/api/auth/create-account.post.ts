@@ -48,8 +48,9 @@ export default defineEventHandler(async (event) => {
 
     const body = await readBody(event);
     const { telegramId, firstName, lastName, username } = body;
+    const normalizedTelegramId = String(telegramId || "");
 
-    if (!telegramId || !firstName) {
+    if (!normalizedTelegramId || !firstName) {
       return {
         success: false,
         error: "Необходимы telegramId и firstName",
@@ -57,7 +58,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const existingUser = await prisma.user.findUnique({
-      where: { telegramId: String(telegramId) },
+      where: { telegramId: normalizedTelegramId },
     });
 
     if (existingUser) {
@@ -80,19 +81,47 @@ export default defineEventHandler(async (event) => {
     const password = randomBytes(6).toString("base64url");
     const passwordHash = hashPassword(password);
 
-    const user = await prisma.user.create({
-      data: {
-        telegramId: String(telegramId),
-        username: username || null,
-        firstName,
-        lastName: lastName || null,
-        photoUrl: null,
-        login,
-        password: passwordHash,
-        balance: 15000,
-        isAdmin: false,
-      },
-    });
+    let user;
+    try {
+      user = await prisma.user.create({
+        data: {
+          telegramId: normalizedTelegramId,
+          username: username || null,
+          firstName,
+          lastName: lastName || null,
+          photoUrl: null,
+          login,
+          password: passwordHash,
+          balance: 15000,
+          isAdmin: false,
+        },
+      });
+    } catch (createUserError) {
+      // Обрабатываем гонку запросов: если пользователь уже создан параллельно,
+      // возвращаем его как existing вместо общей ошибки.
+      const errorMessage =
+        createUserError instanceof Error ? createUserError.message : "";
+      if (
+        errorMessage.includes("Unique constraint failed") ||
+        errorMessage.includes("unique constraint")
+      ) {
+        const racedUser = await prisma.user.findUnique({
+          where: { telegramId: normalizedTelegramId },
+        });
+        if (racedUser) {
+          const { quickToken, quickLoginUrl } = buildQuickLogin(config, racedUser);
+          return {
+            success: true,
+            existing: true,
+            message: "Пользователь уже существует",
+            login: racedUser.login,
+            quickToken,
+            quickLoginUrl,
+          };
+        }
+      }
+      throw createUserError;
+    }
 
     await prisma.transaction.create({
       data: {
@@ -122,9 +151,18 @@ export default defineEventHandler(async (event) => {
     };
   } catch (error) {
     console.error("Create account error:", error);
+    if (error && typeof error === "object" && "statusMessage" in error) {
+      return {
+        success: false,
+        error: String((error as { statusMessage?: string }).statusMessage || "Request failed"),
+      };
+    }
     return {
       success: false,
-      error: "Ошибка создания аккаунта",
+      error:
+        error instanceof Error && error.message
+          ? error.message
+          : "Ошибка создания аккаунта",
     };
   }
 });
