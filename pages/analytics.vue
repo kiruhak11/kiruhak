@@ -317,46 +317,22 @@ const showTrackingCode = (site) => {
     "<!-- Kiruhak Analytics -->",
     "<script>",
     `  window.KIRUHAK_SITE_ID = '${site.id}';`,
-    "</script>",
-    '<script src="https://kiruhak11.ru/analytics.js"></script>',
-    "<!-- End Kiruhak Analytics -->",
-  ].join("\n");
-
-  selectedSiteForCode.value = {
-    ...site,
-    trackingCode,
-  };
-  showCodeModal.value = true;
-};
-
-// Закрыть модальное окно
-const closeCodeModal = () => {
-  showCodeModal.value = false;
-  selectedSiteForCode.value = null;
-  copied.value = false;
-};
-
-// Копировать код
-const copyCode = async () => {
-  try {
-    await navigator.clipboard.writeText(selectedSiteForCode.value.trackingCode);
-    copied.value = true;
-    setTimeout(() => {
-      copied.value = false;
-    }, 2000);
-  } catch (error) {
-    console.error("Error copying code:", error);
-  }
-};
-
-// Форматирование времени
-const formatTime = (seconds) => {
-  if (!seconds) return "0 сек";
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}м ${remainingSeconds}с`;
-};
+    "
 </script>
+", '
+<script src="https://kiruhak11.ru/analytics.js"></script>
+', "
+<!-- End Kiruhak Analytics -->
+", ].join("\n"); selectedSiteForCode.value = { ...site, trackingCode, };
+showCodeModal.value = true; }; // Закрыть модальное окно const closeCodeModal =
+() => { showCodeModal.value = false; selectedSiteForCode.value = null;
+copied.value = false; }; // Копировать код const copyCode = async () => { try {
+await navigator.clipboard.writeText(selectedSiteForCode.value.trackingCode);
+copied.value = true; setTimeout(() => { copied.value = false; }, 2000); } catch
+(error) { console.error("Error copying code:", error); } }; // Форматирование
+времени const formatTime = (seconds) => { if (!seconds) return "0 сек"; const
+minutes = Math.floor(seconds / 60); const remainingSeconds = seconds % 60;
+return `${minutes}м ${remainingSeconds}с`; };
 
 <style lang="scss" scoped>
 .analytics-page {
