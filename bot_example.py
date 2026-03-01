@@ -32,6 +32,12 @@ CHANNEL_ID = os.getenv("CHANNEL_ID", "@webmonke")  # ID вашего канал�
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID") or os.getenv("ADMIN_TELEGRAM_ID", "123456789")
 BOT_SECRET = os.getenv("BOT_SECRET", "")
 BOT_API_BASE_URL = os.getenv("BOT_API_BASE_URL", "").strip()
+NOTIFY_NEW_REGISTRATIONS = os.getenv("NOTIFY_NEW_REGISTRATIONS", "true").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +155,43 @@ async def show_main_menu(message):
     )
 
 
+async def notify_admin_new_registration(
+    telegram_id,
+    first_name,
+    last_name,
+    username,
+    login,
+    balance,
+):
+    if not NOTIFY_NEW_REGISTRATIONS:
+        return
+    if not bot_app:
+        return
+
+    admin_chat_id = str(ADMIN_CHAT_ID or "").strip()
+    if not admin_chat_id:
+        return
+
+    full_name = " ".join([part for part in [first_name, last_name] if part]).strip() or "Без имени"
+    username_part = f"@{username}" if username else "не указан"
+    balance_rub = (balance / 100) if isinstance(balance, (int, float)) else 0
+
+    text = (
+        "🆕 Новая регистрация\n\n"
+        f"👤 Имя: {full_name}\n"
+        f"🆔 Telegram ID: {telegram_id}\n"
+        f"🔗 Username: {username_part}\n"
+        f"🔐 Логин: {login or '-'}\n"
+        f"💰 Стартовый баланс: {balance_rub:.2f} ₽\n"
+        f"🕒 Время: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}"
+    )
+
+    try:
+        await bot_app.bot.send_message(chat_id=admin_chat_id, text=text)
+    except Exception:
+        logger.exception("Failed to send registration notification to admin")
+
+
 async def create_user_account(telegram_id, first_name, last_name, username):
     """Создание аккаунта пользователя через API"""
     data = {
@@ -182,6 +225,16 @@ async def create_user_account(telegram_id, first_name, last_name, username):
             balance = normalized.get("balance")
             if not isinstance(balance, (int, float)):
                 balance = 0
+
+            await notify_admin_new_registration(
+                telegram_id=telegram_id,
+                first_name=first_name,
+                last_name=last_name,
+                username=username,
+                login=user.get("login", ""),
+                balance=balance,
+            )
+
             return (
                 "✅ Аккаунт успешно создан!\n\n"
                 f"🔑 Логин: `{user.get('login', '')}`\n"
