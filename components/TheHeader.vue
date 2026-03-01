@@ -12,7 +12,7 @@
     <nav v-if="!isMobile">
       <ul>
         <li><NuxtLink to="/projects">Проекты</NuxtLink></li>
-        <li><NuxtLink to="/analytics">Аналитика</NuxtLink></li>
+        <li><NuxtLink to="/analytics">Бриф</NuxtLink></li>
         <li><NuxtLink to="/content">Контент</NuxtLink></li>
         <li><NuxtLink to="/contact">Контакты</NuxtLink></li>
         <li v-if="!isAuthenticated"><NuxtLink to="/login">Войти</NuxtLink></li>

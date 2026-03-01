@@ -38,6 +38,7 @@ function isAuthenticatedRoute(path: string, method: string): boolean {
   if (path === "/api/sites" && (method === "GET" || method === "POST")) return true;
   if (path === "/api/telegram/check-subscription" && method === "POST") return true;
   if (path === "/api/analytics/stats" && method === "GET") return true;
+  if (path === "/api/brief" && method === "POST") return true;
   if (path === "/api/ui-components/submit" && method === "POST") return true;
   if (path.match(/^\/api\/materials\/[^/]+\/rate$/) && method === "POST") return true;
   if (path.match(/^\/api\/materials\/[^/]+\/download$/) && method === "POST") return true;

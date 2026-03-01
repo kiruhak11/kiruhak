@@ -1,810 +1,806 @@
 <template>
   <NuxtLayout>
-    <div class="analytics-page">
+    <div class="brief-page">
       <div class="container">
-        <div class="page-header">
-          <div class="header-left">
-            <h1>Аналитика сайтов</h1>
-            <p>Отслеживайте посещения ваших сайтов</p>
-          </div>
+        <header class="page-header">
+          <h1>Бриф на разработку сайта</h1>
+          <p>
+            Заполните анкету. Черновик сохраняется автоматически в браузере и
+            вы можете продолжить позже.
+          </p>
+        </header>
+
+        <div class="status-row">
+          <span class="draft-status">{{ saveStatusText }}</span>
+          <button class="clear-btn" type="button" @click="clearDraft" :disabled="sending">
+            Очистить черновик
+          </button>
         </div>
 
-        <!-- Форма добавления нового сайта -->
-        <div class="add-site-form">
-          <h2>Добавить новый сайт</h2>
-          <form @submit.prevent="addSite">
-            <div class="form-group">
-              <label for="siteName">Название сайта</label>
-              <input
-                id="siteName"
-                v-model="newSite.name"
-                type="text"
-                required
-                placeholder="Мой сайт"
-              />
-            </div>
+        <form class="brief-form" @submit.prevent="submitBrief">
+          <section
+            v-for="section in sections"
+            :key="section.id"
+            class="question-section"
+          >
+            <h2>{{ section.title }}</h2>
+            <div class="questions-grid">
+              <div
+                v-for="question in section.questions"
+                :key="question.key"
+                class="form-group"
+              >
+                <label :for="question.key">
+                  {{ question.label }}
+                  <span v-if="question.required" class="required">*</span>
+                </label>
 
-            <div class="form-group">
-              <label for="siteDomain">Домен</label>
-              <input
-                id="siteDomain"
-                v-model="newSite.domain"
-                type="text"
-                required
-                placeholder="example.com"
-              />
-            </div>
+                <template v-if="question.type === 'select'">
+                  <select
+                    :id="question.key"
+                    v-model="form[question.key]"
+                    :required="question.required"
+                  >
+                    <option value="">Выберите вариант</option>
+                    <option
+                      v-for="option in question.options"
+                      :key="option"
+                      :value="option"
+                    >
+                      {{ option }}
+                    </option>
+                  </select>
+                </template>
 
-            <div class="form-group">
-              <label for="siteDescription">Описание (необязательно)</label>
-              <textarea
-                id="siteDescription"
-                v-model="newSite.description"
-                placeholder="Краткое описание сайта"
-              ></textarea>
-            </div>
+                <template v-else-if="question.type === 'multiselect'">
+                  <div class="checkbox-grid">
+                    <label
+                      v-for="option in question.options"
+                      :key="`${question.key}-${option}`"
+                      class="checkbox-item"
+                    >
+                      <input
+                        type="checkbox"
+                        :checked="(form[question.key] || []).includes(option)"
+                        @change="toggleMulti(question.key, option)"
+                      />
+                      <span>{{ option }}</span>
+                    </label>
+                  </div>
+                </template>
 
-            <button type="submit" :disabled="loading">
-              {{ loading ? "Добавление..." : "Добавить сайт" }}
+                <template v-else-if="question.type === 'textarea'">
+                  <textarea
+                    :id="question.key"
+                    v-model="form[question.key]"
+                    :required="question.required"
+                    :rows="question.rows || 4"
+                  />
+                </template>
+
+                <template v-else>
+                  <input
+                    :id="question.key"
+                    v-model="form[question.key]"
+                    :required="question.required"
+                    type="text"
+                  />
+                </template>
+              </div>
+            </div>
+          </section>
+
+          <div class="actions">
+            <button type="submit" class="submit-btn" :disabled="sending">
+              {{ sending ? "Отправка..." : "Отправить бриф в Telegram" }}
             </button>
-          </form>
-        </div>
-
-        <!-- Список сайтов -->
-        <div class="sites-list">
-          <h2>Мои сайты</h2>
-          <div v-if="sites.length === 0" class="no-sites">
-            <p>У вас пока нет добавленных сайтов</p>
+            <p v-if="submitMessage" :class="['submit-message', submitError ? 'error' : 'success']">
+              {{ submitMessage }}
+            </p>
           </div>
-
-          <div v-else class="sites-grid">
-            <div
-              v-for="site in sites"
-              :key="site.id"
-              class="site-card"
-              @click="selectSite(site)"
-            >
-              <div class="site-info">
-                <h3>{{ site.name }}</h3>
-                <p class="domain">{{ site.domain }}</p>
-                <p v-if="site.description" class="description">
-                  {{ site.description }}
-                </p>
-              </div>
-
-              <div class="site-stats">
-                <div class="stat">
-                  <span class="stat-number">{{
-                    site.stats?.totalVisits || 0
-                  }}</span>
-                  <span class="stat-label">Посещений</span>
-                </div>
-                <div class="stat">
-                  <span class="stat-number">{{
-                    site.stats?.uniqueVisitors || 0
-                  }}</span>
-                  <span class="stat-label">Уникальных</span>
-                </div>
-              </div>
-
-              <div class="tracking-code">
-                <button
-                  @click.stop="showTrackingCode(site)"
-                  class="btn-secondary"
-                >
-                  Показать код
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Детальная статистика -->
-        <div v-if="selectedSite" class="site-analytics">
-          <h2>Статистика: {{ selectedSite.name }}</h2>
-
-          <div class="period-selector">
-            <button
-              v-for="period in periods"
-              :key="period.value"
-              @click="changePeriod(period.value)"
-              :class="{ active: currentPeriod === period.value }"
-              class="period-btn"
-            >
-              {{ period.label }}
-            </button>
-          </div>
-
-          <div v-if="analytics" class="analytics-grid">
-            <!-- Общая статистика -->
-            <div class="stats-cards">
-              <div class="stat-card">
-                <h3>Всего посещений</h3>
-                <div class="stat-value">{{ analytics.totalVisits }}</div>
-              </div>
-
-              <div class="stat-card">
-                <h3>Уникальных посетителей</h3>
-                <div class="stat-value">{{ analytics.uniqueVisitors }}</div>
-              </div>
-
-              <div class="stat-card">
-                <h3>Среднее время на сайте</h3>
-                <div class="stat-value">
-                  {{ formatTime(analytics.avgTimeOnSite) }}
-                </div>
-              </div>
-            </div>
-
-            <!-- Популярные страницы -->
-            <div class="chart-section">
-              <h3>Популярные страницы</h3>
-              <div class="pages-list">
-                <div
-                  v-for="page in analytics.popularPages"
-                  :key="page.page"
-                  class="page-item"
-                >
-                  <span class="page-path">{{ page.page }}</span>
-                  <span class="page-visits">{{ page.visits }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Источники трафика -->
-            <div class="chart-section">
-              <h3>Источники трафика</h3>
-              <div class="sources-list">
-                <div
-                  v-for="source in analytics.trafficSources"
-                  :key="source.referrer"
-                  class="source-item"
-                >
-                  <span class="source-domain">{{
-                    source.referrer || "Прямые переходы"
-                  }}</span>
-                  <span class="source-visits">{{ source.visits }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Модальное окно с кодом отслеживания -->
-      <div v-if="showCodeModal" class="modal-overlay" @click="closeCodeModal">
-        <div class="modal-content" @click.stop>
-          <h3>Код отслеживания для {{ selectedSiteForCode?.name }}</h3>
-          <p>Добавьте этот код в секцию &lt;head&gt; вашего сайта:</p>
-
-          <div class="code-block">
-            <pre><code>{{ selectedSiteForCode?.trackingCode }}</code></pre>
-            <button @click="copyCode" class="copy-btn">
-              {{ copied ? "Скопировано!" : "Копировать" }}
-            </button>
-          </div>
-
-          <button @click="closeCodeModal" class="close-btn">Закрыть</button>
-        </div>
+        </form>
       </div>
     </div>
   </NuxtLayout>
 </template>
 
-<script setup>
-// Импортируем composables
-const {
-  isAuthenticated,
-  initAuth,
-  refreshUser,
-} = useAuth();
+<script setup lang="ts">
 const router = useRouter();
+const { isAuthenticated, initAuth, refreshUser } = useAuth();
+const { apiFetch } = useApi();
 
-// Состояние
-const sites = ref([]);
-const selectedSite = ref(null);
-const selectedSiteForCode = ref(null);
-const showCodeModal = ref(false);
-const copied = ref(false);
-const loading = ref(false);
-const analytics = ref(null);
-const currentPeriod = ref("7d");
+const DRAFT_KEY = "website_brief_draft_v1";
 
-// Инициализируем аутентификацию и загружаем сайты последовательно
+interface QuestionConfig {
+  key: keyof BriefForm;
+  label: string;
+  type: "text" | "textarea" | "select" | "multiselect";
+  options?: string[];
+  required?: boolean;
+  rows?: number;
+}
+
+interface SectionConfig {
+  id: string;
+  title: string;
+  questions: QuestionConfig[];
+}
+
+type BriefForm = {
+  companyName: string;
+  businessSphere: string;
+  businessModel: string;
+  regions: string;
+  currentSite: string;
+  redesignReason: string;
+  mainProblems: string;
+
+  mainGoal: string[];
+  kpi: string;
+  targetAction: string;
+
+  targetClient: string;
+  audienceAgeGenderIncome: string;
+  b2bDecisionMaker: string;
+  clientPain: string;
+  whyChooseYou: string;
+  currentAcquisition: string;
+
+  productsServices: string;
+  positionsCount: string;
+  needCatalog: string;
+  needFilters: string;
+  needProductCards: string;
+  publicPrices: string;
+  needOnlinePayment: string;
+
+  competitors: string;
+  competitorLikes: string;
+  competitorDislikes: string;
+  visualReferences: string;
+
+  requiredSections: string;
+  needAccount: string;
+  needMultiLanguage: string;
+  needMobileAdaptation: string;
+
+  hasBrandStyle: string;
+  hasLogo: string;
+  hasBrandbook: string;
+  preferredColors: string;
+  forbiddenColors: string;
+  visualStyle: string[];
+  likedDesignSites: string;
+
+  hasTexts: string;
+  needCopywriting: string;
+  hasPhotos: string;
+  needPhotoSession: string;
+  needVideo: string;
+  whoWillFillContent: string;
+
+  needFeedbackForms: string;
+  needChat: string;
+  needCrm: string;
+  crmName: string;
+  needOneC: string;
+  needPaymentSystems: string;
+  paymentSystems: string;
+  needCalculator: string;
+  needBlog: string;
+  needReviews: string;
+  needMap: string;
+
+  hasDomain: string;
+  hasHosting: string;
+  needCms: string;
+  cmsPreference: string;
+  needAdminPanel: string;
+  whoMaintains: string;
+  needSeo: string;
+  needAnalytics: string;
+
+  planningContextAds: string;
+  planningSeoPromotion: string;
+  planningTargetAds: string;
+  needLandingPages: string;
+  hasUtp: string;
+
+  launchDate: string;
+  hasDeadline: string;
+  deadlineDate: string;
+  budget: string;
+  phasedDevelopment: string;
+
+  needPrivacyPolicy: string;
+  needOffer: string;
+  personalDataProcessing: string;
+  needCookieNotice: string;
+
+  needTechSupport: string;
+  needFutureImprovements: string;
+  needSupportContract: string;
+
+  mainDifference: string;
+  whyPickYouStrategy: string;
+  desiredBrandImage: string;
+  mandatoryHomepageBlocks: string;
+  successInSixMonths: string;
+};
+
+const yesNoOptions = ["Да", "Нет", "Не знаю"];
+
+const sections: SectionConfig[] = [
+  {
+    id: "general",
+    title: "1. Общая информация о проекте",
+    questions: [
+      { key: "companyName", label: "Как называется компания?", type: "text", required: true },
+      { key: "businessSphere", label: "В какой сфере работаете?", type: "text", required: true },
+      { key: "businessModel", label: "Это B2B или B2C?", type: "select", required: true, options: ["B2B", "B2C", "B2B/B2C"] },
+      { key: "regions", label: "В каких регионах/странах работает бизнес?", type: "text" },
+      { key: "currentSite", label: "Есть ли текущий сайт? (ссылка)", type: "text" },
+      { key: "redesignReason", label: "Почему решили сделать новый сайт/редизайн?", type: "textarea" },
+      { key: "mainProblems", label: "Какие основные проблемы нужно решить?", type: "textarea" },
+    ],
+  },
+  {
+    id: "goals",
+    title: "2. Цели сайта",
+    questions: [
+      {
+        key: "mainGoal",
+        label: "Главная цель сайта",
+        type: "multiselect",
+        required: true,
+        options: ["Продажи", "Лидогенерация", "Презентация компании", "Онлайн-запись", "Интернет-магазин", "Другое"],
+      },
+      { key: "kpi", label: "Какие KPI важны?", type: "textarea" },
+      { key: "targetAction", label: "Какие действия пользователь должен совершать на сайте?", type: "textarea" },
+    ],
+  },
+  {
+    id: "audience",
+    title: "3. Целевая аудитория",
+    questions: [
+      { key: "targetClient", label: "Кто ваш основной клиент?", type: "textarea" },
+      { key: "audienceAgeGenderIncome", label: "Возраст, пол, доход?", type: "text" },
+      { key: "b2bDecisionMaker", label: "B2B: кто принимает решение?", type: "text" },
+      { key: "clientPain", label: "Какие боли у клиента?", type: "textarea" },
+      { key: "whyChooseYou", label: "Почему клиент выбирает вас?", type: "textarea" },
+      { key: "currentAcquisition", label: "Как клиент сейчас находит вас?", type: "textarea" },
+    ],
+  },
+  {
+    id: "product",
+    title: "4. Продукт / услуги",
+    questions: [
+      { key: "productsServices", label: "Какие товары или услуги нужно представить?", type: "textarea" },
+      { key: "positionsCount", label: "Сколько позиций?", type: "text" },
+      { key: "needCatalog", label: "Нужен ли каталог?", type: "select", options: yesNoOptions },
+      { key: "needFilters", label: "Нужна ли фильтрация?", type: "select", options: yesNoOptions },
+      { key: "needProductCards", label: "Нужны ли карточки товара?", type: "select", options: yesNoOptions },
+      { key: "publicPrices", label: "Будут ли цены публичными?", type: "select", options: yesNoOptions },
+      { key: "needOnlinePayment", label: "Нужна ли онлайн-оплата?", type: "select", options: yesNoOptions },
+    ],
+  },
+  {
+    id: "competitors",
+    title: "5. Конкуренты",
+    questions: [
+      { key: "competitors", label: "Назовите 3-5 конкурентов", type: "textarea" },
+      { key: "competitorLikes", label: "Что нравится в их сайтах?", type: "textarea" },
+      { key: "competitorDislikes", label: "Что НЕ нравится?", type: "textarea" },
+      { key: "visualReferences", label: "Сайты, которые нравятся визуально (ссылки)", type: "textarea" },
+    ],
+  },
+  {
+    id: "structure",
+    title: "6. Структура сайта",
+    questions: [
+      { key: "requiredSections", label: "Какие разделы должны быть?", type: "textarea", rows: 5 },
+      { key: "needAccount", label: "Нужен ли личный кабинет?", type: "select", options: yesNoOptions },
+      { key: "needMultiLanguage", label: "Нужна ли мультиязычность?", type: "select", options: yesNoOptions },
+      { key: "needMobileAdaptation", label: "Нужна ли адаптация под мобильные?", type: "select", options: yesNoOptions },
+    ],
+  },
+  {
+    id: "design",
+    title: "7. Дизайн",
+    questions: [
+      { key: "hasBrandStyle", label: "Есть ли фирменный стиль?", type: "select", options: yesNoOptions },
+      { key: "hasLogo", label: "Есть ли логотип (вектор)?", type: "select", options: yesNoOptions },
+      { key: "hasBrandbook", label: "Есть ли брендбук?", type: "select", options: yesNoOptions },
+      { key: "preferredColors", label: "Какие цвета должны быть использованы?", type: "text" },
+      { key: "forbiddenColors", label: "Какие цвета нельзя использовать?", type: "text" },
+      {
+        key: "visualStyle",
+        label: "Какой стиль ближе?",
+        type: "multiselect",
+        options: ["Минимализм", "Корпоративный", "Премиум", "Яркий / креативный", "Тёмный", "Светлый"],
+      },
+      { key: "likedDesignSites", label: "Какие сайты нравятся визуально?", type: "textarea" },
+    ],
+  },
+  {
+    id: "content",
+    title: "8. Контент",
+    questions: [
+      { key: "hasTexts", label: "Есть ли готовые тексты?", type: "select", options: yesNoOptions },
+      { key: "needCopywriting", label: "Нужен ли копирайтинг?", type: "select", options: yesNoOptions },
+      { key: "hasPhotos", label: "Есть ли профессиональные фото?", type: "select", options: yesNoOptions },
+      { key: "needPhotoSession", label: "Нужна ли фотосъёмка?", type: "select", options: yesNoOptions },
+      { key: "needVideo", label: "Нужны ли видео?", type: "select", options: yesNoOptions },
+      { key: "whoWillFillContent", label: "Кто будет наполнять сайт?", type: "text" },
+    ],
+  },
+  {
+    id: "functionality",
+    title: "9. Функционал",
+    questions: [
+      { key: "needFeedbackForms", label: "Нужны ли формы обратной связи?", type: "select", options: yesNoOptions },
+      { key: "needChat", label: "Нужен ли чат?", type: "select", options: yesNoOptions },
+      { key: "needCrm", label: "Интеграция с CRM?", type: "select", options: yesNoOptions },
+      { key: "crmName", label: "Какая CRM?", type: "text" },
+      { key: "needOneC", label: "Интеграция с 1С?", type: "select", options: yesNoOptions },
+      { key: "needPaymentSystems", label: "Интеграция с платежными системами?", type: "select", options: yesNoOptions },
+      { key: "paymentSystems", label: "Какие платежные системы?", type: "text" },
+      { key: "needCalculator", label: "Нужен ли калькулятор?", type: "select", options: yesNoOptions },
+      { key: "needBlog", label: "Нужен ли блог?", type: "select", options: yesNoOptions },
+      { key: "needReviews", label: "Нужны ли отзывы?", type: "select", options: yesNoOptions },
+      { key: "needMap", label: "Нужна ли карта?", type: "select", options: yesNoOptions },
+    ],
+  },
+  {
+    id: "tech",
+    title: "10. Техническая часть",
+    questions: [
+      { key: "hasDomain", label: "Есть ли домен?", type: "select", options: yesNoOptions },
+      { key: "hasHosting", label: "Есть ли хостинг?", type: "select", options: yesNoOptions },
+      { key: "needCms", label: "Нужна ли CMS?", type: "select", options: yesNoOptions },
+      { key: "cmsPreference", label: "Какая CMS?", type: "text" },
+      { key: "needAdminPanel", label: "Нужна ли админ-панель?", type: "select", options: yesNoOptions },
+      { key: "whoMaintains", label: "Кто будет поддерживать сайт?", type: "text" },
+      { key: "needSeo", label: "Нужна ли SEO-оптимизация?", type: "select", options: yesNoOptions },
+      { key: "needAnalytics", label: "Нужна ли аналитика?", type: "select", options: ["Google Analytics", "Яндекс.Метрика", "Обе", "Не нужно", "Не знаю"] },
+    ],
+  },
+  {
+    id: "marketing",
+    title: "11. Маркетинг",
+    questions: [
+      { key: "planningContextAds", label: "Планируется ли контекстная реклама?", type: "select", options: yesNoOptions },
+      { key: "planningSeoPromotion", label: "Планируется ли SEO-продвижение?", type: "select", options: yesNoOptions },
+      { key: "planningTargetAds", label: "Будет ли таргетированная реклама?", type: "select", options: yesNoOptions },
+      { key: "needLandingPages", label: "Нужны ли посадочные страницы?", type: "select", options: yesNoOptions },
+      { key: "hasUtp", label: "Есть ли УТП?", type: "select", options: yesNoOptions },
+    ],
+  },
+  {
+    id: "timeline",
+    title: "12. Сроки и бюджет",
+    questions: [
+      { key: "launchDate", label: "Когда нужен запуск?", type: "text" },
+      { key: "hasDeadline", label: "Есть ли дедлайн?", type: "select", options: yesNoOptions },
+      { key: "deadlineDate", label: "Дата дедлайна", type: "text" },
+      { key: "budget", label: "Какой бюджет заложен?", type: "text" },
+      { key: "phasedDevelopment", label: "Планируется ли поэтапная разработка?", type: "select", options: yesNoOptions },
+    ],
+  },
+  {
+    id: "legal",
+    title: "13. Юридическая часть",
+    questions: [
+      { key: "needPrivacyPolicy", label: "Нужна ли политика конфиденциальности?", type: "select", options: yesNoOptions },
+      { key: "needOffer", label: "Нужна ли оферта?", type: "select", options: yesNoOptions },
+      { key: "personalDataProcessing", label: "Будет ли обработка персональных данных?", type: "select", options: yesNoOptions },
+      { key: "needCookieNotice", label: "Нужны ли cookie-уведомления?", type: "select", options: yesNoOptions },
+    ],
+  },
+  {
+    id: "support",
+    title: "14. Поддержка",
+    questions: [
+      { key: "needTechSupport", label: "Нужна ли техническая поддержка после запуска?", type: "select", options: yesNoOptions },
+      { key: "needFutureImprovements", label: "Нужны ли доработки в будущем?", type: "select", options: yesNoOptions },
+      { key: "needSupportContract", label: "Нужен ли договор на обслуживание?", type: "select", options: yesNoOptions },
+    ],
+  },
+  {
+    id: "strategy",
+    title: "Дополнительные стратегические вопросы",
+    questions: [
+      { key: "mainDifference", label: "В чём ваше главное отличие от конкурентов?", type: "textarea" },
+      { key: "whyPickYouStrategy", label: "Почему клиент должен выбрать вас?", type: "textarea" },
+      { key: "desiredBrandImage", label: "Какой образ бренда вы хотите транслировать?", type: "textarea" },
+      { key: "mandatoryHomepageBlocks", label: "Что обязательно должно быть на главной странице?", type: "textarea" },
+      { key: "successInSixMonths", label: "Что будет считаться успешным результатом через 6 месяцев?", type: "textarea" },
+    ],
+  },
+];
+
+const createInitialForm = (): BriefForm => ({
+  companyName: "",
+  businessSphere: "",
+  businessModel: "",
+  regions: "",
+  currentSite: "",
+  redesignReason: "",
+  mainProblems: "",
+
+  mainGoal: [],
+  kpi: "",
+  targetAction: "",
+
+  targetClient: "",
+  audienceAgeGenderIncome: "",
+  b2bDecisionMaker: "",
+  clientPain: "",
+  whyChooseYou: "",
+  currentAcquisition: "",
+
+  productsServices: "",
+  positionsCount: "",
+  needCatalog: "",
+  needFilters: "",
+  needProductCards: "",
+  publicPrices: "",
+  needOnlinePayment: "",
+
+  competitors: "",
+  competitorLikes: "",
+  competitorDislikes: "",
+  visualReferences: "",
+
+  requiredSections: "Главная\nО компании\nУслуги / Каталог\nКейсы\nБлог\nКонтакты",
+  needAccount: "",
+  needMultiLanguage: "",
+  needMobileAdaptation: "Да",
+
+  hasBrandStyle: "",
+  hasLogo: "",
+  hasBrandbook: "",
+  preferredColors: "",
+  forbiddenColors: "",
+  visualStyle: [],
+  likedDesignSites: "",
+
+  hasTexts: "",
+  needCopywriting: "",
+  hasPhotos: "",
+  needPhotoSession: "",
+  needVideo: "",
+  whoWillFillContent: "",
+
+  needFeedbackForms: "Да",
+  needChat: "",
+  needCrm: "",
+  crmName: "",
+  needOneC: "",
+  needPaymentSystems: "",
+  paymentSystems: "",
+  needCalculator: "",
+  needBlog: "",
+  needReviews: "",
+  needMap: "",
+
+  hasDomain: "",
+  hasHosting: "",
+  needCms: "",
+  cmsPreference: "",
+  needAdminPanel: "",
+  whoMaintains: "",
+  needSeo: "",
+  needAnalytics: "",
+
+  planningContextAds: "",
+  planningSeoPromotion: "",
+  planningTargetAds: "",
+  needLandingPages: "",
+  hasUtp: "",
+
+  launchDate: "",
+  hasDeadline: "",
+  deadlineDate: "",
+  budget: "",
+  phasedDevelopment: "",
+
+  needPrivacyPolicy: "",
+  needOffer: "",
+  personalDataProcessing: "",
+  needCookieNotice: "",
+
+  needTechSupport: "",
+  needFutureImprovements: "",
+  needSupportContract: "",
+
+  mainDifference: "",
+  whyPickYouStrategy: "",
+  desiredBrandImage: "",
+  mandatoryHomepageBlocks: "",
+  successInSixMonths: "",
+});
+
+const form = ref<BriefForm>(createInitialForm());
+const saveStatusText = ref("Черновик не сохранён");
+const submitMessage = ref("");
+const submitError = ref(false);
+const sending = ref(false);
+
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+const toggleMulti = (key: keyof BriefForm, option: string) => {
+  const current = Array.isArray(form.value[key])
+    ? ([...(form.value[key] as string[])] as string[])
+    : [];
+
+  if (current.includes(option)) {
+    form.value[key] = current.filter((item) => item !== option) as BriefForm[keyof BriefForm];
+    return;
+  }
+
+  form.value[key] = [...current, option] as BriefForm[keyof BriefForm];
+};
+
+const saveDraft = () => {
+  if (!process.client) return;
+
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(form.value));
+  saveStatusText.value = `Черновик сохранён: ${new Date().toLocaleTimeString()}`;
+};
+
+const loadDraft = () => {
+  if (!process.client) return;
+
+  const rawDraft = localStorage.getItem(DRAFT_KEY);
+  if (!rawDraft) {
+    saveStatusText.value = "Черновик пока пуст";
+    return;
+  }
+
+  try {
+    const parsed = JSON.parse(rawDraft) as Partial<BriefForm>;
+    form.value = {
+      ...createInitialForm(),
+      ...parsed,
+      mainGoal: Array.isArray(parsed.mainGoal) ? parsed.mainGoal : [],
+      visualStyle: Array.isArray(parsed.visualStyle) ? parsed.visualStyle : [],
+    };
+    saveStatusText.value = "Черновик загружен";
+  } catch {
+    saveStatusText.value = "Не удалось загрузить черновик";
+  }
+};
+
+watch(
+  form,
+  () => {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveDraft, 250);
+  },
+  { deep: true }
+);
+
+const clearDraft = () => {
+  if (!process.client) return;
+
+  form.value = createInitialForm();
+  localStorage.removeItem(DRAFT_KEY);
+  saveStatusText.value = "Черновик очищен";
+  submitMessage.value = "";
+};
+
+const submitBrief = async () => {
+  submitMessage.value = "";
+  submitError.value = false;
+
+  sending.value = true;
+  try {
+    await apiFetch("/api/brief", {
+      method: "POST",
+      body: {
+        form: form.value,
+      },
+    });
+
+    saveDraft();
+    submitMessage.value = "Бриф отправлен в Telegram";
+  } catch (error) {
+    console.error("Failed to send brief:", error);
+    submitError.value = true;
+    submitMessage.value = "Не удалось отправить бриф. Проверьте подключение и повторите.";
+  } finally {
+    sending.value = false;
+  }
+};
+
 onMounted(async () => {
   await initAuth();
 
   if (!isAuthenticated.value) {
-    router.push("/login");
+    await router.push("/login");
     return;
   }
 
   await refreshUser();
-  await loadSites();
+  loadDraft();
 });
-
-// Форма нового сайта
-const newSite = ref({
-  name: "",
-  domain: "",
-  description: "",
-});
-
-// Периоды для аналитики
-const periods = [
-  { value: "1d", label: "Сегодня" },
-  { value: "7d", label: "7 дней" },
-  { value: "30d", label: "30 дней" },
-  { value: "90d", label: "90 дней" },
-];
-
-// Загрузка сайтов
-const loadSites = async () => {
-  if (!isAuthenticated.value) {
-    router.push("/login");
-    return;
-  }
-
-  try {
-    const { apiFetch } = useApi();
-    const data = await apiFetch("/api/sites");
-    sites.value = data || [];
-  } catch (error) {
-    console.error("Error loading sites:", error);
-    if (error?.statusCode === 401 || error?.status === 401) {
-      router.push("/login");
-    }
-  }
-};
-
-// Добавление нового сайта
-const addSite = async () => {
-  loading.value = true;
-  try {
-    const { apiFetch } = useApi();
-    const data = await apiFetch("/api/sites", {
-      method: "POST",
-      body: newSite.value,
-    });
-
-    if (data?.success) {
-      sites.value.push(data.site);
-      newSite.value = { name: "", domain: "", description: "" };
-
-      // Обновляем данные пользователя с сервера
-      await refreshUser();
-    } else if (data?.error) {
-      alert(data.error);
-    }
-  } catch (error) {
-    console.error("Error adding site:", error);
-    alert("Ошибка при создании сайта");
-  } finally {
-    loading.value = false;
-  }
-};
-
-// Выбор сайта для просмотра аналитики
-const selectSite = async (site) => {
-  selectedSite.value = site;
-  await loadAnalytics(site.id);
-};
-
-// Загрузка аналитики
-const loadAnalytics = async (siteId) => {
-  try {
-    const { apiFetch } = useApi();
-    const data = await apiFetch(
-      `/api/analytics/stats?siteId=${siteId}&period=${currentPeriod.value}`
-    );
-    analytics.value = data;
-  } catch (error) {
-    console.error("Error loading analytics:", error);
-  }
-};
-
-// Изменение периода
-const changePeriod = async (period) => {
-  currentPeriod.value = period;
-  if (selectedSite.value) {
-    await loadAnalytics(selectedSite.value.id);
-  }
-};
-
-// Показать код отслеживания
-const showTrackingCode = (site) => {
-  const trackingCode = [
-    "<!-- Kiruhak Analytics -->",
-    "<script>",
-    `  window.KIRUHAK_SITE_ID = '${site.id}';`,
-    "<\\/script>",
-    '<script src="https://kiruhak11.ru/analytics.js"><\\/script>',
-    "<!-- End Kiruhak Analytics -->",
-  ].join("\n");
-
-  selectedSiteForCode.value = {
-    ...site,
-    trackingCode,
-  };
-  showCodeModal.value = true;
-};
-
-// Закрыть модальное окно
-const closeCodeModal = () => {
-  showCodeModal.value = false;
-  selectedSiteForCode.value = null;
-  copied.value = false;
-};
-
-// Копировать код
-const copyCode = async () => {
-  try {
-    await navigator.clipboard.writeText(selectedSiteForCode.value.trackingCode);
-    copied.value = true;
-    setTimeout(() => {
-      copied.value = false;
-    }, 2000);
-  } catch (error) {
-    console.error("Error copying code:", error);
-  }
-};
-
-// Форматирование времени
-const formatTime = (seconds) => {
-  if (!seconds) return "0 сек";
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}м ${remainingSeconds}с`;
-};
 </script>
 
-<style lang="scss" scoped>
-.analytics-page {
-  padding: 2rem 0;
+<style scoped lang="scss">
+.brief-page {
+  padding: 2rem 0 3rem;
+
   .container {
-    max-width: 1200px;
+    max-width: 1100px;
     margin: 0 auto;
     padding: 0 1rem;
   }
+}
 
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 2rem;
-    gap: 2rem;
+.page-header {
+  margin-bottom: 1.5rem;
 
-    .header-left {
-      h1 {
-        color: var(--color-text);
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-
-      p {
-        color: var(--color-text);
-        font-size: 1.1rem;
-        margin: 0;
-      }
-    }
-
-    .header-right {
-      .user-info {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        background: var(--background-color);
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        padding: 1rem;
-        min-width: 300px;
-
-        .user-avatar {
-          width: 50px;
-          height: 50px;
-          border-radius: 50%;
-          overflow: hidden;
-          flex-shrink: 0;
-
-          img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-          }
-
-          .avatar-placeholder {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-          }
-        }
-
-        .user-details {
-          flex: 1;
-          min-width: 0;
-
-          .user-name {
-            font-weight: 600;
-            color: var(--color-text);
-            margin-bottom: 0.25rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
-
-          .user-balance {
-            color: #667eea;
-            font-weight: 500;
-            font-size: 0.9rem;
-          }
-        }
-
-        .logout-btn {
-          background: transparent;
-          border: 1px solid var(--border-color);
-          color: var(--color-text);
-          padding: 0.5rem 1rem;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 0.9rem;
-          transition: all 0.2s ease;
-
-          &:hover {
-            background: var(--border-color);
-          }
-        }
-      }
-    }
+  h1 {
+    margin: 0 0 0.5rem;
+    color: var(--color-text);
+    font-size: 2rem;
   }
 
-  @media (max-width: 768px) {
-    .page-header {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 1rem;
-
-      .header-right .user-info {
-        min-width: auto;
-      }
-    }
+  p {
+    margin: 0;
+    color: var(--color-text);
+    opacity: 0.85;
   }
 }
 
-.add-site-form {
-  background: var(--background-color);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 2rem;
-  margin-bottom: 3rem;
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 
-  h2 {
-    margin-bottom: 1.5rem;
+  .draft-status {
     color: var(--color-text);
+    font-size: 0.95rem;
   }
 
-  .form-group {
-    margin-bottom: 1rem;
-
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      color: var(--color-text);
-      font-weight: 500;
-    }
-
-    input,
-    textarea {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      background: var(--background-color);
-      color: var(--color-text);
-
-      &:focus {
-        outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-      }
-    }
-
-    textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
-  }
-
-  button {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    padding: 0.75rem 2rem;
+  .clear-btn {
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--color-text);
+    padding: 0.6rem 1rem;
     border-radius: 8px;
     cursor: pointer;
+  }
+}
+
+.brief-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.question-section {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--background-color);
+  padding: 1.25rem;
+
+  h2 {
+    margin: 0 0 1rem;
+    color: var(--color-text);
+    font-size: 1.2rem;
+  }
+}
+
+.questions-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+
+  label {
+    color: var(--color-text);
+    font-size: 0.95rem;
     font-weight: 500;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    background: var(--background-color);
+    color: var(--color-text);
+    border-radius: 8px;
+    padding: 0.7rem 0.8rem;
+    font-size: 0.95rem;
+
+    &:focus {
+      outline: none;
+      border-color: #3f8efc;
+      box-shadow: 0 0 0 3px rgba(63, 142, 252, 0.15);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 90px;
+  }
+}
+
+.required {
+  color: #d94848;
+}
+
+.checkbox-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-text);
+  font-size: 0.92rem;
+
+  input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  .submit-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 0.85rem 1.2rem;
+    color: #fff;
+    background: linear-gradient(135deg, #2f6fed 0%, #2aa89f 100%);
+    font-weight: 600;
+    cursor: pointer;
 
     &:disabled {
-      opacity: 0.6;
+      opacity: 0.7;
       cursor: not-allowed;
     }
   }
 }
 
-.sites-list {
-  h2 {
-    margin-bottom: 1.5rem;
-    color: var(--color-text);
+.submit-message {
+  margin: 0;
+  font-size: 0.95rem;
+
+  &.success {
+    color: #0f8a4b;
   }
 
-  .no-sites {
-    text-align: center;
-    padding: 3rem;
-    color: var(--color-text);
-  }
-
-  .sites-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-  }
-
-  .site-card {
-    background: var(--background-color);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 1.5rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-    }
-
-    .site-info {
-      h3 {
-        margin-bottom: 0.5rem;
-        color: var(--color-text);
-      }
-
-      .domain {
-        color: #667eea;
-        font-weight: 500;
-        margin-bottom: 0.5rem;
-      }
-
-      .description {
-        color: var(--color-text);
-        font-size: 0.9rem;
-      }
-    }
-
-    .site-stats {
-      display: flex;
-      gap: 1rem;
-      margin: 1rem 0;
-
-      .stat {
-        text-align: center;
-
-        .stat-number {
-          display: block;
-          font-size: 1.5rem;
-          font-weight: bold;
-          color: var(--color-text);
-        }
-
-        .stat-label {
-          font-size: 0.8rem;
-          color: var(--color-text);
-        }
-      }
-    }
-
-    .tracking-code {
-      .btn-secondary {
-        background: transparent;
-        border: 1px solid var(--border-color);
-        color: var(--color-text);
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        cursor: pointer;
-
-        &:hover {
-          background: var(--border-color);
-        }
-      }
-    }
+  &.error {
+    color: #c43d3d;
   }
 }
 
-.site-analytics {
-  margin-top: 3rem;
-
-  h2 {
-    margin-bottom: 1.5rem;
-    color: var(--color-text);
+@media (max-width: 900px) {
+  .questions-grid {
+    grid-template-columns: 1fr;
   }
 
-  .period-selector {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
-
-    .period-btn {
-      padding: 0.5rem 1rem;
-      border: 1px solid var(--border-color);
-      background: transparent;
-      color: var(--color-text);
-      border-radius: 6px;
-      cursor: pointer;
-
-      &.active {
-        background: #667eea;
-        color: white;
-        border-color: #667eea;
-      }
-    }
-  }
-
-  .analytics-grid {
-    display: grid;
-    gap: 2rem;
-  }
-
-  .stats-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-
-    .stat-card {
-      background: var(--background-color);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 1.5rem;
-      text-align: center;
-
-      h3 {
-        margin-bottom: 1rem;
-        color: var(--color-text);
-        font-size: 0.9rem;
-      }
-
-      .stat-value {
-        font-size: 2rem;
-        font-weight: bold;
-        color: var(--color-text);
-      }
-    }
-  }
-
-  .chart-section {
-    background: var(--background-color);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 1.5rem;
-
-    h3 {
-      margin-bottom: 1rem;
-      color: var(--color-text);
-    }
-
-    .pages-list,
-    .sources-list {
-      .page-item,
-      .source-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid var(--border-color);
-
-        &:last-child {
-          border-bottom: none;
-        }
-
-        .page-path,
-        .source-domain {
-          color: var(--color-text);
-        }
-
-        .page-visits,
-        .source-visits {
-          color: var(--color-text);
-          font-weight: 500;
-        }
-      }
-    }
-  }
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-
-  .modal-content {
-    background: var(--background-color);
-    border-radius: 12px;
-    padding: 2rem;
-    max-width: 600px;
-    width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
-
-    h3 {
-      margin-bottom: 1rem;
-      color: var(--color-text);
-    }
-
-    .code-block {
-      position: relative;
-      margin: 1rem 0;
-
-      pre {
-        background: #1a1a1a;
-        color: #fff;
-        padding: 1rem;
-        border-radius: 8px;
-        overflow-x: auto;
-        font-size: 0.9rem;
-        line-height: 1.4;
-      }
-
-      .copy-btn {
-        position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-        background: #667eea;
-        color: white;
-        border: none;
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        cursor: pointer;
-      }
-    }
-
-    .close-btn {
-      background: var(--border-color);
-      color: var(--color-text);
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 1rem;
-    }
-  }
-}
-
-@media (max-width: 768px) {
-  .analytics-page {
-    .sites-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .stats-cards {
-      grid-template-columns: 1fr;
-    }
-
-    .period-selector {
-      flex-wrap: wrap;
-    }
+  .status-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

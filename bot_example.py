@@ -9,6 +9,7 @@ import json
 import asyncio
 import schedule
 import time
+import logging
 from datetime import datetime, timedelta
 from telegram import (
     Update,
@@ -25,12 +26,14 @@ import os
 from bot_moderation import handle_component_callback
 
 # Конфигурация
-BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "6122558496:AAEXwnP3E4uIk5sSSNzD-13vQK6A4ybCBFI")
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 API_URL = os.getenv("API_URL", "http://app:3015/api/auth/create-account")
 CHANNEL_ID = os.getenv("CHANNEL_ID", "@webmonke")  # ID вашего канала
-ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", "123456789")  # ID админа для статистики
+ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID") or os.getenv("ADMIN_TELEGRAM_ID", "123456789")
 BOT_SECRET = os.getenv("BOT_SECRET", "")
 BOT_API_BASE_URL = os.getenv("BOT_API_BASE_URL", "").strip()
+
+logger = logging.getLogger(__name__)
 
 if not BOT_API_BASE_URL:
     if "/api/" in API_URL:
@@ -64,6 +67,67 @@ def bot_headers():
 
 def bot_api_url(path):
     return f"{BOT_API_BASE_URL.rstrip('/')}{path}"
+
+
+def _safe_json(response):
+    try:
+        payload = response.json()
+    except ValueError:
+        text = (response.text or "").strip()
+        return {
+            "success": False,
+            "error": f"Invalid JSON response (HTTP {response.status_code})",
+            "statusMessage": text[:200] or "Empty body",
+        }
+
+    if not isinstance(payload, dict):
+        return {
+            "success": False,
+            "error": "Invalid API response shape",
+            "statusMessage": f"Expected object, got {type(payload).__name__}",
+        }
+
+    # Нормализуем ошибки HTTP в единый формат.
+    if response.status_code >= 400 and payload.get("success") is not True:
+        payload.setdefault("success", False)
+        payload.setdefault("error", payload.get("statusMessage") or f"HTTP {response.status_code}")
+    return payload
+
+
+def _normalize_account_payload(payload):
+    if not isinstance(payload, dict):
+        return {
+            "success": False,
+            "error": "API returned non-object payload",
+            "raw": payload,
+        }
+
+    data = payload.get("data")
+    if isinstance(data, dict):
+        merged = dict(payload)
+        # Поля верхнего уровня важнее, но недостающие подхватываем из data.
+        for key, value in data.items():
+            merged.setdefault(key, value)
+        payload = merged
+
+    user_obj = payload.get("user")
+    if not isinstance(user_obj, dict):
+        user_obj = {}
+
+    login = payload.get("login") or user_obj.get("login") or "-"
+    quick_token = payload.get("quickToken") or payload.get("quick_token") or "-"
+    quick_url = payload.get("quickLoginUrl") or payload.get("quick_login_url") or "-"
+    balance = payload.get("balance")
+    if balance is None:
+        balance = user_obj.get("balance")
+
+    normalized = dict(payload)
+    normalized["user"] = user_obj
+    normalized["login"] = login
+    normalized["quickToken"] = quick_token
+    normalized["quickLoginUrl"] = quick_url
+    normalized["balance"] = balance
+    return normalized
 
 
 def get_main_menu_markup():
@@ -100,11 +164,13 @@ async def create_user_account(telegram_id, first_name, last_name, username):
         if result is None:
             return "❌ Ошибка: пустой ответ от сервера"
         
-        if result.get("success"):
-            quick_token = result.get("quickToken", "")
-            quick_url = result.get("quickLoginUrl", "")
-            if result.get("existing"):
-                login = result.get("login", "неизвестно")
+        normalized = _normalize_account_payload(result)
+
+        if normalized.get("success"):
+            quick_token = normalized.get("quickToken", "")
+            quick_url = normalized.get("quickLoginUrl", "")
+            if normalized.get("existing"):
+                login = normalized.get("login", "неизвестно")
                 return (
                     "ℹ️ Аккаунт уже существует.\n\n"
                     f"🔑 Логин: `{login}`\n"
@@ -112,17 +178,20 @@ async def create_user_account(telegram_id, first_name, last_name, username):
                     f"🌐 Быстрый вход: {quick_url}\n"
                 )
 
-            user = result.get("user", {})
+            user = normalized.get("user", {})
+            balance = normalized.get("balance")
+            if not isinstance(balance, (int, float)):
+                balance = 0
             return (
                 "✅ Аккаунт успешно создан!\n\n"
                 f"🔑 Логин: `{user.get('login', '')}`\n"
                 f"🔐 Пароль: `{user.get('password', '')}`\n"
-                f"💰 Баланс: {user.get('balance', 0) / 100} ₽\n\n"
+                f"💰 Баланс: {balance / 100} ₽\n\n"
                 f"🪙 Токен быстрого входа: `{quick_token}`\n"
                 f"🌐 Быстрый вход: {quick_url}\n"
             )
         else:
-            return f"❌ Ошибка: {result.get('error', 'Неизвестная ошибка')}"
+            return f"❌ Ошибка: {_get_api_error(normalized)}"
                 
     except requests.exceptions.Timeout:
         return "❌ Ошибка: Превышено время ожидания ответа от сервера"
@@ -150,7 +219,7 @@ def create_or_fetch_account_payload(telegram_id, first_name, last_name, username
     result = None
     for idx, api_url in enumerate(api_candidates):
         response = requests.post(api_url, json=data, headers=bot_headers(), timeout=10)
-        result = response.json()
+        result = _safe_json(response)
 
         # Если попали в telegram-auth endpoint по ошибке, делаем fallback.
         if (
@@ -164,7 +233,7 @@ def create_or_fetch_account_payload(telegram_id, first_name, last_name, username
     if result is None:
         raise RuntimeError("Empty API response")
 
-    return result
+    return _normalize_account_payload(result)
 
 
 def bot_post(path, payload):
@@ -174,14 +243,7 @@ def bot_post(path, payload):
         headers=bot_headers(),
         timeout=10,
     )
-    try:
-        return response.json()
-    except Exception:
-        return {
-            "success": False,
-            "error": f"HTTP {response.status_code}",
-            "statusMessage": "Invalid API response",
-        }
+    return _safe_json(response)
 
 
 def _get_api_error(payload):
@@ -414,18 +476,24 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        login = payload.get("login") or payload.get("user", {}).get("login", "-")
+        login = payload.get("login", "-")
         quick_token = payload.get("quickToken", "-")
         quick_url = payload.get("quickLoginUrl", "-")
+        balance = payload.get("balance")
+        balance_line = ""
+        if isinstance(balance, (int, float)):
+            balance_line = f"💰 Баланс: {balance / 100:.2f} ₽\n"
 
         await update.message.reply_text(
             "👤 Профиль\n\n"
             f"🔑 Логин: `{login}`\n"
+            f"{balance_line}"
             f"🪙 Токен быстрого входа: `{quick_token}`\n"
             f"🌐 Быстрый вход: {quick_url}",
         )
-    except Exception as e:
-        await update.message.reply_text(f"❌ Ошибка профиля: {str(e)}")
+    except Exception:
+        logger.exception("Profile command failed")
+        await update.message.reply_text("❌ Ошибка профиля. Попробуйте снова позже.")
 
 
 async def quick_login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -707,6 +775,14 @@ def main():
     """Основная функция"""
     global bot_app
     
+    logging.basicConfig(
+        level=os.getenv("LOG_LEVEL", "INFO"),
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+
+    if not BOT_TOKEN or ":" not in BOT_TOKEN:
+        raise RuntimeError("TELEGRAM_BOT_TOKEN is not configured")
+
     print("🚀 Запуск улучшенного бота...")
     print(f"🌐 API_URL: {API_URL}")
     print(f"🌐 BOT_API_BASE_URL: {BOT_API_BASE_URL}")

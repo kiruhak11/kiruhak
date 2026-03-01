@@ -236,7 +236,7 @@
               stroke-linejoin="round"
             />
           </svg>
-          Аналитика
+          Бриф
         </NuxtLink>
       </li>
     </ul>
