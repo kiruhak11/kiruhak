@@ -172,7 +172,7 @@ const sendToTelegram = async (message: string, token: string, chatId: string) =>
   if (!response.ok) {
     const details = await response.text();
     throw createError({
-      statusCode: 500,
+      statusCode: 502,
       statusMessage: `Failed to send Telegram message: ${details}`,
     });
   }
@@ -181,6 +181,10 @@ const sendToTelegram = async (message: string, token: string, chatId: string) =>
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const body = (await readBody(event)) as BriefBody;
+  const telegramToken =
+    String(config.telegramToken || process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_TOKEN || "").trim();
+  const telegramChatId =
+    String(config.telegramChatId || process.env.ADMIN_TELEGRAM_ID || process.env.TELEGRAM_CHAT_ID || "").trim();
 
   if (!body?.form || typeof body.form !== "object") {
     throw createError({
@@ -205,10 +209,11 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (!config.telegramToken || !config.telegramChatId) {
+  if (!telegramToken || !telegramChatId) {
     throw createError({
       statusCode: 500,
-      statusMessage: "Telegram integration is not configured",
+      statusMessage:
+        "Telegram integration is not configured (set TELEGRAM_BOT_TOKEN/ADMIN_TELEGRAM_ID or TELEGRAM_TOKEN/TELEGRAM_CHAT_ID)",
     });
   }
 
@@ -223,8 +228,19 @@ export default defineEventHandler(async (event) => {
   const message = renderBriefText(form, userLabel);
   const chunks = chunkText(message);
 
-  for (const chunk of chunks) {
-    await sendToTelegram(chunk, config.telegramToken, config.telegramChatId);
+  try {
+    for (const chunk of chunks) {
+      await sendToTelegram(chunk, telegramToken, telegramChatId);
+    }
+  } catch (error) {
+    console.error("Brief telegram send error:", error);
+    if (error && typeof error === "object" && "statusMessage" in error) {
+      throw error;
+    }
+    throw createError({
+      statusCode: 502,
+      statusMessage: "Failed to deliver brief to Telegram",
+    });
   }
 
   return {

@@ -109,8 +109,10 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
-    telegramToken: process.env.TELEGRAM_BOT_TOKEN || "",
-    telegramChatId: process.env.ADMIN_TELEGRAM_ID || "",
+    telegramToken:
+      process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_TOKEN || "",
+    telegramChatId:
+      process.env.ADMIN_TELEGRAM_ID || process.env.TELEGRAM_CHAT_ID || "",
     channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || "webmonkey",
     botSecret: process.env.BOT_SECRET || "",
     allowSelfTopup: process.env.ALLOW_SELF_TOPUP === "true",

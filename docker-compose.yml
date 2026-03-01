@@ -49,6 +49,9 @@ services:
       REDIS_URL: redis://redis:6379
       # Telegram настройки
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
+      ADMIN_TELEGRAM_ID: ${ADMIN_TELEGRAM_ID}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
       TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME:-webmonke}
       BOT_SECRET: ${BOT_SECRET:-your-secret-key-change-me}
       AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-your-secret-key-change-me}

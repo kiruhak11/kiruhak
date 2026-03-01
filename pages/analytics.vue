@@ -607,8 +607,14 @@ const submitBrief = async () => {
     submitMessage.value = "Бриф отправлен в Telegram";
   } catch (error) {
     console.error("Failed to send brief:", error);
+    const statusMessage =
+      (error as { data?: { statusMessage?: string }; message?: string })?.data?.statusMessage ||
+      (error as { message?: string })?.message ||
+      "";
     submitError.value = true;
-    submitMessage.value = "Не удалось отправить бриф. Проверьте подключение и повторите.";
+    submitMessage.value = statusMessage
+      ? `Не удалось отправить бриф: ${statusMessage}`
+      : "Не удалось отправить бриф. Проверьте подключение и повторите.";
   } finally {
     sending.value = false;
   }
