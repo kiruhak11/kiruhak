@@ -75,6 +75,35 @@ def bot_api_url(path):
     return f"{BOT_API_BASE_URL.rstrip('/')}{path}"
 
 
+def _unique_preserve_order(items):
+    seen = set()
+    result = []
+    for item in items:
+        if item and item not in seen:
+            seen.add(item)
+            result.append(item)
+    return result
+
+
+def _expand_url_host_fallbacks(url):
+    urls = [url]
+    if "host.docker.internal" in url:
+        urls.append(url.replace("host.docker.internal", "127.0.0.1"))
+        urls.append(url.replace("host.docker.internal", "localhost"))
+        urls.append(url.replace("host.docker.internal", "app"))
+    return _unique_preserve_order(urls)
+
+
+def _bot_api_url_candidates(path):
+    base_candidates = [BOT_API_BASE_URL]
+    if "/api/" in API_URL:
+        base_candidates.append(API_URL.split("/api/")[0])
+    expanded_bases = []
+    for base in _unique_preserve_order(base_candidates):
+        expanded_bases.extend(_expand_url_host_fallbacks(base))
+    return [f"{base.rstrip('/')}{path}" for base in _unique_preserve_order(expanded_bases)]
+
+
 def _safe_json(response):
     try:
         payload = response.json()
@@ -265,13 +294,19 @@ def create_or_fetch_account_payload(telegram_id, first_name, last_name, username
     }
 
     fallback_api_url = API_URL.replace("/api/auth/telegram", "/api/auth/create-account")
-    api_candidates = [API_URL]
+    api_candidates = _expand_url_host_fallbacks(API_URL)
     if fallback_api_url != API_URL:
-        api_candidates.append(fallback_api_url)
+        api_candidates.extend(_expand_url_host_fallbacks(fallback_api_url))
+    api_candidates = _unique_preserve_order(api_candidates)
 
     result = None
+    last_request_error = None
     for idx, api_url in enumerate(api_candidates):
-        response = requests.post(api_url, json=data, headers=bot_headers(), timeout=10)
+        try:
+            response = requests.post(api_url, json=data, headers=bot_headers(), timeout=10)
+        except requests.exceptions.RequestException as request_error:
+            last_request_error = request_error
+            continue
         result = _safe_json(response)
 
         # Если попали в telegram-auth endpoint по ошибке, делаем fallback.
@@ -284,19 +319,38 @@ def create_or_fetch_account_payload(telegram_id, first_name, last_name, username
         break
 
     if result is None:
+        if last_request_error:
+            raise last_request_error
         raise RuntimeError("Empty API response")
 
     return _normalize_account_payload(result)
 
 
 def bot_post(path, payload):
-    response = requests.post(
-        bot_api_url(path),
-        json=payload,
-        headers=bot_headers(),
-        timeout=10,
-    )
-    return _safe_json(response)
+    last_request_error = None
+    for full_url in _bot_api_url_candidates(path):
+        try:
+            response = requests.post(
+                full_url,
+                json=payload,
+                headers=bot_headers(),
+                timeout=10,
+            )
+            return _safe_json(response)
+        except requests.exceptions.RequestException as request_error:
+            last_request_error = request_error
+            continue
+
+    if last_request_error:
+        return {
+            "success": False,
+            "error": f"Network error: {last_request_error}",
+        }
+
+    return {
+        "success": False,
+        "error": "Network error: no API URL candidates",
+    }
 
 
 def _get_api_error(payload):
@@ -544,6 +598,8 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"🪙 Токен быстрого входа: `{quick_token}`\n"
             f"🌐 Быстрый вход: {quick_url}",
         )
+    except requests.exceptions.RequestException:
+        await update.message.reply_text("❌ Ошибка профиля: сервер недоступен.")
     except Exception:
         logger.exception("Profile command failed")
         await update.message.reply_text("❌ Ошибка профиля. Попробуйте снова позже.")
@@ -574,8 +630,11 @@ async def quick_login_command(update: Update, context: ContextTypes.DEFAULT_TYPE
             f"🪙 Токен: `{quick_token}`\n"
             f"🌐 Ссылка: {quick_url}",
         )
-    except Exception as e:
-        await update.message.reply_text(f"❌ Ошибка быстрого входа: {str(e)}")
+    except requests.exceptions.RequestException:
+        await update.message.reply_text("❌ Ошибка быстрого входа: сервер недоступен.")
+    except Exception:
+        logger.exception("Quick login command failed")
+        await update.message.reply_text("❌ Ошибка быстрого входа. Попробуйте снова позже.")
 
 
 async def logout_all_sessions_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -721,7 +780,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             amount = float(raw_amount)
             if amount <= 0:
-                raise ValueError("amount <= 0")
+                await update.message.reply_text("❌ Сумма должна быть больше 0.")
+                context.user_data[STATE_KEY] = STATE_NONE
+                await show_main_menu(update.message)
+                return
 
             result = bot_post(
                 "/api/bot/topup",
