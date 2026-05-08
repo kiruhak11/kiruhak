@@ -124,7 +124,7 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
 }
 
@@ -141,8 +141,8 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: var(--particle-overlay-color);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
 }
-</style> 
+</style>

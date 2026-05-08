@@ -28,6 +28,11 @@
   --input-border: #ced4da;
   --input-focus: #80bdff;
   --input-background: #ffffff;
+  --particle-overlay-color: rgba(255, 255, 255, 0.05);
+  --footer-surface: rgba(255, 255, 255, 0.82);
+  --footer-glow-1: rgba(79, 172, 254, 0.16);
+  --footer-glow-2: rgba(250, 112, 154, 0.2);
+  --footer-pill-bg: rgba(248, 250, 252, 0.9);
 }
 
 .dark {
@@ -60,4 +65,9 @@
   --input-border: #30363d;
   --input-focus: #58a6ff;
   --input-background: #0d1117;
+  --particle-overlay-color: rgba(7, 10, 14, 0.2);
+  --footer-surface: rgba(13, 17, 23, 0.78);
+  --footer-glow-1: rgba(88, 166, 255, 0.2);
+  --footer-glow-2: rgba(121, 192, 255, 0.14);
+  --footer-pill-bg: rgba(22, 27, 34, 0.92);
 }
