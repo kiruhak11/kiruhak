@@ -131,11 +131,12 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .header {
-    padding: 8px 12px;
-    border-radius: 0 0 16px 16px;
-    background-color: color-mix(in srgb, var(--background-color) 92%, transparent);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
+    padding: 8px 12px 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
