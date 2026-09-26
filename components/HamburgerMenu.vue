@@ -44,11 +44,13 @@
         >
           <section
             class="mobile-menu-panel"
+            :style="genieOriginStyle"
             role="dialog"
             aria-modal="true"
             aria-labelledby="mobile-menu-title"
             @click.stop
           >
+            <div class="menu-sheet">
             <div class="menu-topline">
               <span class="menu-kicker"><i></i> K-STUDIO <b>/</b> НАВИГАЦИЯ</span>
               <div class="menu-top-actions">
@@ -124,6 +126,7 @@
               <span><i></i> ОТКРЫТЫ К НОВЫМ ПРОЕКТАМ</span>
               <span>© K-STUDIO</span>
             </div>
+            </div>
           </section>
         </div>
       </Transition>
@@ -161,7 +164,12 @@ const {
 const isOpen = ref(false);
 const showEditForm = ref(false);
 const showTopUpForm = ref(false);
+const trigger = ref<HTMLButtonElement | null>(null);
 const closeButton = ref<HTMLButtonElement | null>(null);
+const genieOriginStyle = ref<Record<string, string>>({
+  "--genie-x": "calc(100% - 36px)",
+  "--genie-y": "36px",
+});
 
 const navItems = [
   { label: "Главная", to: "/", hint: "Студия и подход" },
@@ -185,6 +193,13 @@ const closeMenu = () => {
 };
 
 const toggleMenu = () => {
+  if (!isOpen.value && trigger.value) {
+    const rect = trigger.value.getBoundingClientRect();
+    genieOriginStyle.value = {
+      "--genie-x": `${rect.left + rect.width / 2}px`,
+      "--genie-y": `${rect.top + rect.height / 2}px`,
+    };
+  }
   isOpen.value = !isOpen.value;
 };
 
@@ -461,10 +476,23 @@ onBeforeUnmount(() => {
 }
 
 .mobile-menu-panel {
+  position: fixed;
+  z-index: 1;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  clip-path: ellipse(180% 150% at var(--genie-x) var(--genie-y));
+  transition: clip-path 560ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: clip-path;
+}
+
+.menu-sheet {
   position: relative;
   isolation: isolate;
   display: flex;
-  width: min(100%, 540px);
+  width: min(calc(100% - 24px), 540px);
   max-height: calc(100vh - 24px - env(safe-area-inset-top));
   max-height: calc(100dvh - 22px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   flex-direction: column;
@@ -473,6 +501,7 @@ onBeforeUnmount(() => {
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  margin-bottom: calc(10px + env(safe-area-inset-bottom));
   padding: 20px 18px calc(18px + env(safe-area-inset-bottom));
   border: 1px solid rgba(133, 184, 209, 0.22);
   border-radius: 28px;
@@ -481,9 +510,11 @@ onBeforeUnmount(() => {
     radial-gradient(ellipse at 100% 100%, rgba(202, 129, 34, 0.17), transparent 38%),
     linear-gradient(145deg, color-mix(in srgb, var(--background-color) 88%, #102b3d 12%), var(--background-color));
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  transform: translateY(0) scale(1);
+  transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.mobile-menu-panel::before {
+.menu-sheet::before {
   position: absolute;
   z-index: -1;
   top: 0;
@@ -759,13 +790,13 @@ onBeforeUnmount(() => {
 .menu-footer i { width: 6px; height: 6px; background: #61cb9a; box-shadow: 0 0 0 4px rgba(97, 203, 154, 0.1), 0 0 12px rgba(97, 203, 154, 0.4); }
 
 .mobile-menu-enter-active,
-.mobile-menu-leave-active { transition: opacity 0.24s ease; }
-.mobile-menu-enter-active .mobile-menu-panel,
-.mobile-menu-leave-active .mobile-menu-panel { transition: transform 0.34s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.24s ease; }
+.mobile-menu-leave-active { transition: opacity 560ms ease; }
 .mobile-menu-enter-from,
 .mobile-menu-leave-to { opacity: 0; }
 .mobile-menu-enter-from .mobile-menu-panel,
-.mobile-menu-leave-to .mobile-menu-panel { transform: translateY(28px) scale(0.985); opacity: 0.7; }
+.mobile-menu-leave-to .mobile-menu-panel { clip-path: ellipse(0 0 at var(--genie-x) var(--genie-y)); }
+.mobile-menu-enter-from .menu-sheet,
+.mobile-menu-leave-to .menu-sheet { transform: translateY(24px) scale(0.94); }
 
 @keyframes menu-link-in {
   from { transform: translateY(7px); opacity: 0; }
@@ -780,7 +811,7 @@ onBeforeUnmount(() => {
   .header-actions { gap: 6px; }
   .header-cta { min-height: 42px; padding: 0 9px; font-size: 0.68rem; }
   .menu-trigger { width: 44px; height: 44px; flex-basis: 44px; border-radius: 14px; }
-  .mobile-menu-panel { gap: 14px; padding-right: 14px; padding-left: 14px; border-radius: 24px; }
+  .menu-sheet { gap: 14px; padding-right: 14px; padding-left: 14px; border-radius: 24px; }
   .menu-link { min-height: 76px; grid-template-columns: 21px minmax(0, 1fr) 16px; gap: 6px; padding: 10px 8px; }
   .menu-link-copy strong { font-size: 0.82rem; }
   .menu-link-copy small { font-size: 0.59rem; }
