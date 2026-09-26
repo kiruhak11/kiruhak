@@ -52,11 +52,15 @@ const positionClass = computed(() => {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100dvh;
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .modal-backdrop {
@@ -72,7 +76,8 @@ const positionClass = computed(() => {
 .modal-container {
   position: relative;
   max-width: 90vw;
-  max-height: 90vh;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow: auto;
   background: var(--background-color);
   border-radius: 16px;
@@ -107,9 +112,17 @@ const positionClass = computed(() => {
 }
 
 @media (max-width: 768px) {
+  .frog-modal-wrapper {
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  }
+
   .modal-container {
     max-width: 100vw;
-    max-height: 100vh;
+    max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    width: 100%;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     border-radius: 16px 16px 0 0;
   }
 

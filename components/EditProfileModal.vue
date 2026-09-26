@@ -125,10 +125,21 @@ const saveProfile = async () => {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   max-width: 400px;
   width: 100%;
-  max-height: 90vh;
+  max-height: min(90vh, 720px);
+  max-height: min(90dvh, 720px);
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   position: relative;
   z-index: 10000;
+}
+
+@media (max-width: 768px) {
+  .modal-overlay { padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom); }
+  .modal-content {
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 12px);
+    border-radius: 18px;
+  }
 }
 
 .modal-header {

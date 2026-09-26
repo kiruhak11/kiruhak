@@ -534,7 +534,17 @@ ${form.value.description}
 
 @media (max-width: 768px) {
   .modal-overlay {
-    padding: 16px;
+    padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
+    align-items: flex-end;
+  }
+
+  .modal-content {
+    width: 100%;
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 20px 20px 0 0;
   }
 
   .modal-body {

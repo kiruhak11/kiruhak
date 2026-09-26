@@ -1,24 +1,32 @@
 <template>
   <div class="container">
     <!-- Гамбургер меню -->
-    <div class="hamburger-menu" @click="toggleMenu">
+    <div class="hamburger-menu">
       <div class="hamburger-menu-text">
         <NuxtLink to="/">
           <h1>K-Studio</h1>
         </NuxtLink>
       </div>
-      <div class="hamburger-menu-icon">
+      <button
+        class="hamburger-menu-icon"
+        type="button"
+        :aria-expanded="isOpen"
+        aria-controls="mobile-navigation"
+        :aria-label="isOpen ? 'Закрыть меню' : 'Открыть меню'"
+        @click="toggleMenu"
+      >
         <div class="bar" :class="{ open: isOpen }"></div>
         <div class="bar" :class="{ open: isOpen }"></div>
         <div class="bar" :class="{ open: isOpen }"></div>
-      </div>
+      </button>
     </div>
 
     <!-- Мобильное меню -->
     <nav
       :class="{ 'mobile-nav-open': isOpen }"
       class="mobile-nav"
-      @click="toggleMenu"
+      id="mobile-navigation"
+      @click="handleNavigationClick"
     >
       <ul>
         <div class="container">
@@ -297,9 +305,14 @@ const showEditForm = ref(false);
 const showTopUpForm = ref(false);
 
 const router = useRouter();
+const route = useRoute();
 
 const toggleMenu = () => {
   isOpen.value = !isOpen.value;
+};
+
+const handleNavigationClick = (event: MouseEvent) => {
+  if ((event.target as HTMLElement).closest("a")) isOpen.value = false;
 };
 
 const handleLogout = () => {
@@ -329,6 +342,10 @@ watch(isOpen, () => {
   } else {
     document.body.classList.remove("no-scroll");
   }
+});
+
+watch(() => route.fullPath, () => {
+  isOpen.value = false;
 });
 
 // Инициализируем аутентификацию
@@ -362,12 +379,37 @@ onBeforeUnmount(() => {
 .hamburger-menu {
   display: flex;
   flex-direction: row;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  gap: 12px;
+
+  &-text a {
+    text-decoration: none;
+  }
+
+  &-text h1 {
+    margin: 0;
+    font-size: 1.2rem;
+    line-height: 1;
+    letter-spacing: 0.04em;
+  }
+
   &-icon {
     display: flex;
     flex-direction: column;
     margin-left: auto;
     cursor: pointer;
-    z-index: 3;
+    z-index: 12;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background: var(--background-color);
+    color: var(--color-text);
   }
   .bar {
     width: 26px;
@@ -375,6 +417,7 @@ onBeforeUnmount(() => {
     background-color: var(--color-text);
     margin: 4px;
     transition: all 0.3s ease;
+    border-radius: 99px;
   }
 
   .bar.open:nth-child(1) {
@@ -394,15 +437,30 @@ onBeforeUnmount(() => {
 
 .mobile {
   &-nav {
-    max-height: 0;
-    overflow: hidden;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 12px;
+    right: 12px;
+    z-index: 11;
+    max-height: calc(100dvh - 88px - env(safe-area-inset-top));
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     opacity: 0;
     transform: translateY(-20px);
-    transition: max-height 0.5s ease, opacity 0.5s ease, transform 0.5s ease;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
     &-open {
-      max-height: 500px;
       opacity: 1;
       transform: translateY(0);
+      visibility: visible;
+      pointer-events: auto;
     }
 
     ul {
@@ -410,6 +468,7 @@ onBeforeUnmount(() => {
       padding: 0;
       margin: 0;
       display: flex;
+      flex-direction: column;
       align-items: center;
     }
 
@@ -634,6 +693,43 @@ onBeforeUnmount(() => {
       border-color: var(--accent-color);
       color: var(--accent-color);
     }
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    position: relative;
+  }
+
+  .mobile-nav .container {
+    width: 100%;
+    max-width: none;
+    padding: 8px 16px 18px;
+    box-sizing: border-box;
+  }
+
+  .mobile-nav ul {
+    align-items: stretch;
+  }
+
+  .mobile-nav li {
+    margin: 8px 0;
+    font-size: 16px;
+  }
+
+  .mobile-nav .nav-icons-row {
+    margin: 4px 0 12px;
+    padding: 8px;
+  }
+
+  .mobile-nav .nav-icon-link {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 8px;
+  }
+
+  .line {
+    width: 100%;
   }
 }
 </style>

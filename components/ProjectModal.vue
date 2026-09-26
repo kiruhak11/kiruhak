@@ -251,6 +251,8 @@ defineEmits(["close"]);
   justify-content: center;
   z-index: 1000;
   padding: 20px;
+  padding-top: max(20px, env(safe-area-inset-top));
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
   animation: fadeIn 0.3s ease-out;
 }
 
@@ -268,8 +270,11 @@ defineEmits(["close"]);
   border-radius: 24px;
   max-width: 1000px;
   width: 100%;
-  max-height: 90vh;
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   position: relative;
   border: 1px solid var(--border-color);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -605,12 +610,32 @@ defineEmits(["close"]);
 // Responsive Design
 @media (max-width: 768px) {
   .project-modal-overlay {
-    padding: 10px;
+    padding: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    align-items: flex-end;
   }
 
   .project-modal-content {
-    max-height: 95vh;
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100vh - env(safe-area-inset-top));
+    max-height: calc(100dvh - env(safe-area-inset-top));
+    border-radius: 20px 20px 0 0;
   }
+
+  .project-hero { border-radius: 20px 20px 0 0; }
+
+  .close-button {
+    top: 12px;
+    right: 12px;
+    padding: 9px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--background-color) 88%, transparent);
+    backdrop-filter: blur(12px);
+  }
+
+  .project-image-container { height: clamp(150px, 28dvh, 240px); }
 
   .project-header-info {
     padding: 24px;
