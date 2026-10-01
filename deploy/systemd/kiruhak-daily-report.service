@@ -1,0 +1,20 @@
+[Unit]
+Description=Kiruhak daily Docker and website Telegram report
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/etc/kiruhak-daily-report.env
+ExecStart=/usr/bin/python3 /opt/kiruhak-daily-report/daily_server_report.py
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

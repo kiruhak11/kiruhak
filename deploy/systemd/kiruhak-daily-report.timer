@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Kiruhak daily status report at noon in Barnaul
+
+[Timer]
+OnCalendar=*-*-* 12:00:00 Asia/Barnaul
+Persistent=true
+Unit=kiruhak-daily-report.service
+
+[Install]
+WantedBy=timers.target
