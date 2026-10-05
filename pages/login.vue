@@ -14,7 +14,7 @@
               <h3>Создать аккаунт</h3>
               <p>Перейдите в Telegram бота для создания аккаунта</p>
               <a
-                href="https://t.me/gs_company_bot"
+                :href="publicContact.platformBot"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="telegram-btn"
@@ -108,6 +108,8 @@
 </template>
 
 <script setup>
+import { publicContact } from "~/constants/public-contact";
+
 const { loginWithCredentials, loading, initAuth } = useAuth();
 const router = useRouter();
 

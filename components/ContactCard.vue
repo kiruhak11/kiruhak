@@ -1,31 +1,41 @@
 <template>
   <div class="container">
-    <NuxtLink
+    <a
       data-text="Github"
-      to="https://github.com/kiruhak11"
+      :href="publicContact.github.href"
       style="--r: -15"
       class="glass"
+      target="_blank"
+      rel="noopener noreferrer"
     >
       <IconGitHub />
-    </NuxtLink>
-    <NuxtLink
+    </a>
+    <a
       data-text="Telegram"
-      to="https://t.me/kiruhak11"
+      :href="publicContact.telegram.href"
       style="--r: 5"
       class="glass"
+      target="_blank"
+      rel="noopener noreferrer"
     >
       <IconTg />
-    </NuxtLink>
-    <NuxtLink
+    </a>
+    <a
       data-text="Vk"
-      to="https://vk.com/kiruhak11"
+      :href="publicContact.vk.href"
       style="--r: 25"
       class="glass"
+      target="_blank"
+      rel="noopener noreferrer"
     >
       <IconVk />
-    </NuxtLink>
+    </a>
   </div>
 </template>
+
+<script setup lang="ts">
+import { publicContact } from "~/constants/public-contact";
+</script>
 
 <style lang="scss" scoped>
 /* From Uiverse.io by codebykay101 */

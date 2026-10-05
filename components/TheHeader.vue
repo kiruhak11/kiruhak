@@ -1,23 +1,26 @@
 <template>
   <header class="header container">
-    <div class="logo" v-if="!isMobile">
+    <div class="logo">
       <LoaderIcon />
       <div class="logo__text">
-        <NuxtLink to="/">
-          <h1>K-Studio</h1>
+        <NuxtLink to="/" aria-label="K-Studio — главная">
+          <span class="logo-title">K-Studio</span>
         </NuxtLink>
       </div>
     </div>
 
-    <nav v-if="!isMobile">
+    <nav class="desktop-navigation" aria-label="Основная навигация">
       <ul>
-        <li><NuxtLink to="/projects">Проекты</NuxtLink></li>
-        <li><NuxtLink to="/analytics">Бриф</NuxtLink></li>
-        <li><NuxtLink to="/content">Контент</NuxtLink></li>
-        <li><NuxtLink to="/contact">Контакты</NuxtLink></li>
-        <li v-if="!isAuthenticated"><NuxtLink to="/login">Войти</NuxtLink></li>
-        <li v-else class="user-menu">
-          <button @click="showProfile = !showProfile" class="user-button">
+        <li v-for="item in publicNavigation" :key="item.to">
+          <NuxtLink :to="item.to">{{ item.label }}</NuxtLink>
+        </li>
+        <li v-if="isAuthenticated" class="user-menu">
+          <button
+            @click="showProfile = !showProfile"
+            class="user-button"
+            :aria-expanded="showProfile"
+            aria-controls="desktop-profile-menu"
+          >
             <div class="user-avatar">
               <img
                 v-if="user?.photoUrl"
@@ -47,64 +50,47 @@
               />
             </svg>
           </button>
-          <div v-if="showProfile" class="profile-dropdown">
+          <div v-if="showProfile" id="desktop-profile-menu" class="profile-dropdown">
             <UserProfile />
           </div>
         </li>
       </ul>
     </nav>
-    <ThemeToggle v-if="!isMobile" />
-    <HamburgerMenu v-else />
+    <NuxtLink class="header-contact-cta" to="/contact">Обсудить проект</NuxtLink>
+    <ThemeToggle class="desktop-theme" />
+    <HamburgerMenu class="mobile-navigation" />
   </header>
 </template>
 
 <script lang="ts" setup>
-const { isMobile } = useDevice();
+import { publicNavigation } from "~/constants/public-navigation";
+
 const {
   user,
-  token,
   isAuthenticated,
-  logout,
-  formattedBalance,
   initAuth,
   refreshUser,
 } = useAuth();
-const router = useRouter();
 
-// Инициализируем аутентификацию
 onMounted(async () => {
   await initAuth();
-  console.log("🔐 Analytics: Состояние аутентификации:", {
-    isAuthenticated: isAuthenticated.value,
-    hasToken: !!token.value,
-    user: user.value,
-  });
-
-  // Обновляем данные пользователя с сервера при загрузке страницы
   if (isAuthenticated.value) {
     await refreshUser();
-    console.log("🔐 Analytics: Данные пользователя обновлены с сервера:", {
-      balance: user.value?.balance,
-      formattedBalance: formattedBalance.value,
-    });
   }
 });
 
 const showProfile = ref(false);
-console.log(user.value);
-// Закрываем профиль при клике вне его
-const closeProfile = () => {
-  showProfile.value = false;
+const closeProfile = (event: MouseEvent) => {
+  if (!(event.target as HTMLElement).closest(".user-menu")) {
+    showProfile.value = false;
+  }
 };
 
 onMounted(() => {
-  document.addEventListener("click", (e) => {
-    const target = e.target as HTMLElement;
-    if (!target.closest(".user-menu")) {
-      showProfile.value = false;
-    }
-  });
+  document.addEventListener("click", closeProfile);
 });
+
+onBeforeUnmount(() => document.removeEventListener("click", closeProfile));
 </script>
 
 <style lang="scss" scoped>
@@ -148,7 +134,7 @@ onMounted(() => {
   &__text {
     padding-left: 16px;
 
-    h1 {
+    .logo-title {
       font-size: 1.8rem;
       font-weight: bold;
       color: var(--color-text);
@@ -156,14 +142,10 @@ onMounted(() => {
       letter-spacing: 1.5px;
       transition: color 0.3s;
     }
-
-    h1:hover {
-      color: var(--color-text-hover);
-    }
   }
 }
 
-nav {
+.desktop-navigation {
   ul {
     display: flex;
     list-style: none;
@@ -270,5 +252,40 @@ nav {
       min-width: 280px;
     }
   }
+}
+
+.logo a:hover .logo-title { color: var(--color-text-hover); }
+
+.mobile-navigation { display: none; }
+
+.header-contact-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--gradient-primary);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.header-contact-cta:focus-visible,
+.desktop-navigation a:focus-visible,
+.logo a:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
+
+@media (max-width: 768px) {
+  .logo,
+  .desktop-navigation,
+  .header-contact-cta,
+  .desktop-theme { display: none; }
+
+  .mobile-navigation { display: block; width: 100%; }
+}
+
+@media (min-width: 769px) {
+  .mobile-navigation { display: none; }
 }
 </style>

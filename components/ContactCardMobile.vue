@@ -1,19 +1,22 @@
 <template>
   <div class="buttons">
-    <NuxtLink class="button" to="https://t.me/kiruhak11">
+    <a class="button" :href="publicContact.telegram.href" target="_blank" rel="noopener noreferrer">
       <IconTg />
       <span>Telegram</span>
-    </NuxtLink>
-    <NuxtLink class="button button-gh" to="https://github.com/kiruhak11">
+    </a>
+    <a class="button button-gh" :href="publicContact.github.href" target="_blank" rel="noopener noreferrer">
       <IconGitHub />
       <span>GitHub</span>
-    </NuxtLink>
-    <NuxtLink class="button" to="https://vk.com/kiruhak11">
+    </a>
+    <a class="button" :href="publicContact.vk.href" target="_blank" rel="noopener noreferrer">
       <IconVk />
       <span>Vk</span>
-    </NuxtLink>
+    </a>
   </div>
 </template>
+<script setup lang="ts">
+import { publicContact } from "~/constants/public-contact";
+</script>
 <style lang="scss" scoped>
 .button {
   background: transparent;

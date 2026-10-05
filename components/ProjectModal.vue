@@ -1,7 +1,14 @@
 <template>
   <div class="project-modal-overlay" @click="$emit('close')">
-    <div class="project-modal-content" @click.stop>
-      <button class="close-button" @click="$emit('close')">
+    <div
+      class="project-modal-content"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="project-modal-title"
+      tabindex="-1"
+      @click.stop
+    >
+      <button ref="closeButton" class="close-button" type="button" aria-label="Закрыть детали проекта" @click="$emit('close')">
         <svg
           width="24"
           height="24"
@@ -23,10 +30,11 @@
         <!-- Hero Section -->
         <div class="project-hero">
           <div class="project-image-container">
-            <img
+            <ProjectPreview
               :src="project.image"
               :alt="project.title"
-              class="project-hero-image"
+              img-class="project-hero-image"
+              fallback-class="project-modal-image-fallback"
             />
             <div v-if="project.featured" class="featured-badge">
               ⭐ Избранный проект
@@ -34,9 +42,9 @@
           </div>
 
           <div class="project-header-info">
-            <h1 class="project-title">
+            <h2 id="project-modal-title" class="project-title">
               <GradientText variant="primary">{{ project.title }}</GradientText>
-            </h1>
+            </h2>
             <div class="project-meta-tags">
               <span class="category-tag">{{ project.category }}</span>
               <span v-if="project.client" class="client-tag"
@@ -146,12 +154,15 @@
               </div>
 
               <!-- Action Buttons -->
-              <div class="sidebar-section">
+              <div
+                v-if="externalLinks.liveUrl || externalLinks.githubUrl"
+                class="sidebar-section"
+              >
                 <h4 class="sidebar-title">Действия</h4>
                 <div class="action-buttons">
                   <a
-                    v-if="project.liveUrl"
-                    :href="project.liveUrl"
+                    v-if="externalLinks.liveUrl"
+                    :href="externalLinks.liveUrl"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="action-button primary"
@@ -191,8 +202,8 @@
                     Посетить сайт
                   </a>
                   <a
-                    v-if="project.githubUrl"
-                    :href="project.githubUrl"
+                    v-if="externalLinks.githubUrl"
+                    :href="externalLinks.githubUrl"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="action-button secondary"
@@ -224,8 +235,9 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import GradientText from "./GradientText.vue";
+import { getProjectExternalLinks } from "~/utils/project-links";
 
 const props = defineProps({
   project: {
@@ -233,8 +245,54 @@ const props = defineProps({
     required: true,
   },
 });
+const emit = defineEmits(["close"]);
 
-defineEmits(["close"]);
+const externalLinks = computed(() => getProjectExternalLinks(props.project));
+const closeButton = ref<HTMLButtonElement | null>(null);
+let previousFocus: HTMLElement | null = null;
+
+const handleModalKeydown = (event: KeyboardEvent) => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    emitClose();
+    return;
+  }
+
+  if (event.key !== "Tab") return;
+  const content = closeButton.value?.closest<HTMLElement>(".project-modal-content");
+  if (!content) return;
+  const focusable = Array.from(
+    content.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((element) => element.offsetParent !== null);
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+};
+
+const emitClose = () => emit("close");
+
+onMounted(async () => {
+  previousFocus = document.activeElement as HTMLElement | null;
+  document.body.classList.add("no-scroll");
+  window.addEventListener("keydown", handleModalKeydown);
+  await nextTick();
+  closeButton.value?.focus();
+});
+
+onBeforeUnmount(() => {
+  document.body.classList.remove("no-scroll");
+  window.removeEventListener("keydown", handleModalKeydown);
+  nextTick(() => previousFocus?.focus());
+});
 </script>
 
 <style lang="scss" scoped>

@@ -3,27 +3,15 @@
     <main class="landing-page">
       <section class="hero-section">
         <div class="container">
-          <p class="hero-eyebrow">K-Studio</p>
+          <p class="hero-eyebrow">Кирилл · K-Studio</p>
           <h1 class="hero-title">Разработка сайтов на Vue и Nuxt под задачи бизнеса</h1>
           <p class="hero-subtitle">
-            Проектируем, запускаем и развиваем сайты с упором на SEO, интеграции
-            и автоматизацию процессов. Стоимость работ начинается от 35 000 ₽.
+            Я проектирую и разрабатываю сайты с упором на SEO, интеграции и
+            автоматизацию процессов. Стоимость работ начинается от 35 000 ₽.
           </p>
           <div class="hero-actions">
-            <button class="cta-button primary" type="button" @click="scrollToForm">
-              {{ mainCtaText }}
-            </button>
-            <a
-              class="cta-button secondary"
-              href="https://t.me/kiruhak11"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Написать в Telegram
-            </a>
-            <a class="cta-button secondary" href="mailto:kiruhak2005@gmail.com">
-              Написать на почту
-            </a>
+            <NuxtLink class="cta-button primary" to="/contact">Обсудить проект</NuxtLink>
+            <NuxtLink class="cta-button secondary" to="/projects">Посмотреть проекты</NuxtLink>
           </div>
           <div class="hero-stack" aria-label="Технологический стек">
             <span v-for="stack in stackItems" :key="stack" class="stack-pill">
@@ -39,7 +27,7 @@
             <h2>Цены и пакеты</h2>
             <p>
               3 понятных пакета с прозрачным объёмом работ. Стоимость всегда
-              обсуждаем до старта и фиксируем в плане проекта.
+              обсуждаю до старта и фиксирую в плане проекта.
             </p>
           </div>
 
@@ -69,8 +57,8 @@
           <div class="section-header">
             <h2>Стек и подход</h2>
             <p>
-              Работаем на современном стеке: Vue, Nuxt, SEO, интеграции и
-              автоматизация. Подключаем CRM, аналитику, формы, уведомления и
+              Работаю на современном стеке: Vue, Nuxt, SEO, интеграции и
+              автоматизация. Подключаю CRM, аналитику, формы, уведомления и
               сценарии, которые экономят время команды.
             </p>
           </div>
@@ -80,10 +68,9 @@
       <section class="section cases-section">
         <div class="container">
           <div class="section-header">
-            <h2>Кейсы с результатом</h2>
+            <h2>Проекты</h2>
             <p>
-              Показываем не только визуал, но и бизнес‑задачу, решение и итог по
-              проекту.
+              Избранные работы и реализованные решения.
             </p>
           </div>
 
@@ -92,9 +79,14 @@
             {{ projectsError }}
           </div>
 
-          <div v-else class="cases-grid">
+          <div v-else-if="caseItems.length" class="cases-grid">
             <article v-for="caseItem in caseItems" :key="caseItem.id" class="case-card">
-              <img :src="caseItem.image" :alt="caseItem.title" class="case-image" />
+              <ProjectPreview
+                :src="caseItem.image"
+                :alt="caseItem.title"
+                img-class="case-image"
+                fallback-class="case-image-fallback"
+              />
               <div class="case-content">
                 <h3>{{ caseItem.title }}</h3>
                 <div class="case-tags">
@@ -102,12 +94,16 @@
                     {{ tag }}
                   </span>
                 </div>
-                <p><strong>Задача:</strong> {{ caseItem.task }}</p>
-                <p><strong>Решение:</strong> {{ caseItem.solution }}</p>
-                <p><strong>Результат:</strong> {{ caseItem.result }}</p>
+                <p v-if="caseItem.task"><strong>Задача:</strong> {{ caseItem.task }}</p>
+                <p v-if="caseItem.solution"><strong>Решение:</strong> {{ caseItem.solution }}</p>
+                <p v-if="caseItem.result"><strong>Результат:</strong> {{ caseItem.result }}</p>
               </div>
             </article>
           </div>
+          <div v-else class="section-state">Публичные проекты появятся здесь после загрузки.</div>
+          <NuxtLink class="cta-button secondary all-projects-link" to="/projects">
+            Все проекты
+          </NuxtLink>
         </div>
       </section>
 
@@ -139,7 +135,7 @@
         <div class="container support-content">
           <h2>Гарантия и поддержка после запуска</h2>
           <p>
-            После релиза сопровождаем проект: мониторинг, быстрые исправления,
+              После релиза сопровождаю проект: мониторинг, быстрые исправления,
             помощь с контентом и консультации по развитию.
           </p>
           <ul>
@@ -155,22 +151,21 @@
           <div class="form-intro">
             <h2>Форма заявки</h2>
             <p>
-              Заполните короткую форму, и мы подготовим бесплатный разбор сайта и
-              оценку проекта с рекомендациями. Ответим в Telegram и продублируем
-              на почту.
+              Заполните короткую форму — заявка придёт мне в Telegram. Для ответа
+              укажите действующий email и Telegram или телефон.
             </p>
             <div class="messenger-links">
               <a
-                href="https://t.me/kiruhak11"
+                :href="publicContact.telegram.href"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Telegram
               </a>
               <a
-                href="mailto:kiruhak2005@gmail.com"
+                :href="publicContact.email.href"
               >
-                kiruhak2005@gmail.com
+                {{ publicContact.email.label }}
               </a>
             </div>
           </div>
@@ -196,7 +191,7 @@
                 v-model="leadForm.email"
                 type="email"
                 required
-                placeholder="kiruhak2005@gmail.com"
+                placeholder="name@example.com"
               />
             </label>
 
@@ -233,10 +228,10 @@
             </button>
 
             <p v-if="formState === 'success'" class="form-message success">
-              Заявка отправлена. Свяжемся с вами в ближайшее время.
+              Заявка отправлена. Я свяжусь с вами в ближайшее время.
             </p>
             <p v-if="formState === 'error'" class="form-message error">
-              Не удалось отправить заявку. Напишите в Telegram или на почту.
+            Не удалось отправить заявку. Напишите мне в Telegram или на почту.
             </p>
           </form>
         </div>
@@ -248,8 +243,9 @@
 <script setup>
 import { computed, onMounted, ref } from "vue";
 import { useProjects } from "~/composables/useProjects";
+import { publicContact } from "~/constants/public-contact";
 
-const mainCtaText = "Получить бесплатный разбор сайта и оценку проекта";
+const mainCtaText = "Отправить заявку";
 
 const stackItems = ["Vue", "Nuxt", "SEO", "Интеграции", "Автоматизация"];
 
@@ -293,59 +289,26 @@ const packages = [
   },
 ];
 
-const fallbackCases = [
-  {
-    id: "fallback-1",
-    title: "Корпоративный сайт производственной компании",
-    image: "https://placehold.co/640x360?text=Corporate+Case",
-    technologies: ["Nuxt", "SEO", "Интеграции"],
-    task: "Увеличить количество входящих заявок и структурировать контент по услугам.",
-    solution:
-      "Пересобрали структуру, внедрили SEO-страницы, подключили CRM и формы обратной связи.",
-    result: "Рост обращений на 47% за 3 месяца после запуска.",
-  },
-  {
-    id: "fallback-2",
-    title: "Сайт сервиса с автоматизацией заявок",
-    image: "https://placehold.co/640x360?text=Automation+Case",
-    technologies: ["Vue", "Nuxt", "Автоматизация"],
-    task: "Сократить время обработки заявок менеджерами и убрать ручные операции.",
-    solution:
-      "Настроили цепочки уведомлений, интеграцию с Telegram и автоматическое распределение лидов.",
-    result: "Время обработки обращений сократилось с 40 до 12 минут.",
-  },
-  {
-    id: "fallback-3",
-    title: "Редизайн и SEO-перезапуск сайта услуг",
-    image: "https://placehold.co/640x360?text=SEO+Case",
-    technologies: ["Vue", "SEO", "Интеграции"],
-    task: "Повысить видимость сайта в поиске и улучшить конверсию формы заявки.",
-    solution:
-      "Обновили UX, ускорили загрузку, внедрили SEO-шаблоны и сквозную аналитику.",
-    result: "Органический трафик вырос в 2.1 раза за 5 месяцев.",
-  },
-];
-
 const workSteps = [
   {
-    title: "Бесплатный разбор и оценка",
+      title: "Бесплатный разбор и оценка",
     description:
-      "Изучаем текущий сайт или идею, фиксируем задачи, риски и ориентир по бюджету.",
+      "Изучаю текущий сайт или идею, фиксирую задачи, риски и ориентир по бюджету.",
   },
   {
     title: "Проектирование и план",
     description:
-      "Согласовываем структуру, функционал, стек, сроки и этапы с понятными результатами.",
+      "Согласовываю структуру, функционал, стек, сроки и этапы с понятными результатами.",
   },
   {
     title: "Разработка и интеграции",
     description:
-      "Собираем проект на Vue/Nuxt, внедряем SEO, подключаем CRM и автоматизацию.",
+      "Разрабатываю проект на Vue/Nuxt, настраиваю SEO, CRM и автоматизацию.",
   },
   {
     title: "Запуск и поддержка",
     description:
-      "Запускаем сайт, проверяем метрики, помогаем с дальнейшими улучшениями.",
+      "Запускаю сайт, проверяю метрики и планирую дальнейшие улучшения.",
   },
 ];
 
@@ -357,28 +320,19 @@ const {
 } = useProjects();
 
 const caseItems = computed(() => {
-  if (!projects.value.length) {
-    return fallbackCases;
-  }
-
   return projects.value.slice(0, 3).map((project) => ({
     id: project.id,
     title: project.title,
-    image: project.image || "https://placehold.co/640x360?text=Project",
+    image: project.image,
     technologies: Array.isArray(project.technologies)
       ? project.technologies.slice(0, 4)
       : [],
     task:
       project.challenges ||
       project.shortDescription ||
-      project.description ||
-      "Сформировать понятный и эффективный сайт под цели бизнеса.",
-    solution:
-      project.solutions ||
-      "Спроектировали структуру, реализовали на Vue/Nuxt и настроили нужные интеграции.",
-    result:
-      project.results ||
-      "Проект запущен и готов к масштабированию рекламных и SEO-каналов.",
+      project.description || "",
+    solution: project.solutions || "",
+    result: project.results || "",
   }));
 });
 

@@ -10,20 +10,27 @@
           <div class="footer-brand">
             <h2>K-Studio</h2>
             <p>
-              Разработка и развитие сайтов на Vue/Nuxt с фокусом на SEO,
+              Портфолио Кирилла: разработка сайтов на Vue/Nuxt с фокусом на SEO,
               интеграции и автоматизацию.
             </p>
           </div>
 
+          <nav class="footer-navigation" aria-label="Навигация в подвале">
+            <NuxtLink to="/">Главная</NuxtLink>
+            <NuxtLink to="/projects">Проекты</NuxtLink>
+            <NuxtLink to="/contact">Контакты</NuxtLink>
+            <NuxtLink to="/login" class="platform-link">Вход в платформу</NuxtLink>
+          </nav>
+
           <div class="footer-contacts">
             <a
-              href="https://t.me/kiruhak11"
+              :href="publicContact.telegram.href"
               target="_blank"
               rel="noopener noreferrer"
             >
               Telegram
             </a>
-            <a href="mailto:kiruhak2005@gmail.com">kiruhak2005@gmail.com</a>
+            <a :href="publicContact.email.href">{{ publicContact.email.label }}</a>
           </div>
         </div>
 
@@ -50,6 +57,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import ParticleBackground from "~/components/ParticleBackground.vue";
+import { publicContact } from "~/constants/public-contact";
 
 const goTop = () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -114,9 +122,30 @@ body {
 
 .footer-top {
   display: grid;
-  grid-template-columns: minmax(280px, 1.4fr) minmax(220px, 1fr);
+  grid-template-columns: minmax(280px, 1.4fr) minmax(150px, 0.8fr) minmax(220px, 1fr);
   gap: 24px;
   align-items: center;
+}
+
+.footer-navigation,
+.footer-contacts {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
+.footer-navigation a,
+.footer-contacts a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.footer-navigation a:hover,
+.footer-contacts a:hover { color: var(--color-text); }
+
+.footer-navigation .platform-link {
+  margin-top: 8px;
+  font-size: 0.82rem;
 }
 
 .footer-brand h2 {

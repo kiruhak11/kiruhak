@@ -250,7 +250,9 @@ const submitForm = async () => {
     const response = await $fetch("/api/telegram", {
       method: "POST",
       body: {
+        phone: form.value.contact,
         message: formatMessage(),
+        discount: 0,
       },
     });
 

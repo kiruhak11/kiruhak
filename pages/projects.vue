@@ -90,7 +90,6 @@
               :key="project.id"
               :project="project"
               @openModal="openProjectModal"
-              @visitProject="visitProject"
             />
           </div>
         </div>
@@ -250,12 +249,6 @@ const filteredProjects = computed(() => {
 
   return filtered;
 });
-
-const visitProject = (project: any) => {
-  if (project.liveUrl) {
-    window.open(project.liveUrl, "_blank", "noopener,noreferrer");
-  }
-};
 
 // Модальные окна
 const selectedProject = ref<any>(null);

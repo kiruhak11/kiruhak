@@ -40,9 +40,10 @@
           v-if="isOpen"
           id="mobile-navigation"
           class="mobile-menu-backdrop"
-          @click.self="closeMenu"
+          @click.self="closeMenu(true)"
         >
           <section
+            ref="menuPanel"
             class="mobile-menu-panel"
             :style="genieOriginStyle"
             role="dialog"
@@ -60,7 +61,7 @@
                   class="close-button"
                   type="button"
                   aria-label="Закрыть меню"
-                  @click="closeMenu"
+                  @click="closeMenu(true)"
                 >
                   <span></span><span></span>
                 </button>
@@ -102,23 +103,25 @@
                   <strong>{{ user?.firstName }} {{ user?.lastName }}</strong>
                   <small>@{{ user?.username || 'аккаунт' }} · {{ formattedBalance }}</small>
                 </div>
-                <NuxtLink to="/content" class="account-open" aria-label="Открыть кабинет" @click="closeMenu">
+                <NuxtLink to="/content" class="account-open" aria-label="Открыть кабинет" @click="closeMenu()">
                   <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 15 15 5M6 5h9v9" /></svg>
                 </NuxtLink>
               </div>
               <div class="account-actions">
+                <NuxtLink to="/analytics" @click="closeMenu()">Аналитика</NuxtLink>
+                <NuxtLink to="/content" @click="closeMenu()">Контент платформы</NuxtLink>
                 <button type="button" @click="openTopUpModal">Пополнить баланс</button>
                 <button type="button" @click="openEditProfile">Изменить профиль</button>
-                <NuxtLink v-if="isAdmin" to="/admin/projects" @click="closeMenu">Админ-панель</NuxtLink>
+                <NuxtLink v-if="isAdmin" to="/admin/projects" @click="closeMenu()">Админ-панель</NuxtLink>
                 <button type="button" class="logout-action" @click="handleLogout">Выйти</button>
               </div>
             </div>
 
-            <NuxtLink v-else to="/login" class="login-card" @click="closeMenu">
+            <NuxtLink v-else to="/login" class="login-card" @click="closeMenu()">
               <span class="login-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5m5 5H3m9-9h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7" /></svg>
               </span>
-              <span><strong>Личный кабинет</strong><small>Войти или создать аккаунт</small></span>
+              <span><strong>Войти в платформу</strong><small>Аналитика и материалы аккаунта</small></span>
               <svg class="login-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" /></svg>
             </NuxtLink>
 
@@ -151,6 +154,7 @@
 <script setup lang="ts">
 const route = useRoute();
 const router = useRouter();
+import { publicNavigation } from "~/constants/public-navigation";
 const {
   user,
   isAuthenticated,
@@ -166,18 +170,14 @@ const showEditForm = ref(false);
 const showTopUpForm = ref(false);
 const trigger = ref<HTMLButtonElement | null>(null);
 const closeButton = ref<HTMLButtonElement | null>(null);
+const menuPanel = ref<HTMLElement | null>(null);
+let mobileMediaQuery: MediaQueryList | null = null;
 const genieOriginStyle = ref<Record<string, string>>({
   "--genie-x": "calc(100% - 36px)",
   "--genie-y": "36px",
 });
 
-const navItems = [
-  { label: "Главная", to: "/", hint: "Студия и подход" },
-  { label: "Проекты", to: "/projects", hint: "Кейсы и решения" },
-  { label: "Бриф", to: "/analytics", hint: "Задача и бюджет" },
-  { label: "Контент", to: "/content", hint: "Материалы и идеи" },
-  { label: "Контакты", to: "/contact", hint: "Будем на связи" },
-];
+const navItems = publicNavigation;
 
 const initials = computed(() => {
   const first = user.value?.firstName?.charAt(0) || "K";
@@ -188,8 +188,9 @@ const initials = computed(() => {
 const isActive = (to: string) =>
   to === "/" ? route.path === "/" : route.path === to || route.path.startsWith(`${to}/`);
 
-const closeMenu = () => {
+const closeMenu = (restoreFocus = false) => {
   isOpen.value = false;
+  if (restoreFocus) nextTick(() => trigger.value?.focus());
 };
 
 const toggleMenu = () => {
@@ -208,7 +209,29 @@ const handleNavigationClick = (event: MouseEvent) => {
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
-  if (event.key === "Escape") closeMenu();
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeMenu(true);
+    return;
+  }
+
+  if (event.key !== "Tab" || !menuPanel.value) return;
+  const focusable = Array.from(
+    menuPanel.value.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((element) => element.offsetParent !== null);
+  if (!focusable.length) return;
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 };
 
 const openTopUpModal = () => {
@@ -249,16 +272,30 @@ watch(isOpen, async (open) => {
   }
 });
 
-watch(() => route.fullPath, closeMenu);
+watch(() => route.fullPath, () => closeMenu());
 
-onMounted(async () => {
+const handleViewportChange = async (event: MediaQueryListEvent) => {
+  if (!event.matches) {
+    closeMenu();
+    return;
+  }
   await initAuth();
   if (isAuthenticated.value) await refreshUser();
+};
+
+onMounted(async () => {
+  mobileMediaQuery = window.matchMedia("(max-width: 768px)");
+  mobileMediaQuery.addEventListener("change", handleViewportChange);
+  if (mobileMediaQuery.matches) {
+    await initAuth();
+    if (isAuthenticated.value) await refreshUser();
+  }
 });
 
 onBeforeUnmount(() => {
   document.body.classList.remove("no-scroll");
   window.removeEventListener("keydown", handleKeydown);
+  mobileMediaQuery?.removeEventListener("change", handleViewportChange);
 });
 </script>
 

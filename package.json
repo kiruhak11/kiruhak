@@ -14,6 +14,7 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "test:security": "tsx --test tests/security.test.ts",
+    "test:public": "tsx --test tests/public-journey.test.ts",
     "deploy": "scp -r .output/* j53779400@c64869e17b97.hosting.myjino.ru:~/domains/kiruhak11.ru/ && ssh j53779400@c64869e17b97.hosting.myjino.ru \"mkdir -p ~/domains/kiruhak11.ru/tmp && touch ~/domains/kiruhak11.ru/tmp/restart.txt\""
   },
   "dependencies": {

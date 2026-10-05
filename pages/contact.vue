@@ -4,9 +4,9 @@
       <div class="container">
         <div class="header-section">
           <h1 class="main-title">
-            <GradientText variant="primary">Контакты K-Studio</GradientText>
+            <GradientText variant="primary">Связаться с Кириллом</GradientText>
           </h1>
-          <p class="subtitle">Свяжитесь с нами для обсуждения задач и сроков</p>
+          <p class="subtitle">Обсудим задачу, сроки и формат сотрудничества.</p>
         </div>
 
         <div class="contact-grid">
@@ -17,7 +17,7 @@
             </h2>
             <div class="social-links">
               <a
-                href="https://github.com/kiruhak11"
+                :href="publicContact.github.href"
                 class="social-card github"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -28,7 +28,7 @@
                 <div class="card-content">
                   <h3>GitHub</h3>
                   <p>Мои проекты и код</p>
-                  <span class="username">@kiruhak11</span>
+                  <span class="username">{{ publicContact.github.label }}</span>
                 </div>
                 <div class="card-arrow">
                   <svg
@@ -57,7 +57,7 @@
               </a>
 
               <a
-                href="https://t.me/kiruhak11"
+                :href="publicContact.telegram.href"
                 class="social-card telegram"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -68,7 +68,7 @@
                 <div class="card-content">
                   <h3>Telegram</h3>
                   <p>Быстрая связь</p>
-                  <span class="username">@kiruhak11</span>
+                  <span class="username">{{ publicContact.telegram.label }}</span>
                 </div>
                 <div class="card-arrow">
                   <svg
@@ -97,7 +97,7 @@
               </a>
 
               <a
-                href="https://vk.com/kiruhak11"
+                :href="publicContact.vk.href"
                 class="social-card vk"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -108,7 +108,7 @@
                 <div class="card-content">
                   <h3>VKontakte</h3>
                   <p>Социальная сеть</p>
-                  <span class="username">@kiruhak11</span>
+                  <span class="username">{{ publicContact.vk.label }}</span>
                 </div>
                 <div class="card-arrow">
                   <svg
@@ -145,9 +145,8 @@
             </h2>
             <div class="direct-contacts">
               <a
-                href="tel:+79609430029"
+                :href="publicContact.phone.href"
                 class="social-card phone"
-                @click="trackContact('phone')"
               >
                 <div class="card-icon">
                   <svg
@@ -169,7 +168,7 @@
                 <div class="card-content">
                   <h3>Телефон</h3>
                   <p>Прямая связь</p>
-                  <span class="contact-value">+7 960 943 00 29</span>
+                  <span class="contact-value">{{ publicContact.phone.label }}</span>
                 </div>
                 <div class="card-arrow">
                   <svg
@@ -198,9 +197,8 @@
               </a>
 
               <a
-                href="mailto:web@kiruhak11.ru"
+                :href="publicContact.email.href"
                 class="social-card email"
-                @click="trackContact('email')"
               >
                 <div class="card-icon">
                   <svg
@@ -229,7 +227,7 @@
                 <div class="card-content">
                   <h3>Email</h3>
                   <p>Письменная связь</p>
-                  <span class="contact-value">web@kiruhak11.ru</span>
+                  <span class="contact-value">{{ publicContact.email.label }}</span>
                 </div>
                 <div class="card-arrow">
                   <svg
@@ -437,6 +435,7 @@
 <script setup lang="ts">
 import GradientText from "~/components/GradientText.vue";
 import OrderModal from "~/components/OrderModal.vue";
+import { publicContact } from "~/constants/public-contact";
 
 const showOrderModal = ref(false);
 const showDonationModal = ref(false);

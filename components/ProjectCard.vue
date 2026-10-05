@@ -1,8 +1,18 @@
 <template>
-  <div class="project-card" @click="$emit('openModal', project)">
+  <article class="project-card">
     <div class="card-image">
-      <img :src="project.image" :alt="project.title" />
-      <div class="image-overlay">
+      <ProjectPreview
+        :src="project.image"
+        :alt="project.title"
+        img-class="project-image"
+        fallback-class="project-image-fallback"
+      />
+      <button
+        class="image-overlay"
+        type="button"
+        :aria-label="`Подробнее о проекте ${project.title}`"
+        @click="$emit('openModal', project)"
+      >
         <div class="overlay-content">
           <svg
             width="32"
@@ -42,7 +52,7 @@
           </svg>
           <span class="overlay-text">Подробнее</span>
         </div>
-      </div>
+      </button>
       <div v-if="project.featured" class="featured-badge">
         <svg
           width="16"
@@ -140,10 +150,12 @@
       </div>
 
       <div class="card-actions">
-        <button
+        <a
           class="action-button primary"
-          @click.stop="$emit('visitProject', project)"
-          v-if="project.liveUrl"
+          :href="externalLinks.liveUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          v-if="externalLinks.liveUrl"
         >
           <svg
             width="16"
@@ -178,45 +190,10 @@
             />
           </svg>
           Посетить
-        </button>
-        <button class="action-button secondary" v-else>
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <polyline
-              points="15,3 21,3 21,9"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <line
-              x1="10"
-              y1="14"
-              x2="21"
-              y2="3"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          Недоступен
-        </button>
+        </a>
         <button
           class="action-button secondary"
-          @click.stop="$emit('openModal', project)"
+          @click="$emit('openModal', project)"
         >
           <svg
             width="16"
@@ -244,11 +221,12 @@
         </button>
       </div>
     </div>
-  </div>
+  </article>
 </template>
 
 <script setup>
 import GradientText from "./GradientText.vue";
+import { getProjectExternalLinks } from "~/utils/project-links";
 
 const props = defineProps({
   project: {
@@ -257,7 +235,9 @@ const props = defineProps({
   },
 });
 
-defineEmits(["openModal", "visitProject"]);
+const externalLinks = computed(() => getProjectExternalLinks(props.project));
+
+defineEmits(["openModal"]);
 </script>
 
 <style lang="scss" scoped>
@@ -267,7 +247,6 @@ defineEmits(["openModal", "visitProject"]);
   overflow: hidden;
   box-shadow: var(--card-shadow);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
   border: 1px solid var(--border-color);
   position: relative;
 
@@ -280,7 +259,7 @@ defineEmits(["openModal", "visitProject"]);
       opacity: 1;
     }
 
-    .card-image img {
+    .card-image :deep(.project-image) {
       transform: scale(1.1);
     }
 
@@ -289,6 +268,8 @@ defineEmits(["openModal", "visitProject"]);
       color: white;
     }
   }
+
+  &:focus-within .image-overlay { opacity: 1; }
 
   &::before {
     content: "";
@@ -312,7 +293,7 @@ defineEmits(["openModal", "visitProject"]);
   height: 220px;
   overflow: hidden;
 
-  img {
+  :deep(.project-image) {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -336,6 +317,10 @@ defineEmits(["openModal", "visitProject"]);
   justify-content: center;
   opacity: 0;
   transition: all 0.4s ease;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  color: #fff;
 
   .overlay-content {
     color: white;

@@ -146,6 +146,7 @@ import { ref, watch } from "vue";
 import SuccessModal from "~/components/SuccessModal.vue";
 import InfoModal from "~/components/InfoModal.vue";
 import { useFrogModal } from "#imports";
+import { publicContact } from "~/constants/public-contact";
 
 const props = defineProps<{
   show: boolean;
@@ -193,7 +194,7 @@ const closeModal = () => {
 const openTelegram = () => {
   const amount = selectedAmount.value || customAmount.value;
   const message = `Привет! Хочу поддержать проект на сумму ${amount}₽`;
-  const telegramUrl = `https://t.me/kiruhak11?text=${encodeURIComponent(
+  const telegramUrl = `${publicContact.telegram.href}?text=${encodeURIComponent(
     message
   )}`;
   window.open(telegramUrl, "_blank", "noopener,noreferrer");
