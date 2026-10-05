@@ -1,6 +1,7 @@
 import { prisma } from "../utils/prisma";
 import { verifyAuthToken } from "../utils/auth-token";
 import { getUserSessionsRevokedAt } from "../utils/session-control";
+import { getRuntimeAuthTokenSecret } from "../utils/security-config";
 
 function isStaticAsset(path: string): boolean {
   return (
@@ -86,7 +87,10 @@ export default defineEventHandler(async (event) => {
 
   const token = authHeader.slice(7).trim();
   const config = useRuntimeConfig();
-  const decoded = verifyAuthToken(token, config.authTokenSecret);
+  const decoded = verifyAuthToken(
+    token,
+    getRuntimeAuthTokenSecret(config.authTokenSecret)
+  );
 
   if (!decoded || decoded.exp < Math.floor(Date.now() / 1000)) {
     throw createError({

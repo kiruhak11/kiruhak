@@ -44,7 +44,7 @@ services:
     container_name: kiruhak_app
     restart: unless-stopped
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-development}
       DATABASE_URL: postgresql://kiruhak_user:${POSTGRES_PASSWORD:-kiruhak_password}@postgres:5432/kiruhak
       REDIS_URL: redis://redis:6379
       # Telegram настройки
@@ -53,8 +53,11 @@ services:
       ADMIN_TELEGRAM_ID: ${ADMIN_TELEGRAM_ID}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
       TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME:-webmonke}
-      BOT_SECRET: ${BOT_SECRET:-your-secret-key-change-me}
-      AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-your-secret-key-change-me}
+      BOT_SECRET: ${BOT_SECRET:-}
+      AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-}
+      NUXT_AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      NUXT_CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       # Другие переменные окружения
       NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost:3015}
     ports:
@@ -94,7 +97,7 @@ services:
       TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME}
       API_URL: http://app:3015/api/auth/create-account
       API_BASE_URL: http://host.docker.internal:3000
-      BOT_SECRET: ${BOT_SECRET:-your-secret-key-change-me}
+      BOT_SECRET: ${BOT_SECRET:-}
     depends_on:
       app:
         condition: service_healthy

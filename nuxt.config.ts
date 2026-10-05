@@ -1,12 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || "https://kiruhak11.ru";
 const yandexMetrikaId = process.env.YANDEX_METRIKA_ID || "";
-const corsOrigins = (process.env.CORS_ORIGINS || "http://localhost:3000")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-const allowAnyOrigin = corsOrigins.includes("*");
-
 export default defineNuxtConfig({
   compatibilityDate: "2024-04-03",
   devtools: { enabled: process.env.NODE_ENV !== "production" },
@@ -93,20 +87,6 @@ export default defineNuxtConfig({
     prerender: {
       routes: ["/", "/projects", "/contact"],
     },
-    routeRules: {
-      "/api/**": {
-        cors: true,
-        headers: {
-          "Access-Control-Allow-Origin": allowAnyOrigin
-            ? "*"
-            : corsOrigins.join(", "),
-          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-          "Access-Control-Allow-Headers":
-            "Content-Type, Authorization, X-Requested-With",
-          "Access-Control-Allow-Credentials": allowAnyOrigin ? "false" : "true",
-        },
-      },
-    },
   },
   runtimeConfig: {
     telegramToken:
@@ -117,9 +97,12 @@ export default defineNuxtConfig({
     botSecret: process.env.BOT_SECRET || "",
     allowSelfTopup: process.env.ALLOW_SELF_TOPUP === "true",
     authTokenSecret:
+      process.env.NUXT_AUTH_TOKEN_SECRET ||
       process.env.AUTH_TOKEN_SECRET ||
-      process.env.BOT_SECRET ||
-      "dev-only-auth-token-secret",
+      (process.env.NODE_ENV === "production"
+        ? ""
+        : "dev-only-auth-token-secret"),
+    corsOrigins: process.env.NUXT_CORS_ORIGINS || process.env.CORS_ORIGINS || "",
     public: {
       siteUrl,
       channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || "webmonkey",

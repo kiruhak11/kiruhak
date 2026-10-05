@@ -16,6 +16,7 @@
               <a
                 href="https://t.me/gs_company_bot"
                 target="_blank"
+                rel="noopener noreferrer"
                 class="telegram-btn"
               >
                 <svg

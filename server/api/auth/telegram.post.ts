@@ -1,6 +1,7 @@
 import { prisma } from "../../utils/prisma";
 import { createAuthToken } from "../../utils/auth-token";
 import { hashPassword } from "../../utils/password";
+import { getRuntimeAuthTokenSecret } from "../../utils/security-config";
 import {
   createHash,
   createHmac,
@@ -143,7 +144,7 @@ export default defineEventHandler(async (event) => {
         iat: issuedAt,
         exp: issuedAt + 7 * 24 * 60 * 60, // 7 дней
       },
-      config.authTokenSecret
+      getRuntimeAuthTokenSecret(config.authTokenSecret)
     );
 
     return {

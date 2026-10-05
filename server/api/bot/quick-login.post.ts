@@ -1,5 +1,6 @@
 import { prisma } from "../../utils/prisma";
 import { createAuthToken } from "../../utils/auth-token";
+import { getRuntimeAuthTokenSecret } from "../../utils/security-config";
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -52,7 +53,7 @@ export default defineEventHandler(async (event) => {
       iat: issuedAt,
       exp: issuedAt + 15 * 60,
     },
-    config.authTokenSecret
+    getRuntimeAuthTokenSecret(config.authTokenSecret)
   );
 
   const baseUrl = String(config.public.siteUrl || "https://kiruhak11.ru").replace(

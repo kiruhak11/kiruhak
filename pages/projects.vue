@@ -253,7 +253,7 @@ const filteredProjects = computed(() => {
 
 const visitProject = (project: any) => {
   if (project.liveUrl) {
-    window.open(project.liveUrl, "_blank");
+    window.open(project.liveUrl, "_blank", "noopener,noreferrer");
   }
 };
 

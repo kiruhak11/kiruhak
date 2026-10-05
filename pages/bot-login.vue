@@ -27,7 +27,6 @@ onMounted(async () => {
   try {
     if (process.client) {
       localStorage.setItem("auth_token", token);
-      document.cookie = `auth_token=${token}; path=/; max-age=86400; SameSite=Strict`;
     }
 
     const response = await $fetch<{ success: boolean; user?: unknown }>("/api/user/me", {
@@ -49,7 +48,6 @@ onMounted(async () => {
     if (process.client) {
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
-      document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }
 
     error.value = "Ссылка входа устарела или недействительна";

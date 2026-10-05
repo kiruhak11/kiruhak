@@ -196,7 +196,7 @@ const openTelegram = () => {
   const telegramUrl = `https://t.me/kiruhak11?text=${encodeURIComponent(
     message
   )}`;
-  window.open(telegramUrl, "_blank");
+  window.open(telegramUrl, "_blank", "noopener,noreferrer");
 
   // Закрываем текущее модальное окно
   closeModal();

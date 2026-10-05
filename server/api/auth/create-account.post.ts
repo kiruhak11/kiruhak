@@ -2,6 +2,7 @@ import { prisma } from "../../utils/prisma";
 import { randomBytes } from "crypto";
 import { hashPassword } from "../../utils/password";
 import { createAuthToken } from "../../utils/auth-token";
+import { getRuntimeAuthTokenSecret } from "../../utils/security-config";
 
 function buildQuickLogin(
   config: ReturnType<typeof useRuntimeConfig>,
@@ -16,7 +17,7 @@ function buildQuickLogin(
       iat: issuedAt,
       exp: issuedAt + 15 * 60, // 15 минут
     },
-    config.authTokenSecret
+    getRuntimeAuthTokenSecret(config.authTokenSecret)
   );
 
   const baseUrl = String(config.public.siteUrl || "https://kiruhak11.ru").replace(

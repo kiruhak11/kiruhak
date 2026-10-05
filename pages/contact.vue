@@ -20,6 +20,7 @@
                 href="https://github.com/kiruhak11"
                 class="social-card github"
                 target="_blank"
+                rel="noopener noreferrer"
               >
                 <div class="card-icon">
                   <IconGitHub />
@@ -59,6 +60,7 @@
                 href="https://t.me/kiruhak11"
                 class="social-card telegram"
                 target="_blank"
+                rel="noopener noreferrer"
               >
                 <div class="card-icon">
                   <IconTg />
@@ -98,6 +100,7 @@
                 href="https://vk.com/kiruhak11"
                 class="social-card vk"
                 target="_blank"
+                rel="noopener noreferrer"
               >
                 <div class="card-icon">
                   <IconVk />

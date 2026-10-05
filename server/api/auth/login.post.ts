@@ -1,6 +1,11 @@
 import { prisma } from "../../utils/prisma";
 import { createAuthToken } from "../../utils/auth-token";
-import { verifyPassword } from "../../utils/password";
+import {
+  hashPassword,
+  isHashedPassword,
+  verifyPassword,
+} from "../../utils/password";
+import { getRuntimeAuthTokenSecret } from "../../utils/security-config";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -36,6 +41,13 @@ export default defineEventHandler(async (event) => {
       };
     }
 
+    if (!isHashedPassword(user.password)) {
+      await prisma.user.updateMany({
+        where: { id: user.id, password: user.password },
+        data: { password: hashPassword(password) },
+      });
+    }
+
     // Создаем подписанный токен
     const issuedAt = Math.floor(Date.now() / 1000);
     const token = createAuthToken(
@@ -46,7 +58,7 @@ export default defineEventHandler(async (event) => {
         iat: issuedAt,
         exp: issuedAt + 7 * 24 * 60 * 60, // 7 дней
       },
-      config.authTokenSecret
+      getRuntimeAuthTokenSecret(config.authTokenSecret)
     );
 
     return {

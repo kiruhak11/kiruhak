@@ -28,7 +28,7 @@ export const useAuth = () => {
     }
   };
 
-  // Инициализация из localStorage и cookies
+  // Инициализация из localStorage
   const initAuth = async () => {
     if (process.client) {
       const savedToken = localStorage.getItem("auth_token");
@@ -39,8 +39,6 @@ export const useAuth = () => {
         token.value = savedToken;
         user.value = parsedUser;
 
-        // Также сохраняем в cookies для серверного доступа
-        document.cookie = `auth_token=${savedToken}; path=/; max-age=86400; SameSite=Strict`;
       }
     }
   };
@@ -59,13 +57,11 @@ export const useAuth = () => {
         user.value = response.user;
         token.value = response.token;
 
-        // Сохраняем в localStorage и cookies
+        // Сохраняем в localStorage
         if (process.client) {
           localStorage.setItem("auth_token", response.token);
           localStorage.setItem("auth_user", JSON.stringify(response.user));
 
-          // Также сохраняем в cookies для серверного доступа
-          document.cookie = `auth_token=${response.token}; path=/; max-age=86400; SameSite=Strict`;
         }
 
         return { success: true };
@@ -89,9 +85,6 @@ export const useAuth = () => {
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
 
-      // Также удаляем из cookies
-      document.cookie =
-        "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }
   };
 

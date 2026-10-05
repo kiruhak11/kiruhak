@@ -29,3 +29,7 @@ export function verifyPassword(password: string, stored: string): boolean {
   // Backward compatibility for legacy plaintext passwords.
   return password === stored;
 }
+
+export function isHashedPassword(stored: string): boolean {
+  return stored.startsWith(`${HASH_PREFIX}:`);
+}
