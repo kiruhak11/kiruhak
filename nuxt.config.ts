@@ -51,29 +51,29 @@ export default defineNuxtConfig({
             },
           ]
         : [],
-      title: "K-Studio — Веб‑разработка под ключ",
+      title: "Кирилл Коваленко — веб-разработчик Vue/Nuxt",
       meta: [
         { charset: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
         {
           name: "description",
           content:
-            "K-Studio — корпоративная веб‑разработка под ключ. Проектирование, разработка и поддержка сайтов и веб‑сервисов. Vue/Nuxt, SEO, интеграции, CRM.",
+            "Портфолио Кирилла Коваленко: коммерческие сайты, веб-приложения и собственные проекты на Vue, Nuxt и TypeScript. О задачах, реализации и технологиях каждого проекта.",
         },
         {
           name: "keywords",
           content:
-            "веб-разработка, корпоративные сайты, разработка под ключ, Vue, Nuxt, SEO, интеграции, CRM",
+            "Кирилл Коваленко, веб-разработчик, Vue, Nuxt, TypeScript, веб-приложения, портфолио, интеграции, production",
         },
         { name: "yandex-verification", content: "44f17adb3814c2c5" },
         {
           property: "og:title",
-          content: "K-Studio — Веб‑разработка под ключ",
+          content: "Кирилл Коваленко — веб-разработчик Vue/Nuxt",
         },
         {
           property: "og:description",
           content:
-            "Корпоративные сайты, интернет‑проекты и веб‑приложения. Экспертиза во Vue/Nuxt, интеграции, SEO.",
+            "Сайты и веб-приложения на Vue/Nuxt: описание продукта, моя реализация, технические задачи и стек.",
         },
         { property: "og:type", content: "website" },
       ],

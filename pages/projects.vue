@@ -6,7 +6,9 @@
           <h1>
             <GradientText variant="primary">Проекты</GradientText>
           </h1>
-          <p class="subtitle">Корпоративные решения и внедрения для бизнеса</p>
+          <p class="subtitle">
+            Мои проекты и коммерческие работы. В каждом кейсе отдельно показаны продукт, задача и моя реализация.
+          </p>
         </div>
 
         <!-- Loading state -->
@@ -112,63 +114,10 @@
 
         <div class="cta-section">
           <h2>
-            <GradientText variant="secondary"
-              >Нужен сайт для вашего бизнеса?</GradientText
-            >
+            <GradientText variant="secondary">Есть задача для веб-продукта?</GradientText>
           </h2>
-          <p>
-            Создам современный и функциональный веб-сайт, который поможет вашему
-            бизнесу расти
-          </p>
-          <div class="cta-buttons">
-            <button class="cta-button primary" @click="handleOrderClick">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 2L2 7L12 12L22 7L12 2Z"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <path
-                  d="M2 17L12 22L22 17"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <path
-                  d="M2 12L12 17L22 12"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-              Заказать сайт
-            </button>
-            <button class="cta-button secondary" @click="handleDonationClick">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-                  fill="currentColor"
-                />
-              </svg>
-              Поддержать проект
-            </button>
-          </div>
+          <p>Напишите мне — обсудим задачу, объём и подходящий формат работы.</p>
+          <NuxtLink class="cta-button primary" to="/contact">Обсудить проект</NuxtLink>
         </div>
       </div>
     </main>
@@ -178,12 +127,11 @@
 <script setup lang="ts">
 import GradientText from "~/components/GradientText.vue";
 import ProjectModal from "~/components/ProjectModal.vue";
-import DonationModal from "~/components/DonationModal.vue";
-import OrderModal from "~/components/OrderModal.vue";
 import { useProjects } from "~/composables/useProjects";
-import { useFrogModal } from "#imports";
-
-const { setModal } = useFrogModal();
+useSeoMeta({
+  title: "Проекты — Кирилл Коваленко",
+  description: "Кейсы Кирилла Коваленко: веб-сайты и приложения на Vue/Nuxt. О продукте, технических задачах, реализации и используемом стеке.",
+});
 
 // Используем composable для работы с проектами
 const { projects, loading, error, fetchProjects } = useProjects();
@@ -213,7 +161,9 @@ const filteredProjects = computed(() => {
     filtered = filtered.filter(
       (project) =>
         project.title.toLowerCase().includes(query) ||
+        (project.shortDescription || "").toLowerCase().includes(query) ||
         project.description.toLowerCase().includes(query) ||
+        (project.solutions || "").toLowerCase().includes(query) ||
         project.technologies.some((tech) => tech.toLowerCase().includes(query))
     );
   }
@@ -259,13 +209,6 @@ const closeProjectModal = () => {
   selectedProject.value = null;
 };
 
-const handleOrderClick = () => {
-  setModal(OrderModal);
-};
-
-const handleDonationClick = () => {
-  setModal(DonationModal);
-};
 </script>
 
 <style lang="scss" scoped>

@@ -1,5 +1,6 @@
 export const publicContact = {
   name: "Кирилл",
+  fullName: "Кирилл Коваленко",
   email: {
     label: "web@kiruhak11.ru",
     href: "mailto:web@kiruhak11.ru",

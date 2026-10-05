@@ -79,18 +79,23 @@
         </h3>
       </div>
 
-      <p class="project-description">{{ project.description }}</p>
+      <p class="project-description">{{ caseView.productSummary }}</p>
+
+      <div v-if="caseView.contribution" class="project-contribution">
+        <strong>Моя реализация</strong>
+        <p>{{ caseView.contribution }}</p>
+      </div>
 
       <div class="project-tech">
         <span
-          v-for="tech in project.technologies.slice(0, 4)"
+          v-for="tech in caseView.technologies.slice(0, 4)"
           :key="tech"
           class="tech-tag"
         >
           {{ tech }}
         </span>
-        <span v-if="project.technologies.length > 4" class="tech-tag more">
-          +{{ project.technologies.length - 4 }}
+        <span v-if="caseView.technologies.length > 4" class="tech-tag more">
+          +{{ caseView.technologies.length - 4 }}
         </span>
       </div>
 
@@ -224,18 +229,16 @@
   </article>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import GradientText from "./GradientText.vue";
 import { getProjectExternalLinks } from "~/utils/project-links";
+import { getProjectCaseView } from "~/utils/project-case-view";
+import type { Project } from "~/composables/useProjects";
 
-const props = defineProps({
-  project: {
-    type: Object,
-    required: true,
-  },
-});
+const props = defineProps<{ project: Project }>();
 
 const externalLinks = computed(() => getProjectExternalLinks(props.project));
+const caseView = computed(() => getProjectCaseView(props.project));
 
 defineEmits(["openModal"]);
 </script>
@@ -398,6 +401,29 @@ defineEmits(["openModal"]);
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.project-contribution {
+  margin: -4px 0 18px;
+  padding-left: 12px;
+  border-left: 2px solid var(--color-accent);
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.project-contribution strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--color-text);
+}
+
+.project-contribution p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .project-tech {

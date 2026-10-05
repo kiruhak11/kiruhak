@@ -1,6 +1,6 @@
 <template>
   <div class="mobile-header">
-    <NuxtLink to="/" class="mobile-brand" aria-label="K-Studio — Главная">
+    <NuxtLink to="/" class="mobile-brand" aria-label="Портфолио Кирилла Коваленко — главная">
       <span class="brand-mark" aria-hidden="true">
         <i></i><i></i><i></i><i></i>
       </span>

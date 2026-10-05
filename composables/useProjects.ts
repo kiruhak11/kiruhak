@@ -1,12 +1,20 @@
 import { ref, readonly } from "vue";
 
-interface Project {
+export interface Project {
   id: string;
   title: string;
   description: string;
+  shortDescription?: string;
   image: string;
   technologies: string[];
   category: string;
+  client?: string | null;
+  duration?: string | null;
+  budget?: string | null;
+  features?: string[];
+  challenges?: string | null;
+  solutions?: string | null;
+  results?: string | null;
   featured: boolean;
   order: number;
   liveUrl?: string;

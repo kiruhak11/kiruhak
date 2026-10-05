@@ -3,63 +3,35 @@
     <main class="landing-page">
       <section class="hero-section">
         <div class="container">
-          <p class="hero-eyebrow">Кирилл · K-Studio</p>
-          <h1 class="hero-title">Разработка сайтов на Vue и Nuxt под задачи бизнеса</h1>
+          <p class="hero-eyebrow">Кирилл Коваленко · веб-разработчик</p>
+          <h1 class="hero-title">Разрабатываю веб-продукты на Vue и Nuxt — от интерфейса до запуска.</h1>
           <p class="hero-subtitle">
-            Я проектирую и разрабатываю сайты с упором на SEO, интеграции и
-            автоматизацию процессов. Стоимость работ начинается от 35 000 ₽.
+            В портфолио — коммерческие сайты, прикладные веб-приложения и собственные проекты.
+            В кейсах отдельно показаны продукт, задача и моя реализация.
           </p>
           <div class="hero-actions">
-            <NuxtLink class="cta-button primary" to="/contact">Обсудить проект</NuxtLink>
-            <NuxtLink class="cta-button secondary" to="/projects">Посмотреть проекты</NuxtLink>
+            <NuxtLink class="cta-button primary" to="/projects">Посмотреть проекты</NuxtLink>
+            <NuxtLink class="cta-button secondary" to="/contact">Связаться со мной</NuxtLink>
           </div>
-          <div class="hero-stack" aria-label="Технологический стек">
-            <span v-for="stack in stackItems" :key="stack" class="stack-pill">
-              {{ stack }}
-            </span>
-          </div>
+          <a
+            class="hero-github-link"
+            :href="publicContact.github.href"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub {{ publicContact.github.label }}
+          </a>
         </div>
       </section>
 
-      <section id="packages" class="section packages-section">
+      <section id="about" class="section about-section">
         <div class="container">
           <div class="section-header">
-            <h2>Цены и пакеты</h2>
+            <h2>Кто я</h2>
             <p>
-              3 понятных пакета с прозрачным объёмом работ. Стоимость всегда
-              обсуждаю до старта и фиксирую в плане проекта.
-            </p>
-          </div>
-
-          <div class="packages-grid">
-            <article v-for="pack in packages" :key="pack.name" class="package-card">
-              <h3>{{ pack.name }}</h3>
-              <p class="package-price">{{ pack.price }}</p>
-              <p class="package-timeline">Срок: {{ pack.timeline }}</p>
-              <p class="package-description">{{ pack.description }}</p>
-              <ul class="package-features">
-                <li v-for="feature in pack.features" :key="feature">{{ feature }}</li>
-              </ul>
-              <button
-                type="button"
-                class="cta-button ghost"
-                @click="scrollToForm"
-              >
-                Получить бесплатный разбор сайта
-              </button>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="section stack-section">
-        <div class="container">
-          <div class="section-header">
-            <h2>Стек и подход</h2>
-            <p>
-              Работаю на современном стеке: Vue, Nuxt, SEO, интеграции и
-              автоматизация. Подключаю CRM, аналитику, формы, уведомления и
-              сценарии, которые экономят время команды.
+              Я Кирилл, веб-разработчик. Собираю пользовательские сценарии в законченный продукт:
+              проектирую интерфейс, связываю его с серверной логикой и внешними сервисами,
+              затем довожу проект до публикации.
             </p>
           </div>
         </div>
@@ -68,10 +40,8 @@
       <section class="section cases-section">
         <div class="container">
           <div class="section-header">
-            <h2>Проекты</h2>
-            <p>
-              Избранные работы и реализованные решения.
-            </p>
+            <h2>Проекты и моя работа</h2>
+            <p>Сначала — о продукте, затем — о задаче и моей технической реализации.</p>
           </div>
 
           <div v-if="projectsLoading" class="section-state">Загружаем кейсы...</div>
@@ -94,9 +64,10 @@
                     {{ tag }}
                   </span>
                 </div>
-                <p v-if="caseItem.task"><strong>Задача:</strong> {{ caseItem.task }}</p>
-                <p v-if="caseItem.solution"><strong>Решение:</strong> {{ caseItem.solution }}</p>
-                <p v-if="caseItem.result"><strong>Результат:</strong> {{ caseItem.result }}</p>
+                <p class="case-summary">{{ caseItem.summary }}</p>
+                <p v-if="caseItem.contribution" class="case-contribution">
+                  <strong>Моя реализация:</strong> {{ caseItem.contribution }}
+                </p>
               </div>
             </article>
           </div>
@@ -107,13 +78,29 @@
         </div>
       </section>
 
+      <section class="section stack-section">
+        <div class="container">
+          <div class="section-header">
+            <h2>Инструменты в проектах</h2>
+            <p>Стек, который используется в представленных сайтах и приложениях.</p>
+          </div>
+          <div class="skill-groups">
+            <article v-for="group in skillGroups" :key="group.title" class="skill-group">
+              <h3>{{ group.title }}</h3>
+              <div class="skill-tags">
+                <span v-for="tool in group.tools" :key="tool">{{ tool }}</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <section class="section process-section">
         <div class="container">
           <div class="section-header">
-            <h2>Как проходит работа</h2>
+            <h2>Как веду задачу</h2>
             <p>
-              Чёткий процесс по этапам, чтобы вы всегда понимали, что происходит
-              и когда будет следующий результат.
+              Сначала определяю, что должно заработать, затем выбираю решение и проверяю его в реальных сценариях.
             </p>
           </div>
 
@@ -133,26 +120,52 @@
 
       <section class="section support-section">
         <div class="container support-content">
-          <h2>Гарантия и поддержка после запуска</h2>
+          <h2>После запуска</h2>
           <p>
-              После релиза сопровождаю проект: мониторинг, быстрые исправления,
-            помощь с контентом и консультации по развитию.
+            Могу подключиться к исправлениям и развитию опубликованного продукта.
+            Состав и условия поддержки обсуждаем отдельно.
           </p>
           <ul>
-            <li>30 дней гарантии на выполненные работы после запуска.</li>
-            <li>Поддержка по контенту, интеграциям и техническим вопросам.</li>
-            <li>План доработок и точек роста на 1-3 месяца вперёд.</li>
+            <li>Разобрать техническую проблему и предложить следующий шаг.</li>
+            <li>Доработать существующие страницы, формы и интеграции.</li>
+            <li>Подготовить выпуск изменений и проверить работу после публикации.</li>
           </ul>
+        </div>
+      </section>
+
+      <section id="packages" class="section packages-section">
+        <div class="container">
+          <div class="section-header">
+            <h2>Разработка под заказ</h2>
+            <p>
+              Портфолио — главное, но я также беру задачи на разработку. Ниже — текущие ориентиры
+              для типовых форматов; итоговый объём и стоимость фиксируем после обсуждения.
+            </p>
+          </div>
+
+          <div class="packages-grid">
+            <article v-for="pack in packages" :key="pack.name" class="package-card">
+              <h3>{{ pack.name }}</h3>
+              <p class="package-price">{{ pack.price }}</p>
+              <p class="package-timeline">Срок: {{ pack.timeline }}</p>
+              <p class="package-description">{{ pack.description }}</p>
+              <ul class="package-features">
+                <li v-for="feature in pack.features" :key="feature">{{ feature }}</li>
+              </ul>
+              <button type="button" class="cta-button ghost" @click="scrollToForm">
+                Обсудить проект
+              </button>
+            </article>
+          </div>
         </div>
       </section>
 
       <section id="application-form" class="section form-section">
         <div class="container form-layout">
           <div class="form-intro">
-            <h2>Форма заявки</h2>
+            <h2>Напишите мне о проекте</h2>
             <p>
-              Заполните короткую форму — заявка придёт мне в Telegram. Для ответа
-              укажите действующий email и Telegram или телефон.
+              Коротко опишите задачу и оставьте email для ответа. Сообщение придёт мне в Telegram.
             </p>
             <div class="messenger-links">
               <a
@@ -240,14 +253,24 @@
   </NuxtLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useProjects } from "~/composables/useProjects";
 import { publicContact } from "~/constants/public-contact";
+import { getProjectCaseView } from "~/utils/project-case-view";
+
+useSeoMeta({
+  title: "Кирилл Коваленко — веб-разработчик Vue/Nuxt",
+  description: "Портфолио Кирилла Коваленко: коммерческие сайты, веб-приложения и собственные проекты на Vue, Nuxt и TypeScript. О задачах, реализации и технологиях каждого проекта.",
+});
 
 const mainCtaText = "Отправить заявку";
 
-const stackItems = ["Vue", "Nuxt", "SEO", "Интеграции", "Автоматизация"];
+const skillGroups = [
+  { title: "Frontend", tools: ["Vue 3", "Nuxt 3/4", "TypeScript", "SCSS"] },
+  { title: "Backend и данные", tools: ["Node.js / Nitro", "Prisma", "PostgreSQL", "MySQL"] },
+  { title: "Production и интеграции", tools: ["Docker", "Nginx", "Telegram Bot API", "SMTP", "SEO"] },
+];
 
 const packages = [
   {
@@ -291,24 +314,24 @@ const packages = [
 
 const workSteps = [
   {
-      title: "Бесплатный разбор и оценка",
+    title: "Разобрать задачу",
     description:
-      "Изучаю текущий сайт или идею, фиксирую задачи, риски и ориентир по бюджету.",
+      "Уточняю пользовательские сценарии, содержание и ограничения — фиксируем, что именно должно заработать.",
   },
   {
-    title: "Проектирование и план",
+    title: "Спроектировать решение",
     description:
-      "Согласовываю структуру, функционал, стек, сроки и этапы с понятными результатами.",
+      "Определяю структуру страниц и данных, серверные части и интеграции, затем согласую план.",
   },
   {
-    title: "Разработка и интеграции",
+    title: "Разработать и проверить",
     description:
-      "Разрабатываю проект на Vue/Nuxt, настраиваю SEO, CRM и автоматизацию.",
+      "Собираю интерфейс и серверную логику, проверяю формы, интеграции и основные сценарии.",
   },
   {
-    title: "Запуск и поддержка",
+    title: "Опубликовать",
     description:
-      "Запускаю сайт, проверяю метрики и планирую дальнейшие улучшения.",
+      "Настраиваю production-размещение и проверяю работу опубликованной версии.",
   },
 ];
 
@@ -320,20 +343,17 @@ const {
 } = useProjects();
 
 const caseItems = computed(() => {
-  return projects.value.slice(0, 3).map((project) => ({
-    id: project.id,
-    title: project.title,
-    image: project.image,
-    technologies: Array.isArray(project.technologies)
-      ? project.technologies.slice(0, 4)
-      : [],
-    task:
-      project.challenges ||
-      project.shortDescription ||
-      project.description || "",
-    solution: project.solutions || "",
-    result: project.results || "",
-  }));
+  return projects.value.slice(0, 3).map((project) => {
+    const view = getProjectCaseView(project);
+    return {
+      id: project.id,
+      title: project.title,
+      image: project.image,
+      summary: view.productSummary,
+      contribution: view.contribution,
+      technologies: view.technologies.slice(0, 4),
+    };
+  });
 });
 
 const leadForm = ref({
@@ -357,14 +377,13 @@ const scrollToForm = () => {
 
 const buildLeadMessage = () => {
   return [
-    "📩 Новая заявка на бесплатный разбор сайта",
+    "📩 Новая заявка с портфолио Кирилла",
     `Имя: ${leadForm.value.name}`,
     `Telegram/телефон: ${leadForm.value.contact || "Не указан"}`,
     `Email: ${leadForm.value.email}`,
     `Ниша/компания: ${leadForm.value.business || "Не указано"}`,
     `Задача: ${leadForm.value.task}`,
     `Бюджет: ${leadForm.value.budget || "Не указан"}`,
-    "Канал связи: Telegram и email",
   ].join("\n");
 };
 
@@ -525,6 +544,16 @@ onMounted(() => {
   margin-top: 28px;
   flex-wrap: wrap;
 }
+
+.hero-github-link {
+  display: inline-flex;
+  margin-top: 16px;
+  color: var(--color-text-secondary);
+  font-size: 0.92rem;
+  text-underline-offset: 3px;
+}
+
+.hero-github-link:hover { color: var(--color-text); }
 
 .cta-button {
   display: inline-flex;
@@ -763,6 +792,17 @@ onMounted(() => {
   line-height: 1.6;
 }
 
+.case-summary { color: var(--color-text-secondary); }
+
+.case-contribution {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.case-contribution strong { color: var(--color-text); }
+
 .case-tags {
   margin-top: 12px;
   display: flex;
@@ -779,10 +819,39 @@ onMounted(() => {
   color: var(--color-text-secondary);
 }
 
+.skill-groups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.skill-group {
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--background-color);
+}
+
+.skill-group h3 { margin: 0 0 14px; font-size: 1rem; }
+
+.skill-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.skill-tags span {
+  padding: 5px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+}
+
 .process-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .skill-groups { grid-template-columns: 1fr; }
 }
 
 .process-card {

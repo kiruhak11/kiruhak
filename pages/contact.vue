@@ -6,7 +6,7 @@
           <h1 class="main-title">
             <GradientText variant="primary">Связаться с Кириллом</GradientText>
           </h1>
-          <p class="subtitle">Обсудим задачу, сроки и формат сотрудничества.</p>
+          <p class="subtitle">Есть проект, технический вопрос или предложение? Напишите мне удобным способом.</p>
         </div>
 
         <div class="contact-grid">
@@ -297,7 +297,7 @@
                 </div>
                 <div class="info-content">
                   <h3>Веб‑разработка</h3>
-                  <p>Проектирование и разработка на Vue.js и Nuxt.js</p>
+                  <p>Интерфейсы и веб-приложения на Vue.js и Nuxt.js</p>
                 </div>
               </div>
 
@@ -326,7 +326,7 @@
                 </div>
                 <div class="info-content">
                   <h3>Сроки и контроль</h3>
-                  <p>Прозрачные этапы работ и соблюдение дедлайнов</p>
+                  <p>Сначала согласуем объём задачи, этапы и сроки</p>
                 </div>
               </div>
 
@@ -355,98 +355,48 @@
                 </div>
                 <div class="info-content">
                   <h3>Качество</h3>
-                  <p>Лучшие практики, безопасность, поддержка</p>
+                  <p>Проверка сценариев, интеграций и production-запуска</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- CTA секция -->
+          <!-- Personal contact CTA -->
           <div class="cta-section">
             <h2>
               <GradientText variant="warning"
-                >Готовы к новым проектам!</GradientText
+                >Есть задача или предложение?</GradientText
               >
             </h2>
-            <p>Давайте запустим эффективный веб‑проект вместе</p>
+            <p>Напишите мне напрямую — расскажите, что нужно сделать.</p>
             <div class="cta-buttons">
-              <button class="cta-button primary" @click="handleOrderClick">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M12 2L2 7L12 12L22 7L12 2Z"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                  <path
-                    d="M2 17L12 22L22 17"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                  <path
-                    d="M2 12L12 17L22 12"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-                Заказать сайт
-              </button>
-              <button class="cta-button secondary" @click="handleDonationClick">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-                    fill="currentColor"
-                  />
-                </svg>
-                Поддержать проект
-              </button>
+              <a
+                class="cta-button primary"
+                :href="publicContact.telegram.href"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Написать в Telegram
+              </a>
+              <a class="cta-button secondary" :href="publicContact.email.href">
+                Написать на почту
+              </a>
             </div>
           </div>
         </div>
       </div>
     </main>
 
-    <OrderModal :show="showOrderModal" @close="showOrderModal = false" />
-
-    <DonationModal
-      :show="showDonationModal"
-      @close="showDonationModal = false"
-    />
   </NuxtLayout>
 </template>
 
 <script setup lang="ts">
 import GradientText from "~/components/GradientText.vue";
-import OrderModal from "~/components/OrderModal.vue";
 import { publicContact } from "~/constants/public-contact";
-
-const showOrderModal = ref(false);
-const showDonationModal = ref(false);
-
-const handleOrderClick = () => {
-  showOrderModal.value = true;
-};
-
-const handleDonationClick = () => {
-  showDonationModal.value = true;
-};
+useSeoMeta({
+  title: "Контакты — Кирилл Коваленко",
+  description: "Связаться с Кириллом Коваленко по проекту или техническому предложению: Telegram, email, телефон, GitHub и VK.",
+});
 </script>
 
 <style lang="scss" scoped>

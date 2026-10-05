@@ -8,10 +8,9 @@
       <div class="footer-shell">
         <div class="footer-top">
           <div class="footer-brand">
-            <h2>K-Studio</h2>
+            <h2>{{ publicContact.fullName }}</h2>
             <p>
-              Портфолио Кирилла: разработка сайтов на Vue/Nuxt с фокусом на SEO,
-              интеграции и автоматизацию.
+              Портфолио веб-разработчика. Сайты и веб-приложения на Vue/Nuxt — от интерфейса до production.
             </p>
           </div>
 
@@ -35,8 +34,8 @@
         </div>
 
         <div class="footer-bottom">
-          <span>© {{ currentYear }} K-Studio</span>
-          <span>Запуск, поддержка и масштабирование веб‑проектов</span>
+          <span>© {{ currentYear }} {{ publicContact.fullName }} · K-Studio</span>
+          <span>Проекты, реализация и технологии</span>
         </div>
       </div>
     </footer>

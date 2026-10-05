@@ -47,11 +47,9 @@
             </h2>
             <div class="project-meta-tags">
               <span class="category-tag">{{ project.category }}</span>
-              <span v-if="project.client" class="client-tag"
-                >Клиент: {{ project.client }}</span
-              >
+              <span v-if="project.client" class="client-tag">{{ clientContextLabel }}</span>
             </div>
-            <p class="project-subtitle">{{ project.description }}</p>
+            <p class="project-subtitle">{{ caseView.productSummary }}</p>
           </div>
         </div>
 
@@ -61,23 +59,18 @@
             <!-- Main Content -->
             <div class="main-content">
               <div class="content-section">
-                <h3 class="section-title">Описание проекта</h3>
-                <p class="section-text">{{ project.description }}</p>
+                <h3 class="section-title">О продукте</h3>
+                <p class="section-text">{{ caseView.productDescription }}</p>
               </div>
 
-              <div v-if="project.challenges" class="content-section">
-                <h3 class="section-title">Вызовы и задачи</h3>
-                <p class="section-text">{{ project.challenges }}</p>
+              <div v-if="caseView.task" class="content-section">
+                <h3 class="section-title">Задача</h3>
+                <p class="section-text">{{ caseView.task }}</p>
               </div>
 
-              <div v-if="project.solutions" class="content-section">
-                <h3 class="section-title">Решения</h3>
-                <p class="section-text">{{ project.solutions }}</p>
-              </div>
-
-              <div v-if="project.results" class="content-section">
-                <h3 class="section-title">Результаты</h3>
-                <p class="section-text">{{ project.results }}</p>
+              <div v-if="caseView.contribution" class="content-section">
+                <h3 class="section-title">Что сделал Кирилл</h3>
+                <p class="section-text">{{ caseView.contribution }}</p>
               </div>
             </div>
 
@@ -94,25 +87,18 @@
                       <div class="stat-value">{{ project.duration }}</div>
                     </div>
                   </div>
-                  <div v-if="project.budget" class="stat-item">
-                    <div class="stat-icon">💰</div>
-                    <div class="stat-content">
-                      <div class="stat-label">Бюджет</div>
-                      <div class="stat-value">{{ project.budget }}</div>
-                    </div>
-                  </div>
                 </div>
               </div>
 
               <!-- Technologies -->
               <div
-                v-if="project.technologies && project.technologies.length"
+                v-if="caseView.technologies.length"
                 class="sidebar-section"
               >
                 <h4 class="sidebar-title">Технологии</h4>
                 <div class="tech-grid">
                   <span
-                    v-for="tech in project.technologies"
+                    v-for="tech in caseView.technologies"
                     :key="tech"
                     class="tech-chip"
                   >
@@ -123,13 +109,13 @@
 
               <!-- Features -->
               <div
-                v-if="project.features && project.features.length"
+                v-if="caseView.features.length"
                 class="sidebar-section"
               >
-                <h4 class="sidebar-title">Функции</h4>
+                <h4 class="sidebar-title">Функциональность продукта</h4>
                 <div class="features-list">
                   <div
-                    v-for="feature in project.features"
+                    v-for="feature in caseView.features"
                     :key="feature"
                     class="feature-item"
                   >
@@ -158,7 +144,7 @@
                 v-if="externalLinks.liveUrl || externalLinks.githubUrl"
                 class="sidebar-section"
               >
-                <h4 class="sidebar-title">Действия</h4>
+                <h4 class="sidebar-title">Ссылки</h4>
                 <div class="action-buttons">
                   <a
                     v-if="externalLinks.liveUrl"
@@ -238,16 +224,19 @@
 <script setup lang="ts">
 import GradientText from "./GradientText.vue";
 import { getProjectExternalLinks } from "~/utils/project-links";
+import { getProjectCaseView } from "~/utils/project-case-view";
+import type { Project } from "~/composables/useProjects";
 
-const props = defineProps({
-  project: {
-    type: Object,
-    required: true,
-  },
-});
+const props = defineProps<{ project: Project }>();
 const emit = defineEmits(["close"]);
 
 const externalLinks = computed(() => getProjectExternalLinks(props.project));
+const caseView = computed(() => getProjectCaseView(props.project));
+const clientContextLabel = computed(() =>
+  props.project.client?.toLocaleLowerCase().includes("собственный проект")
+    ? props.project.client
+    : `Заказчик / команда: ${props.project.client}`
+);
 const closeButton = ref<HTMLButtonElement | null>(null);
 let previousFocus: HTMLElement | null = null;
 

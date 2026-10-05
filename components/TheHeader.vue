@@ -3,7 +3,7 @@
     <div class="logo">
       <LoaderIcon />
       <div class="logo__text">
-        <NuxtLink to="/" aria-label="K-Studio — главная">
+        <NuxtLink to="/" aria-label="Портфолио Кирилла Коваленко — главная">
           <span class="logo-title">K-Studio</span>
         </NuxtLink>
       </div>
