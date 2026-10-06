@@ -103,18 +103,10 @@ body {
   margin: 0 auto;
   max-width: 1280px;
   padding: 26px 24px;
-  border-radius: 20px;
-  border: 1px solid var(--border-color);
-  background: radial-gradient(
-      circle at 8% 12%,
-      var(--footer-glow-1),
-      transparent 36%
-    ),
-    radial-gradient(circle at 88% 88%, var(--footer-glow-2), transparent 40%),
-    var(--footer-surface);
-  box-shadow: var(--card-shadow);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  border-radius: var(--portfolio-radius-lg);
+  border: 1px solid var(--portfolio-border);
+  background: var(--portfolio-bg-elevated);
+  box-shadow: var(--portfolio-shadow-soft);
 }
 
 .footer-top {
@@ -169,9 +161,9 @@ body {
 .footer-contacts a {
   text-decoration: none;
   color: var(--color-text);
-  border: 1px solid var(--border-color);
-  background: var(--footer-pill-bg);
-  border-radius: 999px;
+  border: 1px solid var(--portfolio-border);
+  background: var(--portfolio-surface);
+  border-radius: var(--portfolio-radius-pill);
   padding: 10px 14px;
   font-weight: 600;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -200,13 +192,8 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(
-      circle at 30% 30%,
-      rgba(255, 255, 255, 0.35),
-      transparent 60%
-    ),
-    var(--gradient-primary);
-  color: #fff;
+  background: var(--portfolio-accent);
+  color: var(--portfolio-accent-contrast);
   border-radius: 100%;
   position: fixed;
   right: 32px;
@@ -216,9 +203,9 @@ body {
   transform: translateY(14px) scale(0.94);
   cursor: pointer;
   visibility: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid var(--portfolio-border-hover);
   transition: all 0.28s ease;
-  box-shadow: 0 12px 26px rgba(102, 126, 234, 0.34);
+  box-shadow: var(--portfolio-shadow-soft);
   backdrop-filter: blur(10px);
 
   &_active {
@@ -227,14 +214,21 @@ body {
     transform: translateY(0) scale(1);
   }
   &:hover {
-    transform: translateY(-4px) scale(1.04);
-    box-shadow: 0 16px 30px rgba(102, 126, 234, 0.45);
+    transform: translateY(-2px);
+    box-shadow: var(--portfolio-shadow);
   }
 
   svg {
     width: 22px;
     height: 22px;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-contacts a,
+  .button-go-top { transition: none; }
+  .footer-contacts a:hover,
+  .button-go-top:hover { transform: none; }
 }
 
 @media (max-width: 900px) {

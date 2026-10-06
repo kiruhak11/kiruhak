@@ -9,6 +9,7 @@ import {
   isUsableProjectPreview,
 } from "../utils/project-links";
 import { getProjectCaseView } from "../utils/project-case-view";
+import { getFeaturedPortfolioProjects } from "../utils/featured-projects";
 import { toPublicProject } from "../server/utils/public-project";
 
 test("public navigation only promotes portfolio routes", () => {
@@ -95,6 +96,21 @@ test("OWN, PARTICIPATION, and UNVERIFIED have evidence-backed exclusive categori
     !projectCaseStudies.cmewb3qw10005o11gpf3x0vtn.technologies.length,
     "unverified projects must not inherit unreviewed legacy stack claims"
   );
+});
+
+test("homepage featured cases require featured status, verified ownership, and production URL", () => {
+  const base = {
+    featured: true,
+    caseStudy: { ownershipType: "OWN", productionUrl: "https://example.test" },
+  };
+  const selected = getFeaturedPortfolioProjects([
+    { id: "selected", ...base },
+    { id: "not-featured", ...base, featured: false },
+    { id: "unverified", ...base, caseStudy: { ownershipType: "UNVERIFIED", productionUrl: "https://example.test" } },
+    { id: "no-production", ...base, caseStudy: { ownershipType: "PARTICIPATION", productionUrl: null } },
+  ]);
+
+  assert.deepEqual(selected.map(({ id }) => id), ["selected"]);
 });
 
 test("public project adapter sanitizes legacy claims and fails closed for unknown records", () => {
