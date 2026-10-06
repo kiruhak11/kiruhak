@@ -59,15 +59,24 @@
               />
               <div class="case-content">
                 <h3>{{ caseItem.title }}</h3>
+                <p class="case-ownership">
+                  {{ caseItem.ownershipType === "OWN" ? "Мой проект" : "Участие в проекте" }}
+                  <span v-if="caseItem.role"> · {{ caseItem.role }}</span>
+                </p>
                 <div class="case-tags">
                   <span v-for="tag in caseItem.technologies" :key="`${caseItem.id}-${tag}`">
                     {{ tag }}
                   </span>
                 </div>
                 <p class="case-summary">{{ caseItem.summary }}</p>
-                <p v-if="caseItem.contribution" class="case-contribution">
-                  <strong>Моя реализация:</strong> {{ caseItem.contribution }}
-                </p>
+                <div v-if="caseItem.responsibilities.length" class="case-contribution">
+                  <strong>Моя реализация:</strong>
+                  <ul>
+                    <li v-for="item in caseItem.responsibilities.slice(0, 2)" :key="item">
+                      {{ item }}
+                    </li>
+                  </ul>
+                </div>
               </div>
             </article>
           </div>
@@ -343,14 +352,22 @@ const {
 } = useProjects();
 
 const caseItems = computed(() => {
-  return projects.value.slice(0, 3).map((project) => {
+  return projects.value
+    .filter((project) =>
+      ["OWN", "PARTICIPATION"].includes(project.caseStudy?.ownershipType || "") &&
+      Boolean(project.caseStudy?.productionUrl)
+    )
+    .slice(0, 3)
+    .map((project) => {
     const view = getProjectCaseView(project);
     return {
       id: project.id,
       title: project.title,
       image: project.image,
       summary: view.productSummary,
-      contribution: view.contribution,
+      ownershipType: view.ownershipType,
+      role: view.role,
+      responsibilities: view.responsibilities,
       technologies: view.technologies.slice(0, 4),
     };
   });
@@ -794,12 +811,18 @@ onMounted(() => {
 
 .case-summary { color: var(--color-text-secondary); }
 
-.case-contribution {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
+.case-ownership {
+  margin: 0 0 12px;
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  font-weight: 650;
 }
+
+.case-ownership span { color: var(--color-text-secondary); font-weight: 500; }
+
+.case-contribution { color: var(--color-text-secondary); }
+
+.case-contribution ul { margin: 6px 0 0; padding-left: 20px; }
 
 .case-contribution strong { color: var(--color-text); }
 

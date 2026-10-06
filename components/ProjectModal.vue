@@ -36,7 +36,7 @@
               img-class="project-hero-image"
               fallback-class="project-modal-image-fallback"
             />
-            <div v-if="project.featured" class="featured-badge">
+            <div v-if="project.featured && caseView.ownershipType !== 'UNVERIFIED'" class="featured-badge">
               ⭐ Избранный проект
             </div>
           </div>
@@ -47,7 +47,10 @@
             </h2>
             <div class="project-meta-tags">
               <span class="category-tag">{{ project.category }}</span>
-              <span v-if="project.client" class="client-tag">{{ clientContextLabel }}</span>
+              <span v-if="caseView.ownershipType !== 'UNVERIFIED'" class="client-tag">
+                {{ caseView.ownershipType === "OWN" ? "Мои проекты" : "Участие в проектах" }}
+              </span>
+              <span v-if="caseView.company" class="client-tag">{{ caseView.company }}</span>
             </div>
             <p class="project-subtitle">{{ caseView.productSummary }}</p>
           </div>
@@ -63,33 +66,37 @@
                 <p class="section-text">{{ caseView.productDescription }}</p>
               </div>
 
-              <div v-if="caseView.task" class="content-section">
-                <h3 class="section-title">Задача</h3>
-                <p class="section-text">{{ caseView.task }}</p>
+              <div v-if="caseView.ownershipType === 'UNVERIFIED'" class="case-note">
+                Моя роль и вклад в этот проект пока не подтверждены, поэтому не отношу его
+                ни к собственным проектам, ни к участию в командной работе.
               </div>
 
-              <div v-if="caseView.contribution" class="content-section">
-                <h3 class="section-title">Что сделал Кирилл</h3>
-                <p class="section-text">{{ caseView.contribution }}</p>
-              </div>
+              <template v-else>
+                <div v-if="caseView.role" class="content-section">
+                  <h3 class="section-title">Моя роль</h3>
+                  <p class="section-text">{{ caseView.role }}</p>
+                </div>
+
+                <div v-if="caseView.responsibilities.length" class="content-section">
+                  <h3 class="section-title">Мой вклад</h3>
+                  <ul class="case-list">
+                    <li v-for="item in caseView.responsibilities" :key="item">{{ item }}</li>
+                  </ul>
+                </div>
+
+                <div v-if="caseView.technicalHighlights.length" class="content-section">
+                  <h3 class="section-title">
+                    {{ caseView.ownershipType === "OWN" ? "Технические решения" : "Реализованные части" }}
+                  </h3>
+                  <ul class="case-list">
+                    <li v-for="item in caseView.technicalHighlights" :key="item">{{ item }}</li>
+                  </ul>
+                </div>
+              </template>
             </div>
 
             <!-- Sidebar -->
             <div class="sidebar">
-              <!-- Project Stats -->
-              <div class="sidebar-section">
-                <h4 class="sidebar-title">Детали проекта</h4>
-                <div class="stats-grid">
-                  <div v-if="project.duration" class="stat-item">
-                    <div class="stat-icon">⏱️</div>
-                    <div class="stat-content">
-                      <div class="stat-label">Длительность</div>
-                      <div class="stat-value">{{ project.duration }}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               <!-- Technologies -->
               <div
                 v-if="caseView.technologies.length"
@@ -104,38 +111,6 @@
                   >
                     {{ tech }}
                   </span>
-                </div>
-              </div>
-
-              <!-- Features -->
-              <div
-                v-if="caseView.features.length"
-                class="sidebar-section"
-              >
-                <h4 class="sidebar-title">Функциональность продукта</h4>
-                <div class="features-list">
-                  <div
-                    v-for="feature in caseView.features"
-                    :key="feature"
-                    class="feature-item"
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M20 6L9 17L4 12"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                    {{ feature }}
-                  </div>
                 </div>
               </div>
 
@@ -232,11 +207,6 @@ const emit = defineEmits(["close"]);
 
 const externalLinks = computed(() => getProjectExternalLinks(props.project));
 const caseView = computed(() => getProjectCaseView(props.project));
-const clientContextLabel = computed(() =>
-  props.project.client?.toLocaleLowerCase().includes("собственный проект")
-    ? props.project.client
-    : `Заказчик / команда: ${props.project.client}`
-);
 const closeButton = ref<HTMLButtonElement | null>(null);
 let previousFocus: HTMLElement | null = null;
 
@@ -488,6 +458,23 @@ onBeforeUnmount(() => {
     font-size: 1rem;
     margin: 0;
   }
+}
+
+.case-list {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--color-text-secondary);
+  line-height: 1.65;
+}
+
+.case-list li + li { margin-top: 8px; }
+
+.case-note {
+  padding: 16px 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
 }
 
 // Sidebar

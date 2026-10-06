@@ -1,4 +1,5 @@
 import { prisma } from "../utils/prisma";
+import { toPublicProject } from "../utils/public-project";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -6,7 +7,7 @@ export default defineEventHandler(async (event) => {
       orderBy: [{ featured: "desc" }, { order: "asc" }, { createdAt: "desc" }],
     });
 
-    return projects;
+    return projects.map((project) => toPublicProject(project));
   } catch (error) {
     console.error("Error fetching projects:", error);
     throw createError({

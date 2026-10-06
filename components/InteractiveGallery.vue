@@ -92,34 +92,7 @@ const fetchProjects = async () => {
   } catch (err) {
     console.error("Ошибка загрузки проектов:", err);
     error.value = "Не удалось загрузить проекты";
-
-    // Fallback на статические данные
-    projects.value = [
-      {
-        title: "K-Studio",
-        description: "Корпоративная веб-разработка",
-        image: "https://placehold.co/400x300/667eea/ffffff?text=K-Studio",
-        technologies: ["Vue.js", "Nuxt.js", "SCSS"],
-      },
-      {
-        title: "Проект 2",
-        description: "Веб-приложение",
-        image: "https://placehold.co/400x300/f093fb/ffffff?text=Project+2",
-        technologies: ["Vue.js", "Node.js", "Prisma"],
-      },
-      {
-        title: "Проект 3",
-        description: "Интернет-магазин",
-        image: "https://placehold.co/400x300/4facfe/ffffff?text=Project+3",
-        technologies: ["Vue.js", "TypeScript", "Docker"],
-      },
-      {
-        title: "Проект 4",
-        description: "CRM система",
-        image: "https://placehold.co/400x300/fa709a/ffffff?text=Project+4",
-        technologies: ["Vue.js", "Nuxt.js", "Prisma", "Docker"],
-      },
-    ];
+    projects.value = [];
   } finally {
     loading.value = false;
   }

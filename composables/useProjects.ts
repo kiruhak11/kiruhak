@@ -1,4 +1,5 @@
 import { ref, readonly } from "vue";
+import type { PublicProjectCaseStudy } from "~/types/project-case-study";
 
 export interface Project {
   id: string;
@@ -19,6 +20,7 @@ export interface Project {
   order: number;
   liveUrl?: string;
   githubUrl?: string;
+  caseStudy?: PublicProjectCaseStudy;
   createdAt: string;
   updatedAt: string;
 }

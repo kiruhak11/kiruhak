@@ -53,7 +53,7 @@
           <span class="overlay-text">Подробнее</span>
         </div>
       </button>
-      <div v-if="project.featured" class="featured-badge">
+      <div v-if="project.featured && caseView.ownershipType !== 'UNVERIFIED'" class="featured-badge">
         <svg
           width="16"
           height="16"
@@ -77,13 +77,27 @@
         <h3 class="project-title">
           <GradientText variant="primary">{{ project.title }}</GradientText>
         </h3>
+        <div
+          v-if="caseView.ownershipType !== 'UNVERIFIED'"
+          class="ownership-label"
+        >
+          <span>{{ caseView.ownershipType === "OWN" ? "Мой проект" : "Участие в проекте" }}</span>
+          <span v-if="caseView.role" class="ownership-role">{{ caseView.role }}</span>
+        </div>
       </div>
 
       <p class="project-description">{{ caseView.productSummary }}</p>
 
-      <div v-if="caseView.contribution" class="project-contribution">
+      <div
+        v-if="caseView.ownershipType !== 'UNVERIFIED' && caseView.responsibilities.length"
+        class="project-contribution"
+      >
         <strong>Моя реализация</strong>
-        <p>{{ caseView.contribution }}</p>
+        <ul>
+          <li v-for="item in caseView.responsibilities.slice(0, 2)" :key="item">
+            {{ item }}
+          </li>
+        </ul>
       </div>
 
       <div class="project-tech">
@@ -392,6 +406,22 @@ defineEmits(["openModal"]);
   line-height: 1.3;
 }
 
+.ownership-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 9px;
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.ownership-role {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
 .project-description {
   color: var(--color-text-secondary);
   font-size: 0.95rem;
@@ -425,6 +455,13 @@ defineEmits(["openModal"]);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
+
+.project-contribution ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.project-contribution li + li { margin-top: 4px; }
 
 .project-tech {
   display: flex;
