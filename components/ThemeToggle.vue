@@ -47,32 +47,30 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .theme-toggle {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  background: var(--background-color);
-  border: 2px solid var(--border-color);
-  color: var(--color-text);
+  width: var(--portfolio-control-compact);
+  height: var(--portfolio-control-compact);
+  border-radius: var(--portfolio-radius-sm);
+  background: var(--portfolio-surface);
+  border: 1px solid var(--portfolio-border);
+  color: var(--portfolio-text);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: var(--card-shadow);
+  transition: border-color var(--portfolio-motion-fast) ease, background-color var(--portfolio-motion-fast) ease, color var(--portfolio-motion-fast) ease;
   
   &:hover {
-    transform: scale(1.1);
-    box-shadow: var(--card-shadow-hover);
-    border-color: var(--color-accent);
+    border-color: var(--portfolio-border-hover);
+    background: var(--portfolio-surface-hover);
   }
   
   &:active {
-    transform: scale(0.95);
+    background: var(--portfolio-bg-elevated);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 3px;
+    outline: var(--portfolio-focus-width) solid var(--portfolio-accent);
+    outline-offset: var(--portfolio-focus-offset);
   }
 }
 
@@ -80,14 +78,14 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: transform var(--portfolio-motion-normal) var(--portfolio-ease-standard);
   
   .sun-icon {
-    animation: rotate 0.5s ease;
+    animation: rotate var(--portfolio-motion-normal) var(--portfolio-ease-standard);
   }
   
   .moon-icon {
-    animation: rotate 0.5s ease;
+    animation: rotate var(--portfolio-motion-normal) var(--portfolio-ease-standard);
   }
 }
 
@@ -102,8 +100,8 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .theme-toggle {
-    width: 40px;
-    height: 40px;
+    width: var(--portfolio-control-compact);
+    height: var(--portfolio-control-compact);
   }
 }
 

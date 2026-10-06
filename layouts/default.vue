@@ -200,8 +200,7 @@ body {
 
 .platform-link:hover { color: var(--portfolio-text); text-decoration: underline; }
 .footer-navigation a:focus-visible,.footer-contacts a:focus-visible,.platform-link:focus-visible,.button-go-top:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
-.footer-navigation a,.footer-contacts a,.platform-link { transition: color 140ms ease; }
-.footer-navigation a:hover,.footer-contacts a:hover,.platform-link:hover { transition: none; }
+.footer-navigation a,.footer-contacts a,.platform-link { transition: color var(--portfolio-motion-fast) ease; }
 
 @media (max-width: 900px) {
   .footer-top { grid-template-columns: 1fr 1fr; }
@@ -226,7 +225,7 @@ body {
   cursor: pointer;
   visibility: hidden;
   border: 1px solid var(--portfolio-border-hover);
-  transition: all 0.28s ease;
+  transition: opacity var(--portfolio-motion-normal) ease, visibility var(--portfolio-motion-normal) ease, transform var(--portfolio-motion-normal) var(--portfolio-ease-standard), box-shadow var(--portfolio-motion-fast) ease;
   box-shadow: var(--portfolio-shadow-soft);
   backdrop-filter: blur(10px);
 

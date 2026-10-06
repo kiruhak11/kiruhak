@@ -24,6 +24,7 @@ defineProps<{ groups: Array<{ title: string; tools: string[] }> }>();
 
 <style scoped lang="scss">
 .capabilities-section { padding: clamp(3rem, 6vw, 5rem) 0; border-top: 1px solid var(--portfolio-border); border-bottom: 1px solid var(--portfolio-border); background: var(--portfolio-surface); }
+.capabilities-section { padding-block: var(--portfolio-section-space); }
 .container { width: min(var(--portfolio-content-width), calc(100% - 2 * var(--portfolio-gutter))); margin: 0 auto; }
 .capabilities-layout { display: grid; grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr); gap: clamp(2rem, 7vw, 7rem); align-items: start; }
 .eyebrow { margin: 0 0 0.75rem; color: var(--portfolio-accent); font-size: var(--portfolio-label); font-weight: 700; letter-spacing: 0.12em; }

@@ -263,6 +263,10 @@ onMounted(() => { fetchProjects(); });
 .lead-form textarea { min-height: 112px; resize: vertical; }
 .lead-form input::placeholder,.lead-form textarea::placeholder { color: var(--portfolio-text-muted); opacity: 1; }
 .lead-form input:focus-visible,.lead-form textarea:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 2px; border-color: var(--portfolio-accent); }
+.hero-section { padding-bottom: var(--portfolio-section-space); }
+.about-section,.contact-section { padding-block: var(--portfolio-section-space); }
+.cta-button { min-height: var(--portfolio-control-standard); }
+.lead-form input,.lead-form textarea { min-height: var(--portfolio-control-compact); }
 .lead-form .cta-button { justify-self: start; }
 .form-message { margin: 0; font-size: var(--portfolio-small); line-height: 1.5; }
 .form-message.success { color: var(--portfolio-success); }

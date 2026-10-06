@@ -58,6 +58,7 @@ h3 { margin: 0; color: var(--portfolio-text); font-size: 1.1rem; }
 .service-cta { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 44px; padding: 0 0.75rem; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-sm); background: transparent; color: var(--portfolio-text); font: inherit; font-size: 0.82rem; font-weight: 650; cursor: pointer; transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease; }
 .service-cta:hover { border-color: var(--portfolio-border-hover); background: var(--portfolio-surface-hover); color: var(--portfolio-accent); }
 .service-cta:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
+.services-section { padding-block: var(--portfolio-section-space); }
 .support-note { margin: 1.25rem 0 0; color: var(--portfolio-text-secondary); font-size: var(--portfolio-small); line-height: 1.6; }
 .support-note strong { color: var(--portfolio-text); }
 @media (max-width: 760px) { .services-heading { display: block; } .services-heading > p { margin-top: 0.75rem; } .service-row { grid-template-columns: 28px minmax(0, 1fr); gap: 0.7rem 0.9rem; } .service-number { grid-row: span 2; } .service-estimate { grid-column: 2; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.35rem 0.8rem; } .service-cta { grid-column: 2; justify-self: start; } }

@@ -135,6 +135,7 @@ h1 { margin: 0; color: var(--portfolio-text); font-size: clamp(2.1rem, 4vw, 3.5r
 .form-link { display: inline-flex; min-height: 44px; align-items: center; gap: 0.45rem; margin-top: 0.8rem; color: var(--portfolio-text); font-size: 0.82rem; font-weight: 650; text-underline-offset: 4px; }
 .form-link:hover { color: var(--portfolio-accent); }
 .primary-channel:focus-visible,.secondary-channel:focus-visible,.form-link:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
+.channel-action { min-height: var(--portfolio-control-compact); }
 
 @media (max-width: 760px) {
   .contact-page { padding-top: clamp(1.75rem, 6vw, 2.5rem); }

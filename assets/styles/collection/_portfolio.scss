@@ -38,6 +38,17 @@
   --portfolio-space-16: 4rem;
   --portfolio-space-24: 6rem;
 
+  --portfolio-section-space: clamp(3rem, 6vw, 5rem);
+  --portfolio-control-compact: 44px;
+  --portfolio-control-standard: 48px;
+  --portfolio-motion-fast: 150ms;
+  --portfolio-motion-normal: 220ms;
+  --portfolio-motion-slow: 380ms;
+  --portfolio-ease-standard: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --portfolio-ease-enter: cubic-bezier(0.2, 0.75, 0.3, 1);
+  --portfolio-focus-width: 2px;
+  --portfolio-focus-offset: 3px;
+
   --portfolio-content-width: 1280px;
   --portfolio-gutter: clamp(1rem, 4vw, 4rem);
   --portfolio-radius-sm: 0.5rem;

@@ -239,6 +239,7 @@ h1 { margin: 0; color: var(--portfolio-text); font-size: clamp(2rem, 4vw, 3.3rem
 .projects-cta .eyebrow { margin-bottom: 0.55rem; }
 .projects-cta h2 { max-width: 34ch; margin: 0; color: var(--portfolio-text); font-size: clamp(1.25rem, 2.2vw, 1.75rem); line-height: 1.25; letter-spacing: -0.03em; }
 .contact-link { display: inline-flex; flex: 0 0 auto; min-height: 46px; align-items: center; gap: 0.65rem; padding: 0 0.95rem; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-sm); color: var(--portfolio-text); font-size: 0.85rem; font-weight: 650; text-decoration: none; transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease; }
+.contact-link { min-height: var(--portfolio-control-standard); }
 .contact-link svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
 .contact-link:hover { border-color: var(--portfolio-border-hover); background: var(--portfolio-surface-hover); color: var(--portfolio-accent); }
 

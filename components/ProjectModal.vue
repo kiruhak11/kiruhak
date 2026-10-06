@@ -214,6 +214,8 @@ onBeforeUnmount(() => {
 .archive-note { max-width: 640px; padding: 1rem 1.1rem; border-left: 2px solid var(--portfolio-border); color: var(--portfolio-text-secondary); }
 .archive-note p { margin: 0.45rem 0 0; font-size: 0.88rem; line-height: 1.6; }
 .close-button:focus-visible,.project-links a:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
+.close-button { width: var(--portfolio-control-compact); height: var(--portfolio-control-compact); flex-basis: var(--portfolio-control-compact); }
+.project-links a { min-height: var(--portfolio-control-compact); }
 @keyframes modal-enter { from { opacity: 0; transform: translateY(8px) scale(0.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (max-width: 700px) { .project-modal-overlay { align-items: end; padding: 0; padding-top: env(safe-area-inset-top); } .project-modal-content { width: 100%; max-height: calc(100dvh - env(safe-area-inset-top)); border-radius: var(--portfolio-radius-lg) var(--portfolio-radius-lg) 0 0; padding-bottom: env(safe-area-inset-bottom); } .modal-overview { grid-template-columns: 1fr; gap: 1rem; } .modal-media { grid-row: 2; } .case-details { grid-template-columns: 1fr; } .case-sidebar { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .project-modal-content { animation: none; } .close-button,.project-links a { transition: none; } }

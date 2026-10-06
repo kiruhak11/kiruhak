@@ -154,6 +154,7 @@ const externalLinks = computed(() => getVerifiedProjectLinks(props.project));
 .production-link { color: var(--portfolio-text-secondary); font-size: 0.8rem; font-weight: 600; text-decoration: none; text-underline-offset: 4px; }
 .production-link:hover { color: var(--portfolio-accent); text-decoration: underline; }
 .details-button:focus-visible,.production-link:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
+.details-button { min-height: var(--portfolio-control-compact); }
 
 @media (max-width: 520px) { .card-content { padding: 1.05rem; } .project-title { font-size: 1.15rem; } }
 @media (prefers-reduced-motion: reduce) { .project-card,:deep(.project-image),.details-button,.details-button svg { transition: none; } .project-card:hover { transform: none; } .project-card:hover :deep(.project-image),.details-button:hover svg { transform: none; } }

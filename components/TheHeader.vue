@@ -158,7 +158,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
   flex: 0 0 38px;
   place-items: center;
   border: 1px solid var(--portfolio-border);
-  border-radius: 12px;
+  border-radius: var(--portfolio-radius-sm);
   background: var(--portfolio-surface-hover);
   color: var(--portfolio-accent);
   font-size: 1rem;
@@ -182,7 +182,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
 
 .desktop-navigation > ul > li > a {
   display: inline-flex;
-  min-height: 42px;
+  min-height: var(--portfolio-control-compact);
   align-items: center;
   padding: 0 13px;
   border-radius: var(--portfolio-radius-sm);
@@ -216,7 +216,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
 
 .header-contact-cta {
   display: inline-flex;
-  min-height: 42px;
+  min-height: var(--portfolio-control-compact);
   align-items: center;
   justify-content: center;
   padding: 0 15px;
@@ -236,8 +236,8 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
 .mobile-navigation { display: none; }
 
 .header :deep(.theme-toggle) {
-  width: 40px;
-  height: 40px;
+  width: var(--portfolio-control-compact);
+  height: var(--portfolio-control-compact);
   border: 1px solid var(--portfolio-border);
   border-radius: var(--portfolio-radius-sm);
   background: transparent;

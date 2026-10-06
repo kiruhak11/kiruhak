@@ -137,6 +137,8 @@ h3 { margin: 0.8rem 0 0; color: var(--portfolio-text); font-size: clamp(1.65rem,
 .all-projects-link { margin-top: 2rem; }
 .all-projects-link span { transition: transform 160ms ease; }
 .case-link:focus-visible,.all-projects-link:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 4px; border-radius: 2px; }
+.featured-section { padding-block: var(--portfolio-section-space); }
+:deep(.case-image) { transition-duration: var(--portfolio-motion-slow); transition-timing-function: var(--portfolio-ease-standard); }
 @media (max-width: 900px) {
   .section-heading { display: block; }
   .heading-note { margin-top: 0.8rem; }

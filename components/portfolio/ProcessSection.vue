@@ -22,6 +22,7 @@ defineProps<{ steps: Array<{ title: string; description: string }> }>();
 
 <style scoped lang="scss">
 .process-section { padding: clamp(4rem, 8vw, 7rem) 0; }
+.process-section { padding-block: var(--portfolio-section-space); }
 .container { width: min(var(--portfolio-content-width), calc(100% - 2 * var(--portfolio-gutter))); margin: 0 auto; }
 .process-heading { max-width: 640px; }
 .eyebrow { margin: 0 0 0.75rem; color: var(--portfolio-accent); font-size: var(--portfolio-label); font-weight: 700; letter-spacing: 0.12em; }
