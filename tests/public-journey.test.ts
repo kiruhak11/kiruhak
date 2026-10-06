@@ -29,6 +29,26 @@ test("public contact data is centralized and points to one profile", () => {
   assert.equal(publicContact.vk.href, "https://vk.com/kiruhak11");
 });
 
+test("contact experience uses canonical channels and keeps platform access secondary", () => {
+  const contactPage = readFileSync(new URL("../pages/contact.vue", import.meta.url), "utf8");
+  const footer = readFileSync(new URL("../layouts/default.vue", import.meta.url), "utf8");
+  const home = readFileSync(new URL("../pages/index.vue", import.meta.url), "utf8");
+
+  assert.match(contactPage, /publicContact\.telegram\.href/);
+  assert.match(contactPage, /publicContact\.email\.href/);
+  assert.match(contactPage, /publicContact\.github\.href/);
+  assert.match(contactPage, /to="\/#application-form"/);
+  assert.doesNotMatch(contactPage, /<form|publicContact\.phone|publicContact\.vk/);
+  assert.match(footer, /publicContact\.telegram\.href/);
+  assert.match(footer, /publicContact\.email\.href/);
+  assert.match(footer, /publicContact\.github\.href/);
+  assert.match(footer, /to="\/login"/);
+  assert.doesNotMatch(footer, /K-Studio|\/analytics|\/content|\/admin|\/tutorials|\/materials/);
+  assert.match(footer, /portfolio-current-year/);
+  assert.match(home, /publicContact\.telegram\.href/);
+  assert.match(home, /publicContact\.email\.href/);
+});
+
 test("project links suppress repository URLs masquerading as production sites", () => {
   assert.deepEqual(
     getProjectExternalLinks({
@@ -239,5 +259,5 @@ test("key public copy is personal and does not surface unsupported result sectio
   assert.doesNotMatch(publicCopy, /K-Studio — корпоративная веб|наша команда|мы создаём|мы создаем/i);
   assert.doesNotMatch(homepage + projectPage + projectModal, /project\.results|caseItem\.result/);
   assert.doesNotMatch(projectPage + contactPage, /Поддержать проект|handleDonationClick/);
-  assert.match(contactPage, /Напишите мне напрямую/);
+  assert.match(contactPage, /отвечаю лично/);
 });

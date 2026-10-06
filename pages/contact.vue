@@ -1,722 +1,158 @@
 <template>
   <NuxtLayout>
     <main class="contact-page">
-      <div class="container">
-        <div class="header-section">
-          <h1 class="main-title">
-            <GradientText variant="primary">Связаться с Кириллом</GradientText>
-          </h1>
-          <p class="subtitle">Есть проект, технический вопрос или предложение? Напишите мне удобным способом.</p>
-        </div>
+      <div class="contact-shell">
+        <header class="contact-intro">
+          <p class="eyebrow">КОНТАКТЫ / КИРИЛЛ КОВАЛЕНКО</p>
+          <h1>Давайте обсудим задачу</h1>
+          <p class="intro-copy">
+            Можно написать по поводу работы в команде, сотрудничества или разработки продукта — отвечаю лично.
+          </p>
+        </header>
 
-        <div class="contact-grid">
-          <!-- Основные контакты -->
-          <div class="contact-section">
-            <h2>
-              <GradientText variant="secondary">Социальные сети</GradientText>
-            </h2>
-            <div class="social-links">
+        <div class="contact-layout">
+          <section class="contact-channels" aria-label="Способы связи">
+            <a
+              class="primary-channel"
+              :href="publicContact.telegram.href"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Написать Кириллу в Telegram, откроется в новой вкладке"
+            >
+              <span class="channel-eyebrow">ПРЕДПОЧТИТЕЛЬНЫЙ КАНАЛ</span>
+              <span class="channel-title">Telegram</span>
+              <span class="channel-label">{{ publicContact.telegram.label }}</span>
+              <span class="channel-action">Написать в Telegram <span aria-hidden="true">↗</span></span>
+              <svg class="channel-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m21 3-7.2 18-3.8-7-7-3.8L21 3Z" />
+                <path d="M10 14 21 3" />
+              </svg>
+            </a>
+
+            <div class="secondary-channels">
+              <a class="secondary-channel" :href="publicContact.email.href">
+                <span class="channel-icon-wrap" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></svg>
+                </span>
+                <span class="secondary-copy">
+                  <span class="secondary-title">Email</span>
+                  <span class="secondary-value">{{ publicContact.email.label }}</span>
+                </span>
+                <span class="secondary-action">Написать <span aria-hidden="true">↗</span></span>
+              </a>
+
               <a
+                class="secondary-channel"
                 :href="publicContact.github.href"
-                class="social-card github"
                 target="_blank"
                 rel="noopener noreferrer"
+                :aria-label="`Открыть GitHub ${publicContact.github.label} в новой вкладке`"
               >
-                <div class="card-icon">
-                  <IconGitHub />
-                </div>
-                <div class="card-content">
-                  <h3>GitHub</h3>
-                  <p>Мои проекты и код</p>
-                  <span class="username">{{ publicContact.github.label }}</span>
-                </div>
-                <div class="card-arrow">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M7 17L17 7"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M7 7H17V17"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </div>
-              </a>
-
-              <a
-                :href="publicContact.telegram.href"
-                class="social-card telegram"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <div class="card-icon">
-                  <IconTg />
-                </div>
-                <div class="card-content">
-                  <h3>Telegram</h3>
-                  <p>Быстрая связь</p>
-                  <span class="username">{{ publicContact.telegram.label }}</span>
-                </div>
-                <div class="card-arrow">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M7 17L17 7"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M7 7H17V17"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </div>
-              </a>
-
-              <a
-                :href="publicContact.vk.href"
-                class="social-card vk"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <div class="card-icon">
-                  <IconVk />
-                </div>
-                <div class="card-content">
-                  <h3>VKontakte</h3>
-                  <p>Социальная сеть</p>
-                  <span class="username">{{ publicContact.vk.label }}</span>
-                </div>
-                <div class="card-arrow">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M7 17L17 7"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M7 7H17V17"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </div>
+                <span class="channel-icon-wrap" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.9a3.4 3.4 0 0 0-.9-2.6c3-.3 6.1-1.5 6.1-6.6A5.1 5.1 0 0 0 18.8 5a4.7 4.7 0 0 0-.1-3S17.5 1.7 15 3.4a13.3 13.3 0 0 0-7 0C5.5 1.7 4.3 2 4.3 2A4.7 4.7 0 0 0 4.2 5a5.1 5.1 0 0 0-1.4 3.9c0 5.1 3.1 6.3 6.1 6.6a3.4 3.4 0 0 0-.9 2.6V22" /></svg>
+                </span>
+                <span class="secondary-copy">
+                  <span class="secondary-title">GitHub</span>
+                  <span class="secondary-value">{{ publicContact.github.label }}</span>
+                </span>
+                <span class="secondary-action">Открыть профиль <span aria-hidden="true">↗</span></span>
               </a>
             </div>
-          </div>
+          </section>
 
-          <!-- Прямые контакты -->
-          <div class="contact-section">
-            <h2>
-              <GradientText variant="primary">Прямые контакты</GradientText>
-            </h2>
-            <div class="direct-contacts">
-              <a
-                :href="publicContact.phone.href"
-                class="social-card phone"
-              >
-                <div class="card-icon">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </div>
-                <div class="card-content">
-                  <h3>Телефон</h3>
-                  <p>Прямая связь</p>
-                  <span class="contact-value">{{ publicContact.phone.label }}</span>
-                </div>
-                <div class="card-arrow">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M7 17L17 7"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M7 7H17V17"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </div>
-              </a>
-
-              <a
-                :href="publicContact.email.href"
-                class="social-card email"
-              >
-                <div class="card-icon">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <polyline
-                      points="22,6 12,13 2,6"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </div>
-                <div class="card-content">
-                  <h3>Email</h3>
-                  <p>Письменная связь</p>
-                  <span class="contact-value">{{ publicContact.email.label }}</span>
-                </div>
-                <div class="card-arrow">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M7 17L17 7"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M7 7H17V17"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </div>
-              </a>
-            </div>
-          </div>
-
-          <!-- Информация о работе -->
-          <div class="contact-section">
-            <h2>
-              <GradientText variant="success">Работа и проекты</GradientText>
-            </h2>
-            <div class="info-cards">
-              <div class="info-card">
-                <div class="info-icon">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M12 2L2 7L12 12L22 7L12 2Z"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M2 17L12 22L22 17"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M2 12L12 17L22 12"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </div>
-                <div class="info-content">
-                  <h3>Веб‑разработка</h3>
-                  <p>Интерфейсы и веб-приложения на Vue.js и Nuxt.js</p>
-                </div>
-              </div>
-
-              <div class="info-card">
-                <div class="info-icon">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    />
-                    <path
-                      d="M12 6V12L16 14"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </div>
-                <div class="info-content">
-                  <h3>Сроки и контроль</h3>
-                  <p>Сначала согласуем объём задачи, этапы и сроки</p>
-                </div>
-              </div>
-
-              <div class="info-card">
-                <div class="info-icon">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M9 12L11 14L15 10"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    />
-                  </svg>
-                </div>
-                <div class="info-content">
-                  <h3>Качество</h3>
-                  <p>Проверка сценариев, интеграций и production-запуска</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Personal contact CTA -->
-          <div class="cta-section">
-            <h2>
-              <GradientText variant="warning"
-                >Есть задача или предложение?</GradientText
-              >
-            </h2>
-            <p>Напишите мне напрямую — расскажите, что нужно сделать.</p>
-            <div class="cta-buttons">
-              <a
-                class="cta-button primary"
-                :href="publicContact.telegram.href"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Написать в Telegram
-              </a>
-              <a class="cta-button secondary" :href="publicContact.email.href">
-                Написать на почту
-              </a>
-            </div>
-          </div>
+          <aside class="contact-context" aria-labelledby="contact-context-title">
+            <p class="eyebrow">О ЧЁМ МОЖНО НАПИСАТЬ</p>
+            <h2 id="contact-context-title">Короткого первого сообщения достаточно</h2>
+            <ul class="topic-list">
+              <li>Вакансия или работа в команде</li>
+              <li>Сайт, сервис или приложение</li>
+              <li>Техническое сотрудничество</li>
+            </ul>
+            <p class="message-hint">
+              Для проекта опишите задачу, желаемый результат и ориентир по срокам — этого хватит, чтобы начать разговор.
+            </p>
+            <NuxtLink class="form-link" to="/#application-form">
+              Или подробно описать проект <span aria-hidden="true">→</span>
+            </NuxtLink>
+          </aside>
         </div>
       </div>
     </main>
-
   </NuxtLayout>
 </template>
 
 <script setup lang="ts">
-import GradientText from "~/components/GradientText.vue";
 import { publicContact } from "~/constants/public-contact";
+
 useSeoMeta({
   title: "Контакты — Кирилл Коваленко",
-  description: "Связаться с Кириллом Коваленко по проекту или техническому предложению: Telegram, email, телефон, GitHub и VK.",
+  description: "Написать Кириллу Коваленко по поводу работы в команде, сотрудничества или разработки продукта: Telegram и email.",
 });
 </script>
 
-<style lang="scss" scoped>
+<style scoped lang="scss">
 .contact-page {
-  min-height: 100vh;
-  padding: 32px 0;
+  min-height: 62vh;
+  padding: clamp(3.25rem, 8vw, 7rem) 0 clamp(4rem, 9vw, 8rem);
+  background: var(--portfolio-bg);
+  color: var(--portfolio-text);
+  font-family: var(--portfolio-font-sans);
 }
 
-.container {
-  max-width: 1200px;
+.contact-shell {
+  width: min(1050px, calc(100% - 2 * var(--portfolio-gutter)));
   margin: 0 auto;
-  padding: 0 32px;
 }
 
-.header-section {
-  text-align: center;
-  margin-bottom: 64px;
+.contact-intro { max-width: 720px; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+.eyebrow { margin: 0 0 0.85rem; color: var(--portfolio-accent); font-size: var(--portfolio-label); font-weight: 700; letter-spacing: 0.12em; }
+h1 { margin: 0; color: var(--portfolio-text); font-size: clamp(2.1rem, 4vw, 3.5rem); line-height: 1.04; letter-spacing: -0.06em; }
+.intro-copy { max-width: 56ch; margin: 1rem 0 0; color: var(--portfolio-text-secondary); font-size: var(--portfolio-body-large); line-height: 1.65; }
+.contact-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr); gap: clamp(2rem, 7vw, 6rem); align-items: start; }
+.contact-channels { display: grid; min-width: 0; gap: 0.85rem; }
+.primary-channel { position: relative; display: grid; min-height: 210px; align-content: start; justify-items: start; overflow: hidden; padding: clamp(1.25rem, 4vw, 2rem); border: 1px solid var(--portfolio-border-hover); border-radius: var(--portfolio-radius-lg); background: var(--portfolio-surface); color: var(--portfolio-text); text-decoration: none; box-shadow: var(--portfolio-shadow-soft); transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
+.primary-channel:hover { transform: translateY(-2px); border-color: var(--portfolio-accent); background: var(--portfolio-bg-elevated); box-shadow: var(--portfolio-shadow); }
+.channel-eyebrow { color: var(--portfolio-accent); font-family: var(--portfolio-font-mono); font-size: 0.68rem; font-weight: 650; letter-spacing: 0.09em; }
+.channel-title { margin-top: 0.85rem; font-size: clamp(1.75rem, 3.2vw, 2.4rem); font-weight: 650; letter-spacing: -0.05em; line-height: 1.1; }
+.channel-label { margin-top: 0.35rem; color: var(--portfolio-text-secondary); font-size: 0.9rem; }
+.channel-action { display: inline-flex; min-height: 42px; align-items: center; gap: 0.65rem; margin-top: 1.2rem; padding: 0 0.85rem; border-radius: var(--portfolio-radius-sm); background: var(--portfolio-accent); color: var(--portfolio-accent-contrast); font-size: 0.82rem; font-weight: 650; }
+.channel-icon { position: absolute; top: 1.5rem; right: 1.5rem; width: clamp(36px, 5vw, 54px); height: clamp(36px, 5vw, 54px); fill: none; stroke: var(--portfolio-accent); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.25; }
+.secondary-channels { display: grid; gap: 0.65rem; }
+.secondary-channel { display: flex; min-width: 0; min-height: 76px; align-items: center; gap: 0.85rem; padding: 0.8rem 0.9rem; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-md); background: var(--portfolio-bg-elevated); color: var(--portfolio-text); text-decoration: none; transition: border-color 150ms ease, background-color 150ms ease; }
+.secondary-channel:hover { border-color: var(--portfolio-border-hover); background: var(--portfolio-surface-hover); }
+.channel-icon-wrap { display: grid; width: 38px; height: 38px; flex: 0 0 38px; place-items: center; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-sm); color: var(--portfolio-accent); }
+.channel-icon-wrap svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
+.secondary-copy { display: grid; min-width: 0; gap: 0.18rem; }
+.secondary-title { font-size: 0.85rem; font-weight: 650; }
+.secondary-value { overflow-wrap: anywhere; color: var(--portfolio-text-muted); font-size: 0.77rem; }
+.secondary-action { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 0.3rem; margin-left: auto; color: var(--portfolio-text-secondary); font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+.contact-context { padding-top: 0.3rem; }
+.contact-context h2 { max-width: 24ch; margin: 0; color: var(--portfolio-text); font-size: clamp(1.3rem, 2vw, 1.65rem); line-height: 1.2; letter-spacing: -0.035em; }
+.topic-list { display: grid; gap: 0.65rem; margin: 1.25rem 0 0; padding: 0; color: var(--portfolio-text-secondary); font-size: 0.88rem; line-height: 1.5; list-style: none; }
+.topic-list li { display: flex; gap: 0.6rem; }
+.topic-list li::before { color: var(--portfolio-accent); content: "↗"; }
+.message-hint { margin: 1.25rem 0 0; padding-top: 1rem; border-top: 1px solid var(--portfolio-border); color: var(--portfolio-text-muted); font-size: 0.82rem; line-height: 1.6; }
+.form-link { display: inline-flex; min-height: 44px; align-items: center; gap: 0.45rem; margin-top: 0.8rem; color: var(--portfolio-text); font-size: 0.82rem; font-weight: 650; text-underline-offset: 4px; }
+.form-link:hover { color: var(--portfolio-accent); }
+.primary-channel:focus-visible,.secondary-channel:focus-visible,.form-link:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
 
-  .main-title {
-    font-size: 3rem;
-    font-weight: 700;
-    margin: 0 0 16px 0;
-    animation: fadeInUp 0.8s ease forwards;
-  }
-
-  .subtitle {
-    font-size: 1.2rem;
-    color: var(--color-text-secondary);
-    margin: 0;
-    animation: fadeInUp 0.8s ease forwards 0.2s;
-    opacity: 0;
-  }
+@media (max-width: 760px) {
+  .contact-page { padding-top: clamp(1.75rem, 6vw, 2.5rem); }
+  .contact-intro { margin-bottom: 1.5rem; }
+  .contact-layout { grid-template-columns: 1fr; gap: 2.25rem; }
+  .contact-context { padding-top: 1.25rem; border-top: 1px solid var(--portfolio-border); }
+  .contact-context h2 { max-width: 32ch; }
 }
 
-.contact-grid {
-  display: grid;
-  gap: 48px;
+@media (max-width: 420px) {
+  h1 { font-size: clamp(2rem, 8vw, 2.35rem); }
+  .intro-copy { margin-top: 0.75rem; font-size: 0.98rem; }
+  .secondary-channel { gap: 0.6rem; padding-inline: 0.7rem; }
+  .secondary-action { font-size: 0.68rem; }
 }
 
-.contact-section {
-  h2 {
-    font-size: 1.8rem;
-    font-weight: 600;
-    margin: 0 0 32px 0;
-    text-align: center;
-  }
-}
-
-.social-links {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
-}
-
-.direct-contacts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
-}
-
-.social-card {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 24px;
-  background: var(--background-color);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  text-decoration: none;
-  color: var(--color-text);
-  transition: all 0.3s ease;
-  box-shadow: var(--card-shadow);
-
-  &:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--card-shadow-hover);
-    border-color: var(--color-accent);
-
-    .card-arrow {
-      transform: translateX(4px);
-    }
-  }
-
-  &.github:hover {
-    border-color: #333;
-    .card-icon {
-      color: #333;
-    }
-  }
-
-  &.telegram:hover {
-    border-color: #0088cc;
-    .card-icon {
-      color: #0088cc;
-    }
-  }
-
-  &.vk:hover {
-    border-color: #4a76a8;
-    .card-icon {
-      color: #4a76a8;
-    }
-  }
-
-  &.phone:hover {
-    border-color: #25d366;
-    .card-icon {
-      color: #25d366;
-    }
-  }
-
-  &.email:hover {
-    border-color: #ea4335;
-    .card-icon {
-      color: #ea4335;
-    }
-  }
-}
-
-.card-icon {
-  font-size: 2.5rem;
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-}
-
-.card-content {
-  flex: 1;
-
-  h3 {
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin: 0 0 4px 0;
-  }
-
-  p {
-    color: var(--color-text-secondary);
-    margin: 0 0 8px 0;
-    font-size: 0.9rem;
-  }
-
-  .username {
-    color: var(--color-accent);
-    font-weight: 600;
-    font-size: 0.9rem;
-  }
-
-  .contact-value {
-    color: var(--color-accent);
-    font-weight: 600;
-    font-size: 1rem;
-  }
-}
-
-.card-arrow {
-  transition: transform 0.3s ease;
-  color: var(--color-text-secondary);
-}
-
-.info-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 24px;
-}
-
-.info-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 24px;
-  background: var(--background-color);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  transition: all 0.3s ease;
-  box-shadow: var(--card-shadow);
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--card-shadow-hover);
-    border-color: var(--color-accent);
-  }
-}
-
-.info-icon {
-  color: var(--color-accent);
-  flex-shrink: 0;
-  margin-top: 4px;
-}
-
-.info-content {
-  h3 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0 0 8px 0;
-    color: var(--color-text);
-  }
-
-  p {
-    color: var(--color-text-secondary);
-    margin: 0;
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-}
-
-.cta-section {
-  text-align: center;
-  padding: 48px;
-  background: linear-gradient(
-    135deg,
-    rgba(102, 126, 234, 0.1) 0%,
-    rgba(118, 75, 162, 0.1) 100%
-  );
-  border-radius: 20px;
-  border: 1px solid var(--background-info-color);
-
-  h2 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0 0 16px 0;
-  }
-
-  p {
-    font-size: 1.1rem;
-    color: var(--color-text-secondary);
-    margin: 0 0 32px 0;
-    line-height: 1.6;
-  }
-}
-
-.cta-buttons {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.cta-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 24px;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &.primary {
-    background: var(--gradient-primary);
-    color: white;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-    }
-  }
-
-  &.secondary {
-    background: var(--background-color);
-    color: var(--color-text);
-    border: 2px solid var(--background-info-color);
-
-    &:hover {
-      border-color: #ef4444;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.2);
-    }
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (max-width: 768px) {
-  .container {
-    padding: 0 16px;
-  }
-
-  .header-section {
-    margin-bottom: 48px;
-
-    .main-title {
-      font-size: 2.2rem;
-    }
-
-    .subtitle {
-      font-size: 1rem;
-    }
-  }
-
-  .social-links {
-    grid-template-columns: 1fr;
-  }
-
-  .info-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .cta-section {
-    padding: 32px 24px;
-  }
-
-  .cta-buttons {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .cta-button {
-    width: 100%;
-    max-width: 300px;
-    justify-content: center;
-  }
+@media (prefers-reduced-motion: reduce) {
+  .primary-channel,.secondary-channel { transition: none; }
+  .primary-channel:hover { transform: none; }
 }
 </style>
