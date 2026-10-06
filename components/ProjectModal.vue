@@ -1,214 +1,133 @@
 <template>
-  <div class="project-modal-overlay" @click="$emit('close')">
-    <div
+  <div class="project-modal-overlay" @click.self="emitClose">
+    <section
+      ref="dialog"
       class="project-modal-content"
       role="dialog"
       aria-modal="true"
       aria-labelledby="project-modal-title"
+      aria-describedby="project-modal-summary"
       tabindex="-1"
       @click.stop
     >
-      <button ref="closeButton" class="close-button" type="button" aria-label="Закрыть детали проекта" @click="$emit('close')">
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+      <div class="modal-topbar">
+        <div class="modal-labels">
+          <span v-if="caseView.ownershipType !== 'UNVERIFIED'" class="ownership-label">
+            {{ caseView.ownershipType === 'OWN' ? 'Собственный проект' : 'Участие в проекте' }}
+          </span>
+          <span v-else class="archive-label">Архивный проект</span>
+          <span v-if="project.category" class="category-label">{{ project.category }}</span>
+          <span v-if="caseView.company" class="company-label">{{ caseView.company }}</span>
+        </div>
+        <button
+          ref="closeButton"
+          class="close-button"
+          type="button"
+          :aria-label="`Закрыть кейс «${project.title}»`"
+          @click="emitClose"
         >
-          <path
-            d="M18 6L6 18M6 6L18 18"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+      </div>
+
+      <header class="modal-overview">
+        <div class="overview-copy">
+          <p class="eyebrow">{{ caseView.ownershipType === 'UNVERIFIED' ? 'АРХИВ' : 'CASE STUDY' }}</p>
+          <h2 id="project-modal-title">{{ project.title }}</h2>
+          <p id="project-modal-summary" class="project-summary">{{ caseView.productSummary }}</p>
+          <p v-if="caseView.role && caseView.ownershipType !== 'UNVERIFIED'" class="project-role">
+            <span>Моя роль</span>{{ caseView.role }}
+          </p>
+        </div>
+        <div class="modal-media">
+          <ProjectPreview
+            :src="project.image"
+            :alt="`Превью проекта «${project.title}»`"
+            img-class="project-hero-image"
+            fallback-class="project-modal-image-fallback"
           />
-        </svg>
-      </button>
+        </div>
+      </header>
 
       <div class="modal-body">
-        <!-- Hero Section -->
-        <div class="project-hero">
-          <div class="project-image-container">
-            <ProjectPreview
-              :src="project.image"
-              :alt="project.title"
-              img-class="project-hero-image"
-              fallback-class="project-modal-image-fallback"
-            />
-            <div v-if="project.featured && caseView.ownershipType !== 'UNVERIFIED'" class="featured-badge">
-              ⭐ Избранный проект
-            </div>
-          </div>
-
-          <div class="project-header-info">
-            <h2 id="project-modal-title" class="project-title">
-              <GradientText variant="primary">{{ project.title }}</GradientText>
-            </h2>
-            <div class="project-meta-tags">
-              <span class="category-tag">{{ project.category }}</span>
-              <span v-if="caseView.ownershipType !== 'UNVERIFIED'" class="client-tag">
-                {{ caseView.ownershipType === "OWN" ? "Мои проекты" : "Участие в проектах" }}
-              </span>
-              <span v-if="caseView.company" class="client-tag">{{ caseView.company }}</span>
-            </div>
-            <p class="project-subtitle">{{ caseView.productSummary }}</p>
-          </div>
+        <div v-if="caseView.ownershipType === 'UNVERIFIED'" class="archive-note">
+          <h3>Архивный проект</h3>
+          <p>Сведения о моей роли, личном вкладе и использованном стеке здесь не публикую, пока не смогу их подтвердить.</p>
         </div>
 
-        <!-- Project Details -->
-        <div class="project-content">
-          <div class="content-grid">
-            <!-- Main Content -->
-            <div class="main-content">
-              <div class="content-section">
-                <h3 class="section-title">О продукте</h3>
-                <p class="section-text">{{ caseView.productDescription }}</p>
-              </div>
+        <template v-else>
+          <div class="case-details">
+            <div class="case-main">
+              <section v-if="caseView.responsibilities.length" class="detail-section">
+                <p class="section-label">{{ caseView.ownershipType === 'OWN' ? 'СОБСТВЕННЫЙ ПРОДУКТ' : 'МОЯ ЗОНА ОТВЕТСТВЕННОСТИ' }}</p>
+                <h3>{{ caseView.ownershipType === 'OWN' ? 'Моя работа' : 'Мой вклад' }}</h3>
+                <ul class="detail-list">
+                  <li v-for="item in caseView.responsibilities" :key="item">{{ item }}</li>
+                </ul>
+              </section>
 
-              <div v-if="caseView.ownershipType === 'UNVERIFIED'" class="case-note">
-                Моя роль и вклад в этот проект пока не подтверждены, поэтому не отношу его
-                ни к собственным проектам, ни к участию в командной работе.
-              </div>
+              <section v-if="caseView.technicalHighlights.length" class="detail-section">
+                <p class="section-label">{{ caseView.ownershipType === 'OWN' ? 'АРХИТЕКТУРА И РЕАЛИЗАЦИЯ' : 'ЧАСТИ ПРОДУКТА И РЕШЕНИЯ' }}</p>
+                <h3>{{ caseView.ownershipType === 'OWN' ? 'Ключевые технические решения' : 'Реализованные части и решения' }}</h3>
+                <ul class="detail-list">
+                  <li v-for="item in caseView.technicalHighlights" :key="item">{{ item }}</li>
+                </ul>
+              </section>
 
-              <template v-else>
-                <div v-if="caseView.role" class="content-section">
-                  <h3 class="section-title">Моя роль</h3>
-                  <p class="section-text">{{ caseView.role }}</p>
-                </div>
-
-                <div v-if="caseView.responsibilities.length" class="content-section">
-                  <h3 class="section-title">Мой вклад</h3>
-                  <ul class="case-list">
-                    <li v-for="item in caseView.responsibilities" :key="item">{{ item }}</li>
-                  </ul>
-                </div>
-
-                <div v-if="caseView.technicalHighlights.length" class="content-section">
-                  <h3 class="section-title">
-                    {{ caseView.ownershipType === "OWN" ? "Технические решения" : "Реализованные части" }}
-                  </h3>
-                  <ul class="case-list">
-                    <li v-for="item in caseView.technicalHighlights" :key="item">{{ item }}</li>
-                  </ul>
-                </div>
-              </template>
+              <section v-if="caseView.ownershipType === 'OWN' && externalLinks.liveUrl" class="detail-section current-state">
+                <p class="section-label">ТЕКУЩЕЕ СОСТОЯНИЕ</p>
+                <h3>Опубликован в production</h3>
+                <p>Рабочую версию можно открыть по ссылке в блоке проекта.</p>
+              </section>
             </div>
 
-            <!-- Sidebar -->
-            <div class="sidebar">
-              <!-- Technologies -->
-              <div
-                v-if="caseView.technologies.length"
-                class="sidebar-section"
-              >
-                <h4 class="sidebar-title">Технологии</h4>
-                <div class="tech-grid">
-                  <span
-                    v-for="tech in caseView.technologies"
-                    :key="tech"
-                    class="tech-chip"
-                  >
-                    {{ tech }}
-                  </span>
-                </div>
-              </div>
+            <aside class="case-sidebar" aria-label="Технологии и ссылки проекта">
+              <section v-if="caseView.technologies.length" class="sidebar-section">
+                <p class="section-label">STACK</p>
+                <h3>Технологии</h3>
+                <ul class="tech-list">
+                  <li v-for="technology in caseView.technologies" :key="technology">{{ technology }}</li>
+                </ul>
+              </section>
 
-              <!-- Action Buttons -->
-              <div
-                v-if="externalLinks.liveUrl || externalLinks.githubUrl"
-                class="sidebar-section"
-              >
-                <h4 class="sidebar-title">Ссылки</h4>
-                <div class="action-buttons">
-                  <a
-                    v-if="externalLinks.liveUrl"
-                    :href="externalLinks.liveUrl"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="action-button primary"
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <polyline
-                        points="15,3 21,3 21,9"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <line
-                        x1="10"
-                        y1="14"
-                        x2="21"
-                        y2="3"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                    Посетить сайт
+              <section v-if="externalLinks.liveUrl || externalLinks.githubUrl" class="sidebar-section">
+                <p class="section-label">ВНЕШНИЕ ССЫЛКИ</p>
+                <h3>Открыть проект</h3>
+                <div class="project-links">
+                  <a v-if="externalLinks.liveUrl" :href="externalLinks.liveUrl" target="_blank" rel="noopener noreferrer">
+                    Production <span aria-hidden="true">↗</span>
                   </a>
-                  <a
-                    v-if="externalLinks.githubUrl"
-                    :href="externalLinks.githubUrl"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="action-button secondary"
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                    GitHub
+                  <a v-if="externalLinks.githubUrl" :href="externalLinks.githubUrl" target="_blank" rel="noopener noreferrer">
+                    Исходный код <span aria-hidden="true">↗</span>
                   </a>
                 </div>
-              </div>
-            </div>
+                <p class="external-note">Ссылки откроются в новой вкладке.</p>
+              </section>
+            </aside>
           </div>
-        </div>
+        </template>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import GradientText from "./GradientText.vue";
-import { getProjectExternalLinks } from "~/utils/project-links";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import type { DeepReadonly } from "vue";
+import { getVerifiedProjectLinks } from "~/utils/project-case-links";
 import { getProjectCaseView } from "~/utils/project-case-view";
 import type { Project } from "~/composables/useProjects";
 
-const props = defineProps<{ project: Project }>();
-const emit = defineEmits(["close"]);
+const props = defineProps<{ project: DeepReadonly<Project> }>();
+const emit = defineEmits<{ close: [] }>();
 
-const externalLinks = computed(() => getProjectExternalLinks(props.project));
 const caseView = computed(() => getProjectCaseView(props.project));
+const externalLinks = computed(() => getVerifiedProjectLinks(props.project));
+const dialog = ref<HTMLElement | null>(null);
 const closeButton = ref<HTMLButtonElement | null>(null);
 let previousFocus: HTMLElement | null = null;
+
+const emitClose = () => emit("close");
 
 const handleModalKeydown = (event: KeyboardEvent) => {
   if (event.key === "Escape") {
@@ -216,19 +135,22 @@ const handleModalKeydown = (event: KeyboardEvent) => {
     emitClose();
     return;
   }
+  if (event.key !== "Tab" || !dialog.value) return;
 
-  if (event.key !== "Tab") return;
-  const content = closeButton.value?.closest<HTMLElement>(".project-modal-content");
-  if (!content) return;
-  const focusable: HTMLElement[] = Array.from(
-    content.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    )
-  ).filter((element) => element.offsetParent !== null);
-  if (!focusable.length) return;
+  const focusable = Array.from(dialog.value.querySelectorAll<HTMLElement>(
+    'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )).filter((element) => element.getClientRects().length > 0);
+  if (!focusable.length) {
+    event.preventDefault();
+    dialog.value.focus();
+    return;
+  }
   const first = focusable[0];
   const last = focusable[focusable.length - 1];
-  if (event.shiftKey && document.activeElement === first) {
+  if (!dialog.value.contains(document.activeElement)) {
+    event.preventDefault();
+    (event.shiftKey ? last : first).focus();
+  } else if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog.value)) {
     event.preventDefault();
     last.focus();
   } else if (!event.shiftKey && document.activeElement === last) {
@@ -237,10 +159,8 @@ const handleModalKeydown = (event: KeyboardEvent) => {
   }
 };
 
-const emitClose = () => emit("close");
-
 onMounted(async () => {
-  previousFocus = document.activeElement as HTMLElement | null;
+  previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   document.body.classList.add("no-scroll");
   window.addEventListener("keydown", handleModalKeydown);
   await nextTick();
@@ -254,465 +174,47 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style lang="scss" scoped>
-.project-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-  padding-top: max(20px, env(safe-area-inset-top));
-  padding-bottom: max(20px, env(safe-area-inset-bottom));
-  animation: fadeIn 0.3s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.project-modal-content {
-  background: var(--background-color);
-  border-radius: 24px;
-  max-width: 1000px;
-  width: 100%;
-  max-height: calc(100vh - 40px);
-  max-height: calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  position: relative;
-  border: 1px solid var(--border-color);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideIn 0.4s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-30px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.close-button {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: var(--background-color-secondary);
-  border: 1px solid var(--border-color);
-  color: var(--color-text);
-  cursor: pointer;
-  padding: 12px;
-  border-radius: 16px;
-  transition: all 0.2s ease;
-  z-index: 10;
-
-  &:hover {
-    background: var(--background-color-hover);
-    transform: scale(1.1);
-    box-shadow: var(--card-shadow);
-  }
-}
-
-.modal-body {
-  padding: 0;
-}
-
-// Hero Section
-.project-hero {
-  position: relative;
-  background: linear-gradient(
-    135deg,
-    var(--background-color) 0%,
-    var(--background-secondary) 100%
-  );
-  border-radius: 24px 24px 0 0;
-  overflow: hidden;
-}
-
-.project-image-container {
-  position: relative;
-  height: 300px;
-  overflow: hidden;
-
-  .project-hero-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-}
-
-.featured-badge {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: var(--gradient-primary);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  z-index: 2;
-}
-
-.project-header-info {
-  padding: 32px;
-  text-align: center;
-}
-
-.project-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin: 0 0 16px 0;
-  line-height: 1.2;
-}
-
-.project-meta-tags {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-.category-tag,
-.client-tag {
-  background: var(--background-color-secondary);
-  border: 1px solid var(--border-color);
-  color: var(--color-accent);
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.client-tag {
-  color: var(--color-text);
-}
-
-.project-subtitle {
-  color: var(--color-text-secondary);
-  font-size: 1.1rem;
-  line-height: 1.6;
-  margin: 0;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-// Content Grid
-.project-content {
-  padding: 32px;
-}
-
-.content-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 32px;
-}
-
-.main-content {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-}
-
-.content-section {
-  .section-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--color-text);
-    margin: 0 0 16px 0;
-    position: relative;
-
-    &::after {
-      content: "";
-      position: absolute;
-      bottom: -4px;
-      left: 0;
-      width: 40px;
-      height: 3px;
-      background: var(--gradient-primary);
-      border-radius: 2px;
-    }
-  }
-
-  .section-text {
-    color: var(--color-text-secondary);
-    line-height: 1.7;
-    font-size: 1rem;
-    margin: 0;
-  }
-}
-
-.case-list {
-  margin: 0;
-  padding-left: 20px;
-  color: var(--color-text-secondary);
-  line-height: 1.65;
-}
-
-.case-list li + li { margin-top: 8px; }
-
-.case-note {
-  padding: 16px 18px;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-}
-
-// Sidebar
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.sidebar-section {
-  background: var(--background-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 24px;
-}
-
-.sidebar-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--color-text);
-  margin: 0 0 16px 0;
-}
-
-// Stats Grid
-.stats-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: var(--background-color);
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-}
-
-.stat-icon {
-  font-size: 1.2rem;
-  width: 24px;
-  text-align: center;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  font-weight: 500;
-  margin-bottom: 2px;
-}
-
-.stat-value {
-  font-size: 14px;
-  color: var(--color-text);
-  font-weight: 600;
-}
-
-// Tech Grid
-.tech-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.tech-chip {
-  padding: 6px 12px;
-  background: var(--background-color);
-  border: 1px solid var(--border-color);
-  color: var(--color-text);
-  border-radius: 16px;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: var(--color-accent);
-    color: white;
-    transform: translateY(-1px);
-  }
-}
-
-// Features List
-.features-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: var(--background-color);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  font-size: 14px;
-  color: var(--color-text);
-  transition: all 0.2s ease;
-
-  svg {
-    color: var(--color-accent);
-    flex-shrink: 0;
-  }
-
-  &:hover {
-    background: var(--color-accent);
-    color: white;
-    transform: translateX(5px);
-
-    svg {
-      color: white;
-    }
-  }
-}
-
-// Action Buttons
-.action-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.action-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 14px 20px;
-  border-radius: 12px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-
-  &.primary {
-    background: var(--gradient-primary);
-    color: white;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-    }
-  }
-
-  &.secondary {
-    background: var(--background-color);
-    color: var(--color-text);
-    border: 1px solid var(--border-color);
-
-    &:hover {
-      background: var(--background-color-hover);
-      transform: translateY(-2px);
-      box-shadow: var(--card-shadow);
-    }
-  }
-}
-
-// Responsive Design
-@media (max-width: 768px) {
-  .project-modal-overlay {
-    padding: 0;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    align-items: flex-end;
-  }
-
-  .project-modal-content {
-    width: 100%;
-    max-width: 100%;
-    max-height: calc(100vh - env(safe-area-inset-top));
-    max-height: calc(100dvh - env(safe-area-inset-top));
-    border-radius: 20px 20px 0 0;
-  }
-
-  .project-hero { border-radius: 20px 20px 0 0; }
-
-  .close-button {
-    top: 12px;
-    right: 12px;
-    padding: 9px;
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--background-color) 88%, transparent);
-    backdrop-filter: blur(12px);
-  }
-
-  .project-image-container { height: clamp(150px, 28dvh, 240px); }
-
-  .project-header-info {
-    padding: 24px;
-  }
-
-  .project-title {
-    font-size: 2rem;
-  }
-
-  .project-content {
-    padding: 24px;
-  }
-
-  .content-grid {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-
-  .project-meta-tags {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .sidebar-section {
-    padding: 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .project-hero-image {
-    height: 200px;
-  }
-
-  .project-title {
-    font-size: 1.5rem;
-  }
-
-  .project-content {
-    padding: 16px;
-  }
-
-  .project-header-info {
-    padding: 16px;
-  }
-}
+<style scoped lang="scss">
+.project-modal-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1.25rem; background: var(--portfolio-backdrop); }
+.project-modal-content { width: min(100%, 1080px); max-height: calc(100dvh - 2.5rem); overflow: auto; overscroll-behavior: contain; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-lg); background: var(--portfolio-bg-elevated); color: var(--portfolio-text); box-shadow: var(--portfolio-shadow); animation: modal-enter 180ms ease-out both; }
+.modal-topbar { position: sticky; top: 0; z-index: 3; display: flex; min-height: 58px; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.55rem clamp(1rem, 3vw, 1.5rem); border-bottom: 1px solid var(--portfolio-border); background: var(--portfolio-bg-elevated); }
+.modal-labels { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.7rem; color: var(--portfolio-text-muted); font-size: 0.72rem; }
+.ownership-label { color: var(--portfolio-accent); font-weight: 650; }
+.archive-label { color: var(--portfolio-text-muted); }
+.category-label::before,.company-label::before { content: "·"; margin-right: 0.7rem; color: var(--portfolio-text-muted); }
+.close-button { display: inline-grid; width: 42px; height: 42px; flex: 0 0 42px; place-items: center; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-sm); background: var(--portfolio-surface); color: var(--portfolio-text); cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease; }
+.close-button svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-width: 1.7; }
+.close-button:hover { border-color: var(--portfolio-border-hover); background: var(--portfolio-surface-hover); color: var(--portfolio-accent); }
+.modal-overview { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); align-items: center; gap: clamp(1.25rem, 4vw, 3rem); padding: clamp(1.25rem, 3vw, 2rem); border-bottom: 1px solid var(--portfolio-border); }
+.overview-copy { min-width: 0; }
+.eyebrow,.section-label { margin: 0 0 0.6rem; color: var(--portfolio-accent); font-family: var(--portfolio-font-mono); font-size: 0.68rem; font-weight: 650; letter-spacing: 0.1em; }
+.overview-copy h2 { margin: 0; color: var(--portfolio-text); font-size: clamp(1.65rem, 3.4vw, 2.8rem); line-height: 1.08; letter-spacing: -0.05em; }
+.project-summary { max-width: 56ch; margin: 0.85rem 0 0; color: var(--portfolio-text-secondary); font-size: var(--portfolio-body); line-height: 1.65; }
+.project-role { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 1rem 0 0; color: var(--portfolio-text); font-size: 0.85rem; }
+.project-role span { color: var(--portfolio-text-muted); }
+.modal-media { display: grid; place-items: center; overflow: hidden; aspect-ratio: 2 / 1; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-md); background: var(--portfolio-surface-hover); }
+:deep(.project-hero-image) { display: block; width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; }
+:deep(.project-modal-image-fallback) { height: 100%; min-height: 0; background: var(--portfolio-surface-hover); }
+.modal-body { padding: clamp(1.25rem, 3vw, 2rem); }
+.case-details { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(230px, 0.75fr); gap: clamp(1.5rem, 4vw, 3.5rem); }
+.case-main { display: grid; align-content: start; gap: 1.75rem; }
+.detail-section h3,.sidebar-section h3,.archive-note h3 { margin: 0; color: var(--portfolio-text); font-size: 1.08rem; line-height: 1.3; letter-spacing: -0.02em; }
+.detail-section .section-label,.sidebar-section .section-label { margin-bottom: 0.5rem; }
+.detail-list { display: grid; gap: 0.55rem; margin: 0.75rem 0 0; padding-left: 1.15rem; color: var(--portfolio-text-secondary); font-size: 0.9rem; line-height: 1.6; }
+.detail-list li::marker { color: var(--portfolio-accent); }
+.current-state > p:last-child { margin: 0.55rem 0 0; color: var(--portfolio-text-secondary); font-size: 0.85rem; line-height: 1.55; }
+.case-sidebar { display: grid; align-content: start; gap: 1.25rem; }
+.sidebar-section { padding: 1rem; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-md); background: var(--portfolio-surface); }
+.tech-list { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.8rem 0 0; padding: 0; list-style: none; }
+.tech-list li { padding: 0.33rem 0.58rem; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-pill); color: var(--portfolio-text-secondary); font-family: var(--portfolio-font-mono); font-size: 0.68rem; }
+.project-links { display: grid; gap: 0.5rem; margin-top: 0.8rem; }
+.project-links a { display: flex; min-height: 42px; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0 0.7rem; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-sm); color: var(--portfolio-text); font-size: 0.82rem; font-weight: 600; text-decoration: none; transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease; }
+.project-links a:hover { border-color: var(--portfolio-border-hover); background: var(--portfolio-surface-hover); color: var(--portfolio-accent); }
+.external-note { margin: 0.65rem 0 0; color: var(--portfolio-text-muted); font-size: 0.72rem; line-height: 1.45; }
+.archive-note { max-width: 640px; padding: 1rem 1.1rem; border-left: 2px solid var(--portfolio-border); color: var(--portfolio-text-secondary); }
+.archive-note p { margin: 0.45rem 0 0; font-size: 0.88rem; line-height: 1.6; }
+.close-button:focus-visible,.project-links a:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
+@keyframes modal-enter { from { opacity: 0; transform: translateY(8px) scale(0.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (max-width: 700px) { .project-modal-overlay { align-items: end; padding: 0; padding-top: env(safe-area-inset-top); } .project-modal-content { width: 100%; max-height: calc(100dvh - env(safe-area-inset-top)); border-radius: var(--portfolio-radius-lg) var(--portfolio-radius-lg) 0 0; padding-bottom: env(safe-area-inset-bottom); } .modal-overview { grid-template-columns: 1fr; gap: 1rem; } .modal-media { grid-row: 2; } .case-details { grid-template-columns: 1fr; } .case-sidebar { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .project-modal-content { animation: none; } .close-button,.project-links a { transition: none; } }
 </style>

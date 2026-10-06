@@ -1,10 +1,11 @@
 <template>
   <img
     v-if="visible && isUsableProjectPreview(src)"
-    :src="src"
+    :src="src ?? undefined"
     :alt="alt"
     :class="imgClass"
     loading="lazy"
+    decoding="async"
     @error="visible = false"
   />
   <div
@@ -67,8 +68,6 @@ const visible = ref(true);
   gap: 0.7rem;
   overflow: hidden;
   padding: 1rem;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(83, 156, 192, 0.22), transparent 42%),
-    linear-gradient(140deg, var(--background-color-secondary), var(--background-color));
+  background: var(--portfolio-surface-hover, var(--background-color-secondary));
 }
 </style>

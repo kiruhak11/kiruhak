@@ -1,585 +1,160 @@
 <template>
-  <article class="project-card">
-    <div class="card-image">
+  <article class="project-card" :class="`ownership-${caseView.ownershipType.toLowerCase()}`">
+    <div class="card-media">
       <ProjectPreview
         :src="project.image"
-        :alt="project.title"
+        :alt="`Превью проекта «${project.title}»`"
         img-class="project-image"
         fallback-class="project-image-fallback"
       />
-      <button
-        class="image-overlay"
-        type="button"
-        :aria-label="`Подробнее о проекте ${project.title}`"
-        @click="$emit('open-modal', project)"
-      >
-        <div class="overlay-content">
-          <svg
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M15 3H21V9"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M9 21H3V15"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M21 3L13.5 10.5"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M3 21L10.5 13.5"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          <span class="overlay-text">Подробнее</span>
-        </div>
-      </button>
-      <div v-if="project.featured && caseView.ownershipType !== 'UNVERIFIED'" class="featured-badge">
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-          />
-        </svg>
-        Избранный
-      </div>
-      <div class="card-category">
-        {{ project.category }}
-      </div>
     </div>
 
     <div class="card-content">
-      <div class="card-header">
-        <h3 class="project-title">
-          <GradientText variant="primary">{{ project.title }}</GradientText>
-        </h3>
-        <div
+      <div class="card-meta">
+        <span
           v-if="caseView.ownershipType !== 'UNVERIFIED'"
           class="ownership-label"
         >
-          <span>{{ caseView.ownershipType === "OWN" ? "Мой проект" : "Участие в проекте" }}</span>
-          <span v-if="caseView.role" class="ownership-role">{{ caseView.role }}</span>
-        </div>
+          {{ caseView.ownershipType === 'OWN' ? 'Собственный проект' : 'Участие в проекте' }}
+        </span>
+        <span class="category-label">{{ project.category }}</span>
+        <span v-if="project.featured && caseView.ownershipType !== 'UNVERIFIED'" class="featured-label">Избранный кейс</span>
       </div>
 
-      <p class="project-description">{{ caseView.productSummary }}</p>
+      <h3 class="project-title">{{ project.title }}</h3>
+      <p class="project-summary">{{ caseView.productSummary }}</p>
+
+      <p v-if="caseView.role && caseView.ownershipType !== 'UNVERIFIED'" class="project-role">
+        <span>Роль</span>{{ caseView.role }}
+      </p>
 
       <div
         v-if="caseView.ownershipType !== 'UNVERIFIED' && caseView.responsibilities.length"
         class="project-contribution"
       >
-        <strong>Моя реализация</strong>
+        <span>Мой вклад</span>
         <ul>
-          <li v-for="item in caseView.responsibilities.slice(0, 2)" :key="item">
-            {{ item }}
-          </li>
+          <li v-for="item in caseView.responsibilities.slice(0, 2)" :key="item">{{ item }}</li>
         </ul>
       </div>
 
-      <div class="project-tech">
-        <span
-          v-for="tech in caseView.technologies.slice(0, 4)"
-          :key="tech"
-          class="tech-tag"
-        >
-          {{ tech }}
-        </span>
-        <span v-if="caseView.technologies.length > 4" class="tech-tag more">
+      <ul
+        v-if="caseView.ownershipType !== 'UNVERIFIED' && caseView.technologies.length"
+        class="project-tech"
+        aria-label="Основные технологии"
+      >
+        <li v-for="tech in caseView.technologies.slice(0, 4)" :key="tech">{{ tech }}</li>
+        <li v-if="caseView.technologies.length > 4" class="tech-more">
           +{{ caseView.technologies.length - 4 }}
-        </span>
-      </div>
-
-      <div class="project-meta">
-        <div v-if="project.client" class="meta-item">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <circle
-              cx="12"
-              cy="7"
-              r="4"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          <span>{{ project.client }}</span>
-        </div>
-        <div v-if="project.duration" class="meta-item">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <circle
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="2"
-            />
-            <polyline
-              points="12,6 12,12 16,14"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          <span>{{ project.duration }}</span>
-        </div>
-      </div>
+        </li>
+      </ul>
 
       <div class="card-actions">
+        <button
+          class="details-button"
+          type="button"
+          :aria-label="`Подробнее о проекте «${project.title}»`"
+          @click="$emit('open-modal', project)"
+        >
+          Подробнее
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" /></svg>
+        </button>
         <a
-          class="action-button primary"
+          v-if="externalLinks.liveUrl"
+          class="production-link"
           :href="externalLinks.liveUrl"
           target="_blank"
           rel="noopener noreferrer"
-          v-if="externalLinks.liveUrl"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <polyline
-              points="15,3 21,3 21,9"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <line
-              x1="10"
-              y1="14"
-              x2="21"
-              y2="3"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          Посетить
+          Production <span aria-hidden="true">↗</span>
         </a>
-        <button
-          class="action-button secondary"
-          @click="$emit('open-modal', project)"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <circle
-              cx="11"
-              cy="11"
-              r="8"
-              stroke="currentColor"
-              stroke-width="2"
-            />
-            <path
-              d="M21 21L16.65 16.65"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          Подробнее
-        </button>
       </div>
     </div>
   </article>
 </template>
 
 <script setup lang="ts">
-import GradientText from "./GradientText.vue";
-import { getProjectExternalLinks } from "~/utils/project-links";
+import { computed } from "vue";
+import type { DeepReadonly } from "vue";
+import { getVerifiedProjectLinks } from "~/utils/project-case-links";
 import { getProjectCaseView } from "~/utils/project-case-view";
 import type { Project } from "~/composables/useProjects";
 
-const props = defineProps<{ project: Project }>();
+const props = defineProps<{ project: DeepReadonly<Project> }>();
+defineEmits<{ (event: "open-modal", project: DeepReadonly<Project>): void }>();
 
-const externalLinks = computed(() => getProjectExternalLinks(props.project));
 const caseView = computed(() => getProjectCaseView(props.project));
-
-defineEmits(["open-modal"]);
+const externalLinks = computed(() => getVerifiedProjectLinks(props.project));
 </script>
 
-<style lang="scss" scoped>
+<style scoped lang="scss">
 .project-card {
-  background: var(--background-color);
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: var(--card-shadow);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid var(--border-color);
-  position: relative;
-
-  &:hover {
-    transform: translateY(-12px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-    border-color: var(--color-primary);
-
-    .image-overlay {
-      opacity: 1;
-    }
-
-    .card-image :deep(.project-image) {
-      transform: scale(1.1);
-    }
-
-    .card-category {
-      background: var(--gradient-primary);
-      color: white;
-    }
-  }
-
-  &:focus-within .image-overlay { opacity: 1; }
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--gradient-primary);
-    transform: scaleX(0);
-    transition: transform 0.3s ease;
-  }
-
-  &:hover::before {
-    transform: scaleX(1);
-  }
-}
-
-.card-image {
-  position: relative;
-  height: 220px;
-  overflow: hidden;
-
-  :deep(.project-image) {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.4s ease;
-  }
-}
-
-.image-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(102, 126, 234, 0.9) 0%,
-    rgba(118, 75, 162, 0.9) 100%
-  );
   display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: all 0.4s ease;
-  border: 0;
-  cursor: pointer;
-  font: inherit;
-  color: #fff;
-
-  .overlay-content {
-    color: white;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .overlay-text {
-    font-size: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-}
-
-.featured-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: var(--gradient-primary);
-  color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.card-category {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  z-index: 2;
-  transition: all 0.3s ease;
-}
-
-.card-content {
-  padding: 24px;
-}
-
-.card-header {
-  margin-bottom: 16px;
-}
-
-.project-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  margin: 0;
-  line-height: 1.3;
-}
-
-.ownership-label {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
-  margin-top: 9px;
-  color: var(--color-accent);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.ownership-role {
-  color: var(--color-text-secondary);
-  font-weight: 500;
-}
-
-.project-description {
-  color: var(--color-text-secondary);
-  font-size: 0.95rem;
-  line-height: 1.6;
-  margin-bottom: 20px;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+  min-width: 0;
+  flex-direction: column;
   overflow: hidden;
+  border: 1px solid var(--portfolio-border);
+  border-radius: var(--portfolio-radius-lg);
+  background: var(--portfolio-bg-elevated);
+  box-shadow: var(--portfolio-shadow-soft);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
-.project-contribution {
-  margin: -4px 0 18px;
-  padding-left: 12px;
-  border-left: 2px solid var(--color-accent);
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
-  line-height: 1.55;
+.project-card:hover,
+.project-card:focus-within {
+  transform: translateY(-2px);
+  border-color: var(--portfolio-border-hover);
+  box-shadow: var(--portfolio-shadow);
 }
 
-.project-contribution strong {
+.card-media {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  aspect-ratio: 2 / 1;
+  border-bottom: 1px solid var(--portfolio-border);
+  background: var(--portfolio-surface-hover);
+}
+
+:deep(.project-image) {
   display: block;
-  margin-bottom: 3px;
-  color: var(--color-text);
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 280ms cubic-bezier(.2,.7,.2,1);
 }
 
-.project-contribution p {
-  display: -webkit-box;
-  overflow: hidden;
-  margin: 0;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
+.project-card:hover :deep(.project-image) { transform: scale(1.025); }
+:deep(.project-image-fallback) { height: 100%; min-height: 0; background: var(--portfolio-surface-hover); }
 
-.project-contribution ul {
-  margin: 0;
-  padding-left: 18px;
-}
+.card-content { display: flex; flex: 1; min-width: 0; flex-direction: column; padding: 1.35rem; }
+.card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.75rem; color: var(--portfolio-text-muted); font-size: 0.72rem; }
+.ownership-label { color: var(--portfolio-accent); font-weight: 650; }
+.category-label { color: var(--portfolio-text-muted); }
+.category-label::before { content: "·"; margin-right: 0.65rem; }
+.featured-label { margin-left: auto; font-family: var(--portfolio-font-mono); font-size: 0.65rem; letter-spacing: 0.03em; }
+.project-title { margin: 0.75rem 0 0; color: var(--portfolio-text); font-size: 1.25rem; line-height: 1.25; letter-spacing: -0.035em; }
+.project-summary { display: -webkit-box; overflow: hidden; margin: 0.6rem 0 0; color: var(--portfolio-text-secondary); font-size: 0.9rem; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.project-role { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.8rem 0 0; color: var(--portfolio-text); font-size: 0.82rem; }
+.project-role span,.project-contribution > span { color: var(--portfolio-text-muted); }
+.project-contribution { margin-top: 0.9rem; color: var(--portfolio-text-secondary); font-size: 0.8rem; line-height: 1.5; }
+.project-contribution > span { display: block; margin-bottom: 0.35rem; }
+.project-contribution ul { display: grid; gap: 0.25rem; margin: 0; padding-left: 1rem; }
+.project-contribution li::marker { color: var(--portfolio-accent); }
+.project-tech { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+.project-tech li { padding: 0.28rem 0.55rem; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-pill); color: var(--portfolio-text-secondary); font-family: var(--portfolio-font-mono); font-size: 0.66rem; }
+.project-tech .tech-more { color: var(--portfolio-text-muted); }
+.card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.9rem; margin-top: auto; padding-top: 1.15rem; }
+.details-button { display: inline-flex; min-height: 42px; align-items: center; gap: 0.5rem; padding: 0 0.8rem; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-sm); background: var(--portfolio-surface); color: var(--portfolio-text); font: inherit; font-size: 0.82rem; font-weight: 650; cursor: pointer; transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
+.details-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; transition: transform 160ms ease; }
+.details-button:hover { border-color: var(--portfolio-border-hover); background: var(--portfolio-surface-hover); color: var(--portfolio-accent); }
+.details-button:hover svg { transform: translateX(2px); }
+.production-link { color: var(--portfolio-text-secondary); font-size: 0.8rem; font-weight: 600; text-decoration: none; text-underline-offset: 4px; }
+.production-link:hover { color: var(--portfolio-accent); text-decoration: underline; }
+.details-button:focus-visible,.production-link:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
 
-.project-contribution li + li { margin-top: 4px; }
-
-.project-tech {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.tech-tag {
-  padding: 6px 12px;
-  background: var(--background-color-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  font-weight: 500;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: var(--color-accent);
-    color: white;
-    transform: translateY(-1px);
-  }
-
-  &.more {
-    background: var(--color-accent);
-    color: white;
-    border-color: var(--color-accent);
-  }
-}
-
-.project-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 20px;
-  font-size: 13px;
-  color: var(--color-text-secondary);
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: var(--background-color-secondary);
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-
-  svg {
-    color: var(--color-accent);
-  }
-}
-
-.card-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.action-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  flex: 1;
-  text-decoration: none;
-
-  &.primary {
-    background: var(--gradient-primary);
-    color: white;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-    }
-  }
-
-  &.secondary {
-    background: var(--background-color-secondary);
-    color: var(--color-text);
-    border: 1px solid var(--border-color);
-
-    &:hover {
-      background: var(--color-accent);
-      color: white;
-      border-color: var(--color-accent);
-      transform: translateY(-2px);
-    }
-  }
-}
-
-@media (max-width: 768px) {
-  .card-content {
-    padding: 20px;
-  }
-
-  .project-title {
-    font-size: 1.2rem;
-  }
-
-  .card-actions {
-    flex-direction: column;
-  }
-
-  .action-button {
-    justify-content: center;
-  }
-
-  .project-meta {
-    flex-direction: column;
-    gap: 8px;
-  }
-}
+@media (max-width: 520px) { .card-content { padding: 1.05rem; } .project-title { font-size: 1.15rem; } }
+@media (prefers-reduced-motion: reduce) { .project-card,:deep(.project-image),.details-button,.details-button svg { transition: none; } .project-card:hover { transform: none; } .project-card:hover :deep(.project-image),.details-button:hover svg { transform: none; } }
 </style>

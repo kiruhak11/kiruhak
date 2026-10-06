@@ -10,6 +10,8 @@ import {
 } from "../utils/project-links";
 import { getProjectCaseView } from "../utils/project-case-view";
 import { getFeaturedPortfolioProjects } from "../utils/featured-projects";
+import { getVerifiedProjectLinks } from "../utils/project-case-links";
+import { groupProjectsByOwnership } from "../utils/project-ownership";
 import { toPublicProject } from "../server/utils/public-project";
 
 test("public navigation only promotes portfolio routes", () => {
@@ -98,6 +100,33 @@ test("OWN, PARTICIPATION, and UNVERIFIED have evidence-backed exclusive categori
   );
 });
 
+test("project list grouping preserves all ownership categories and fails closed", () => {
+  const projects: Array<{ id: string; caseStudy?: (typeof projectCaseStudies)[string] }> = Object.entries(projectCaseStudies).map(([id, caseStudy]) => ({ id, caseStudy }));
+  const grouped = groupProjectsByOwnership([...projects, { id: "missing-metadata" }]);
+
+  assert.equal(grouped.OWN.length, 1);
+  assert.equal(grouped.PARTICIPATION.length, 3);
+  assert.equal(grouped.UNVERIFIED.length, 5);
+  assert.ok(grouped.UNVERIFIED.every((project) => project.caseStudy?.ownershipType === "UNVERIFIED" || !project.caseStudy));
+});
+
+test("case links only come from verified project metadata", () => {
+  assert.deepEqual(
+    getVerifiedProjectLinks({ caseStudy: projectCaseStudies.cmewb3qvv0003o11ge17zb005 }),
+    { liveUrl: "https://kes-sib.ru/", githubUrl: "https://github.com/kiruhak11/kes" }
+  );
+  assert.deepEqual(
+    getVerifiedProjectLinks({
+      caseStudy: {
+        ...projectCaseStudies.cmewb3qw10005o11gpf3x0vtn,
+        productionUrl: "https://unverified.example",
+        repositoryUrl: "https://github.com/unverified/repo",
+      },
+    }),
+    { liveUrl: null, githubUrl: null }
+  );
+});
+
 test("homepage featured cases require featured status, verified ownership, and production URL", () => {
   const base = {
     featured: true,
@@ -163,7 +192,23 @@ test("case modal supports roles/contributions while unverified entries receive n
   assert.match(modal, /Мой вклад/);
   assert.match(modal, /technicalHighlights/);
   assert.match(modal, /ownershipType === 'UNVERIFIED'/);
-  assert.match(card, /ownershipType !== 'UNVERIFIED'/);
+  assert.match(card, /caseView\.ownershipType !== 'UNVERIFIED'/);
+  assert.match(modal, /role="dialog"/);
+  assert.match(modal, /aria-modal="true"/);
+  assert.match(modal, /handleModalKeydown/);
+  assert.match(card, /Production/);
+  assert.match(card, /noopener noreferrer/);
+});
+
+test("project media retains lazy loading, stable intrinsic size, and visible fallback", () => {
+  const preview = readFileSync(new URL("../components/ProjectPreview.vue", import.meta.url), "utf8");
+  const card = readFileSync(new URL("../components/ProjectCard.vue", import.meta.url), "utf8");
+  const modal = readFileSync(new URL("../components/ProjectModal.vue", import.meta.url), "utf8");
+  assert.match(preview, /loading="lazy"/);
+  assert.match(preview, /decoding="async"/);
+  assert.match(preview, /превью недоступно/i);
+  assert.match(card, /aspect-ratio: 2 \/ 1/);
+  assert.match(modal, /aspect-ratio: 2 \/ 1/);
 });
 
 test("ownership tabs are conditional and keyboard operable; unverified items stay separate", () => {
@@ -173,7 +218,9 @@ test("ownership tabs are conditional and keyboard operable; unverified items sta
   assert.match(page, /@keydown="handleTabKeydown/);
   assert.match(page, /ArrowRight/);
   assert.match(page, /details v-if="unverifiedProjects\.length"/);
-  assert.match(page, /не отношу их ни к собственным проектам/);
+  assert.match(page, /Архив проектов/);
+  assert.match(page, /не публикую сведения о своей роли, вкладе и стеке/);
+  assert.doesNotMatch(page, /searchQuery|selectedCategory|sortBy/);
   assert.doesNotMatch(gallery, /Проект 2|Проект 3|Проект 4/);
 });
 

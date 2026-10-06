@@ -1,10 +1,27 @@
-import type { Project } from "~/composables/useProjects";
+import type { ProjectOwnershipType } from "~/types/project-case-study";
+
+type ProjectCaseViewSource = {
+  [key: string]: unknown;
+  id?: string;
+  title?: string;
+  description: string;
+  shortDescription?: string | null;
+  caseStudy?: {
+    ownershipType?: ProjectOwnershipType | null;
+    projectSummary?: string | null;
+    role?: string | null;
+    company?: string | null;
+    responsibilities?: readonly string[];
+    technicalHighlights?: readonly string[];
+    technologies?: readonly string[];
+  } | null;
+};
 
 /**
  * Public presentation for the current legacy Project record.
  * Numeric/result claims stay out of the public case until they have evidence.
  */
-export function getProjectCaseView(project: Project) {
+export function getProjectCaseView(project: ProjectCaseViewSource) {
   const caseStudy = project.caseStudy;
 
   return {

@@ -1,37 +1,34 @@
 <template>
   <NuxtLayout>
-    <main>
+    <main class="projects-page">
       <div class="container">
-        <div class="label">
-          <h1>
-            <GradientText variant="primary">Проекты</GradientText>
-          </h1>
-          <p class="subtitle">
-            Собственные продукты и мой подтверждённый вклад в проекты компаний — отдельно и без смешения ролей.
+        <header class="page-intro">
+          <p class="eyebrow">ПОРТФОЛИО / КЕЙСЫ</p>
+          <h1>Проекты и продукты</h1>
+          <p class="intro-copy">
+            От собственных сервисов до коммерческой разработки — с контекстом проекта и моей конкретной ролью.
           </p>
+          <p v-if="!loading && !error" class="case-count" aria-live="polite">
+            {{ ownProjects.length + participationProjects.length }} подтверждённых кейса
+          </p>
+        </header>
+
+        <div v-if="loading" class="page-state" role="status">
+          <span class="loading-mark" aria-hidden="true"></span>
+          Загружаю проекты…
         </div>
 
-        <!-- Loading state -->
-        <div v-if="loading" class="loading-container">
-          <div class="loading-spinner"></div>
-          <p>Загружаем проекты...</p>
+        <div v-else-if="error" class="page-state error-state" role="alert">
+          <p>{{ error }}</p>
+          <button type="button" class="text-action" @click="fetchProjects">Попробовать снова</button>
         </div>
 
-        <!-- Error state -->
-        <div v-else-if="error" class="error-container">
-          <p class="error-message">{{ error }}</p>
-          <button @click="fetchProjects" class="retry-button">
-            Попробовать снова
-          </button>
-        </div>
-
-        <!-- Classified projects -->
-        <div v-else class="projects-container">
+        <template v-else>
           <div
             v-if="ownProjects.length && participationProjects.length"
             class="ownership-tabs"
             role="tablist"
-            aria-label="Категории проектов"
+            aria-label="Тип участия в проектах"
           >
             <button
               id="own-projects-tab"
@@ -39,14 +36,14 @@
               type="button"
               role="tab"
               :aria-selected="selectedOwnership === 'OWN'"
+              :aria-controls="'ownership-projects-panel'"
               :tabindex="selectedOwnership === 'OWN' ? 0 : -1"
-              aria-controls="ownership-projects-panel"
               class="ownership-tab"
               :class="{ active: selectedOwnership === 'OWN' }"
               @click="selectOwnership('OWN')"
               @keydown="handleTabKeydown($event, 'OWN')"
             >
-              Мои проекты <span>{{ ownProjects.length }}</span>
+              <span class="tab-label">Мои проекты</span><span class="tab-count">{{ ownProjects.length }}</span>
             </button>
             <button
               id="participation-projects-tab"
@@ -54,14 +51,14 @@
               type="button"
               role="tab"
               :aria-selected="selectedOwnership === 'PARTICIPATION'"
+              :aria-controls="'ownership-projects-panel'"
               :tabindex="selectedOwnership === 'PARTICIPATION' ? 0 : -1"
-              aria-controls="ownership-projects-panel"
               class="ownership-tab"
               :class="{ active: selectedOwnership === 'PARTICIPATION' }"
               @click="selectOwnership('PARTICIPATION')"
               @keydown="handleTabKeydown($event, 'PARTICIPATION')"
             >
-              Участие в проектах <span>{{ participationProjects.length }}</span>
+              <span class="tab-label">Участие в проектах</span><span class="tab-count">{{ participationProjects.length }}</span>
             </button>
           </div>
           <h2 v-else-if="ownProjects.length" class="single-category-title">Мои проекты</h2>
@@ -75,679 +72,177 @@
             :aria-labelledby="ownProjects.length && participationProjects.length ? (selectedOwnership === 'OWN' ? 'own-projects-tab' : 'participation-projects-tab') : undefined"
             :tabindex="ownProjects.length && participationProjects.length ? 0 : undefined"
           >
-          <!-- Filters and Search -->
-          <div class="filters-section">
-            <div class="search-container">
-              <input
-                v-model="searchQuery"
-                type="text"
-                placeholder="Поиск проектов..."
-                class="search-input"
-              />
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                class="search-icon"
-              >
-                <circle
-                  cx="11"
-                  cy="11"
-                  r="8"
-                  stroke="currentColor"
-                  stroke-width="2"
-                />
-                <path
-                  d="M21 21L16.65 16.65"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </div>
-
-            <div class="filter-controls">
-              <select v-model="selectedCategory" class="filter-select">
-                <option value="">Все категории</option>
-                <option
-                  v-for="category in availableCategories"
-                  :key="category"
-                  :value="category"
-                >
-                  {{ category }}
-                </option>
-              </select>
-
-              <select v-model="sortBy" class="filter-select">
-                <option value="date">По дате</option>
-                <option value="name">По названию</option>
-                <option value="featured">Избранные</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Projects count -->
-          <div class="projects-count">
-            <span>Найдено проектов: {{ filteredProjects.length }}</span>
-          </div>
-
-          <div v-if="filteredProjects.length" class="cards">
-            <ProjectCard
-              v-for="project in filteredProjects"
-              :key="project.id"
-              :project="project"
-              @open-modal="openProjectModal"
-            />
-          </div>
-          <div v-else class="category-empty-state">
-            <h2>{{ selectedOwnership === "OWN" ? "Мои проекты" : "Участие в проектах" }}</h2>
-            <p>В этой категории пока нет проектов, соответствующих фильтрам.</p>
-          </div>
-          </section>
-
-          <details v-if="unverifiedProjects.length" class="unverified-projects">
-            <summary>
-              Ещё {{ unverifiedProjects.length }} проекта — уточняю сведения о своей роли и вкладе
-            </summary>
-            <p class="unverified-intro">
-              Пока не отношу их ни к собственным проектам, ни к участию в командной работе.
-            </p>
-            <div class="cards">
+            <div v-if="selectedProjects.length" class="project-grid">
               <ProjectCard
-                v-for="project in unverifiedProjects"
+                v-for="project in selectedProjects"
                 :key="project.id"
                 :project="project"
                 @open-modal="openProjectModal"
               />
             </div>
-          </details>
-        </div>
+            <div v-else class="empty-category">
+              <h2>{{ selectedOwnership === 'OWN' ? 'Мои проекты' : 'Участие в проектах' }}</h2>
+              <p>В этой категории пока нет опубликованных кейсов.</p>
+            </div>
+          </section>
 
-        <!-- Project Modal -->
+          <details v-if="unverifiedProjects.length" class="project-archive">
+            <summary>
+              <span>Архив проектов</span>
+              <span class="archive-count">{{ unverifiedProjects.length }}</span>
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5" /></svg>
+            </summary>
+            <p class="archive-intro">Проекты, по которым я пока не публикую сведения о своей роли, вкладе и стеке.</p>
+            <ul class="archive-list">
+              <li v-for="project in unverifiedProjects" :key="project.id" class="archive-item">
+                <div>
+                  <h3>{{ project.title }}</h3>
+                  <p>{{ getProjectCaseView(project).productSummary }}</p>
+                </div>
+                <button
+                  type="button"
+                  class="archive-details"
+                  :aria-label="`Подробнее об архивном проекте «${project.title}»`"
+                  @click="openProjectModal(project)"
+                >Подробнее</button>
+              </li>
+            </ul>
+          </details>
+
+          <div v-if="projects.length === 0" class="empty-page">
+            <h2>Пока нет опубликованных кейсов</h2>
+            <p>Загляните позже — раздел обновляется по мере подготовки материалов.</p>
+          </div>
+
+          <section class="projects-cta" aria-labelledby="projects-cta-title">
+            <div>
+              <p class="eyebrow">ОБСУДИТЬ ЗАДАЧУ</p>
+              <h2 id="projects-cta-title">Нужен похожий продукт или хотите обсудить мой опыт?</h2>
+            </div>
+            <NuxtLink class="contact-link" to="/contact">
+              Написать мне <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" /></svg>
+            </NuxtLink>
+          </section>
+        </template>
+
         <ProjectModal
           v-if="selectedProject"
           :project="selectedProject"
           @close="closeProjectModal"
         />
-
-        <!-- Empty state -->
-        <div
-          v-if="!loading && !error && projects.length === 0"
-          class="empty-state"
-        >
-          <h3>Проекты не найдены</h3>
-          <p>Пока нет доступных проектов</p>
-        </div>
-
-        <div class="cta-section">
-          <h2>
-            <GradientText variant="secondary">Есть задача для веб-продукта?</GradientText>
-          </h2>
-          <p>Напишите мне — обсудим задачу, объём и подходящий формат работы.</p>
-          <NuxtLink class="cta-button primary" to="/contact">Обсудить проект</NuxtLink>
-        </div>
       </div>
     </main>
   </NuxtLayout>
 </template>
 
 <script setup lang="ts">
-import GradientText from "~/components/GradientText.vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
+import type { DeepReadonly } from "vue";
+import ProjectCard from "~/components/ProjectCard.vue";
 import ProjectModal from "~/components/ProjectModal.vue";
 import { useProjects } from "~/composables/useProjects";
 import type { Project } from "~/composables/useProjects";
-import type { ProjectOwnershipType } from "~/types/project-case-study";
+import { groupProjectsByOwnership } from "~/utils/project-ownership";
+import { getProjectCaseView } from "~/utils/project-case-view";
+
 useSeoMeta({
   title: "Проекты — Кирилл Коваленко",
-  description: "Кейсы Кирилла Коваленко: веб-сайты и приложения на Vue/Nuxt. О продукте, технических задачах, реализации и используемом стеке.",
+  description: "Кейсы Кирилла Коваленко: собственные продукты и подтверждённый вклад в командные веб-проекты, технологии и production-примеры.",
 });
 
-// Используем composable для работы с проектами
 const { projects, loading, error, fetchProjects } = useProjects();
+const selectedOwnership = ref<"OWN" | "PARTICIPATION">("OWN");
+const ownTab = ref<HTMLButtonElement | null>(null);
+const participationTab = ref<HTMLButtonElement | null>(null);
+const selectedProject = ref<DeepReadonly<Project> | null>(null);
 
-// Загружаем проекты при монтировании компонента
-onMounted(() => {
-  fetchProjects();
-});
+const projectGroups = computed(() => groupProjectsByOwnership(projects.value));
+const ownProjects = computed(() => projectGroups.value.OWN);
+const participationProjects = computed(() => projectGroups.value.PARTICIPATION);
+const unverifiedProjects = computed(() => projectGroups.value.UNVERIFIED);
+const selectedProjects = computed(() => selectedOwnership.value === "OWN" ? ownProjects.value : participationProjects.value);
 
 watch(projects, (loadedProjects) => {
-  const hasOwn = loadedProjects.some((project) => getOwnershipType(project) === "OWN");
-  const hasParticipation = loadedProjects.some(
-    (project) => getOwnershipType(project) === "PARTICIPATION"
-  );
+  const { OWN, PARTICIPATION } = groupProjectsByOwnership(loadedProjects);
+  const hasOwn = OWN.length > 0;
+  const hasParticipation = PARTICIPATION.length > 0;
   if (!hasOwn && hasParticipation) selectedOwnership.value = "PARTICIPATION";
   else if (hasOwn) selectedOwnership.value = "OWN";
 });
 
-// Фильтрация и поиск
-const searchQuery = ref("");
-const selectedCategory = ref("");
-const sortBy = ref("date");
-const selectedOwnership = ref<"OWN" | "PARTICIPATION">("OWN");
-const ownTab = ref<HTMLButtonElement | null>(null);
-const participationTab = ref<HTMLButtonElement | null>(null);
-
-const getOwnershipType = (project: Project): ProjectOwnershipType =>
-  project.caseStudy?.ownershipType ?? "UNVERIFIED";
-
-const ownProjects = computed(() =>
-  projects.value.filter((project) => getOwnershipType(project) === "OWN")
-);
-const participationProjects = computed(() =>
-  projects.value.filter((project) => getOwnershipType(project) === "PARTICIPATION")
-);
-const unverifiedProjects = computed(() =>
-  projects.value.filter((project) => getOwnershipType(project) === "UNVERIFIED")
-);
-
 const selectOwnership = (ownership: "OWN" | "PARTICIPATION", focus = false) => {
   selectedOwnership.value = ownership;
   if (focus) {
-    nextTick(() => {
-      (ownership === "OWN" ? ownTab.value : participationTab.value)?.focus();
-    });
+    nextTick(() => (ownership === "OWN" ? ownTab.value : participationTab.value)?.focus());
   }
 };
 
 const handleTabKeydown = (event: KeyboardEvent, current: "OWN" | "PARTICIPATION") => {
   let next: "OWN" | "PARTICIPATION" | null = null;
-  if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
-    next = current === "OWN" ? "PARTICIPATION" : "OWN";
-  } else if (event.key === "Home") {
-    next = "OWN";
-  } else if (event.key === "End") {
-    next = "PARTICIPATION";
-  }
+  if (event.key === "ArrowRight" || event.key === "ArrowLeft") next = current === "OWN" ? "PARTICIPATION" : "OWN";
+  else if (event.key === "Home") next = "OWN";
+  else if (event.key === "End") next = "PARTICIPATION";
   if (!next) return;
   event.preventDefault();
   selectOwnership(next, true);
 };
 
-// Вычисляемые свойства для фильтрации
-const availableCategories = computed(() => {
-  const categories = new Set(projects.value.map((project) => project.category));
-  return Array.from(categories).sort();
-});
+const openProjectModal = (project: DeepReadonly<Project>) => { selectedProject.value = project; };
+const closeProjectModal = () => { selectedProject.value = null; };
 
-const filteredProjects = computed(() => {
-  let filtered = projects.value.filter(
-    (project) => getOwnershipType(project) === selectedOwnership.value
-  );
-
-  // Поиск по названию и описанию
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(
-      (project) =>
-        project.title.toLowerCase().includes(query) ||
-        (project.shortDescription || "").toLowerCase().includes(query) ||
-        project.description.toLowerCase().includes(query) ||
-        (project.caseStudy?.responsibilities.join(" ") || "").toLowerCase().includes(query) ||
-        project.technologies.some((tech) => tech.toLowerCase().includes(query))
-    );
-  }
-
-  // Фильтрация по категории
-  if (selectedCategory.value) {
-    filtered = filtered.filter(
-      (project) => project.category === selectedCategory.value
-    );
-  }
-
-  // Сортировка
-  switch (sortBy.value) {
-    case "name":
-      filtered.sort((a, b) => a.title.localeCompare(b.title));
-      break;
-    case "featured":
-      filtered.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
-      break;
-    case "date":
-    default:
-      // Сортировка по дате (если есть поле createdAt)
-      filtered.sort((a, b) => {
-        if (a.createdAt && b.createdAt) {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        }
-        return 0;
-      });
-      break;
-  }
-
-  return filtered;
-});
-
-// Модальные окна
-const selectedProject = ref<Project | null>(null);
-const openProjectModal = (project: Project) => {
-  selectedProject.value = project;
-};
-const closeProjectModal = () => {
-  selectedProject.value = null;
-};
-
+onMounted(() => { fetchProjects(); });
 </script>
 
-<style lang="scss" scoped>
-.container {
-  padding: 0 32px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px;
-  text-align: center;
-}
-
-h1 {
-  display: flex;
-  justify-content: center;
-  padding: 32px 0 16px;
-  color: var(--color-text);
-  transform: scale(0.9);
-  animation: fadeIn 0.7s ease forwards;
-  animation-delay: 0.3s;
-  margin: 0;
-  font-size: 2.5rem;
-  font-weight: 700;
-}
-
-.subtitle {
-  color: var(--color-text-secondary);
-  font-size: 1.1rem;
-  margin: 0;
-  animation: fadeIn 0.7s ease forwards;
-  animation-delay: 0.5s;
-  opacity: 0;
-}
-
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
-  margin: 48px 0;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-}
-
-// Filters Section
-.projects-container {
-  .filters-section {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    margin-bottom: 32px;
-    padding: 24px;
-    background: var(--background-secondary);
-    border-radius: 16px;
-    border: 1px solid var(--border-color);
-
-    @media (max-width: 768px) {
-      padding: 16px;
-    }
-  }
-
-  .search-container {
-    position: relative;
-    max-width: 400px;
-
-    .search-input {
-      width: 100%;
-      padding: 12px 16px 12px 48px;
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      background: var(--background-color);
-      color: var(--color-text);
-      font-size: 16px;
-      transition: all 0.3s ease;
-
-      &:focus {
-        outline: none;
-        border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-      }
-
-      &::placeholder {
-        color: var(--color-text-secondary);
-      }
-    }
-
-    .search-icon {
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--color-text-secondary);
-      pointer-events: none;
-    }
-  }
-
-  .filter-controls {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-
-    @media (max-width: 768px) {
-      flex-direction: column;
-    }
-  }
-
-  .filter-select {
-    padding: 12px 16px;
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    background: var(--background-color);
-    color: var(--color-text);
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 150px;
-
-    &:focus {
-      outline: none;
-      border-color: var(--color-primary);
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-
-    option {
-      background: var(--background-color);
-      color: var(--color-text);
-    }
-  }
-
-  .projects-count {
-    margin-bottom: 24px;
-    padding: 0 8px;
-
-    span {
-      color: var(--color-text-secondary);
-      font-size: 14px;
-      font-weight: 500;
-    }
-  }
-}
-
-.ownership-tabs {
-  display: flex;
-  gap: 8px;
-  margin: 0 0 20px;
-  padding: 6px;
-  overflow-x: auto;
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  background: var(--background-secondary);
-}
-
-.ownership-tab {
-  display: inline-flex;
-  flex: 1 0 auto;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  min-height: 46px;
-  padding: 10px 18px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--color-text-secondary);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.ownership-tab span {
-  display: inline-grid;
-  min-width: 24px;
-  min-height: 24px;
-  place-items: center;
-  border-radius: 999px;
-  background: var(--background-color);
-  font-size: 0.8rem;
-}
-
-.ownership-tab:hover,
-.ownership-tab:focus-visible {
-  border-color: var(--border-color);
-  color: var(--color-text);
-}
-
-.ownership-tab:focus-visible,
-.ownership-panel:focus-visible {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-.ownership-tab.active {
-  background: var(--background-color);
-  color: var(--color-text);
-  box-shadow: var(--card-shadow);
-}
-
+<style scoped lang="scss">
+.projects-page { min-height: 60vh; padding: clamp(2.5rem, 5vw, 4.5rem) 0 clamp(3.5rem, 7vw, 6rem); background: var(--portfolio-bg); color: var(--portfolio-text); font-family: var(--portfolio-font-sans); }
+.container { width: min(var(--portfolio-content-width), calc(100% - 2 * var(--portfolio-gutter))); margin: 0 auto; }
+.page-intro { max-width: 760px; margin: 0 0 2rem; }
+.eyebrow { margin: 0 0 0.7rem; color: var(--portfolio-accent); font-size: var(--portfolio-label); font-weight: 700; letter-spacing: 0.12em; }
+h1 { margin: 0; color: var(--portfolio-text); font-size: clamp(2rem, 4vw, 3.3rem); line-height: 1.04; letter-spacing: -0.055em; }
+.intro-copy { max-width: 62ch; margin: 0.85rem 0 0; color: var(--portfolio-text-secondary); font-size: var(--portfolio-body-large); line-height: 1.6; }
+.case-count { margin: 0.85rem 0 0; color: var(--portfolio-text-muted); font-family: var(--portfolio-font-mono); font-size: 0.74rem; }
+.page-state,.empty-page { display: grid; justify-items: start; gap: 0.8rem; padding: 2.5rem 0; color: var(--portfolio-text-secondary); }
+.page-state p,.empty-page p { margin: 0; }
+.error-state { color: var(--portfolio-error); }
+.loading-mark { width: 22px; height: 22px; border: 2px solid var(--portfolio-border); border-top-color: var(--portfolio-accent); border-radius: 50%; animation: spin 800ms linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.text-action { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.ownership-tabs { display: flex; width: fit-content; max-width: 100%; gap: clamp(0.5rem, 2vw, 1.5rem); margin: 0 0 1.5rem; border-bottom: 1px solid var(--portfolio-border); }
+.ownership-tab { display: inline-flex; min-width: 0; min-height: 48px; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.7rem 0.15rem; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: transparent; color: var(--portfolio-text-muted); font: inherit; font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: color 140ms ease, border-color 140ms ease; }
+.ownership-tab:hover { color: var(--portfolio-text); }
+.ownership-tab.active { border-bottom-color: var(--portfolio-accent); color: var(--portfolio-text); }
+.ownership-tab:focus-visible,.ownership-panel:focus-visible,.text-action:focus-visible,.archive-details:focus-visible,.contact-link:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
+.tab-label { min-width: 0; }
+.tab-count,.archive-count { display: inline-grid; min-width: 1.35rem; height: 1.35rem; place-items: center; padding: 0 0.25rem; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-pill); color: var(--portfolio-text-muted); font-family: var(--portfolio-font-mono); font-size: 0.66rem; font-weight: 500; }
+.ownership-tab.active .tab-count { border-color: var(--portfolio-border-hover); color: var(--portfolio-accent); }
 .ownership-panel { min-width: 0; }
+.project-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.single-category-title { margin: 0 0 1rem; font-size: var(--portfolio-h2); }
+.empty-category { padding: 2rem 0; border-top: 1px solid var(--portfolio-border); color: var(--portfolio-text-secondary); }
+.empty-category h2 { margin: 0; color: var(--portfolio-text); font-size: 1.25rem; }
+.empty-category p { margin: 0.6rem 0 0; }
+.project-archive { margin-top: clamp(2rem, 5vw, 3.5rem); border-top: 1px solid var(--portfolio-border); border-bottom: 1px solid var(--portfolio-border); }
+.project-archive summary { display: flex; min-height: 58px; align-items: center; gap: 0.6rem; color: var(--portfolio-text-secondary); font-size: 0.9rem; font-weight: 600; cursor: pointer; list-style: none; }
+.project-archive summary::-webkit-details-marker { display: none; }
+.project-archive summary svg { width: 18px; height: 18px; margin-left: auto; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; transition: transform 140ms ease; }
+.project-archive[open] summary svg { transform: rotate(180deg); }
+.project-archive summary:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
+.archive-intro { max-width: 58ch; margin: 0 0 1rem; color: var(--portfolio-text-muted); font-size: 0.83rem; line-height: 1.5; }
+.archive-list { margin: 0; padding: 0; list-style: none; }
+.archive-item { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1rem 0; border-top: 1px solid var(--portfolio-border); }
+.archive-item > div { min-width: 0; }
+.archive-item h3 { margin: 0; color: var(--portfolio-text); font-size: 0.95rem; }
+.archive-item p { display: -webkit-box; overflow: hidden; max-width: 70ch; margin: 0.3rem 0 0; color: var(--portfolio-text-muted); font-size: 0.8rem; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.archive-details { flex: 0 0 auto; padding: 0.5rem 0; border: 0; background: transparent; color: var(--portfolio-text-secondary); font: inherit; font-size: 0.78rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.archive-details:hover { color: var(--portfolio-accent); }
+.projects-cta { display: flex; align-items: center; justify-content: space-between; gap: 2rem; margin-top: clamp(2.5rem, 6vw, 4.5rem); padding: clamp(1.25rem, 3vw, 2rem) 0 0; border-top: 1px solid var(--portfolio-border); }
+.projects-cta .eyebrow { margin-bottom: 0.55rem; }
+.projects-cta h2 { max-width: 34ch; margin: 0; color: var(--portfolio-text); font-size: clamp(1.25rem, 2.2vw, 1.75rem); line-height: 1.25; letter-spacing: -0.03em; }
+.contact-link { display: inline-flex; flex: 0 0 auto; min-height: 46px; align-items: center; gap: 0.65rem; padding: 0 0.95rem; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-sm); color: var(--portfolio-text); font-size: 0.85rem; font-weight: 650; text-decoration: none; transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease; }
+.contact-link svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
+.contact-link:hover { border-color: var(--portfolio-border-hover); background: var(--portfolio-surface-hover); color: var(--portfolio-accent); }
 
-.single-category-title { margin: 0 0 16px; font-size: 1.25rem; }
-
-.category-empty-state,
-.unverified-projects {
-  margin: 24px 0;
-  padding: 20px;
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  color: var(--color-text-secondary);
-}
-
-.category-empty-state h2 { margin-top: 0; color: var(--color-text); }
-
-.unverified-projects summary {
-  color: var(--color-text);
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.unverified-intro { margin-bottom: 0; }
-
-.unverified-projects[open] .cards { margin-bottom: 0; }
-
-@media (max-width: 520px) {
-  .ownership-tabs { gap: 4px; padding: 4px; }
-  .ownership-tab { justify-content: flex-start; padding: 10px 12px; font-size: 0.9rem; }
-}
-
-// Loading state
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 20px;
-  text-align: center;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--border-color);
-  border-top: 4px solid var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-// Error state
-.error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 20px;
-  text-align: center;
-}
-
-.error-message {
-  color: #ef4444;
-  font-size: 1.1rem;
-  margin-bottom: 24px;
-}
-
-.retry-button {
-  background: var(--gradient-primary);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-  }
-}
-
-// Empty state
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 20px;
-  text-align: center;
-  color: var(--color-text-secondary);
-
-  h3 {
-    margin: 0 0 16px 0;
-    font-size: 1.5rem;
-    color: var(--color-text);
-  }
-
-  p {
-    margin: 0;
-    font-size: 1.1rem;
-  }
-}
-
-.cta-section {
-  text-align: center;
-  margin: 64px 0;
-  padding: 48px;
-  background: linear-gradient(
-    135deg,
-    rgba(102, 126, 234, 0.1) 0%,
-    rgba(118, 75, 162, 0.1) 100%
-  );
-  border-radius: 20px;
-  border: 1px solid var(--background-info-color);
-
-  h2 {
-    margin: 0 0 16px 0;
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--color-text);
-  }
-
-  p {
-    margin: 0 0 32px 0;
-    font-size: 1.1rem;
-    color: var(--color-text-secondary);
-    line-height: 1.6;
-  }
-}
-
-.cta-buttons {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.cta-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 24px;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-
-  &.primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-    }
-  }
-
-  &.secondary {
-    background: var(--background-color);
-    color: var(--color-text);
-    border: 2px solid var(--background-info-color);
-
-    &:hover {
-      border-color: #ef4444;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.2);
-    }
-  }
-}
-
-@media (max-width: 768px) {
-  .container {
-    padding: 0 16px;
-  }
-
-  h1 {
-    font-size: 2rem;
-  }
-
-  .cta-section {
-    padding: 32px 24px;
-    margin: 48px 0;
-  }
-
-  .cta-buttons {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .cta-button {
-    width: 100%;
-    max-width: 300px;
-    justify-content: center;
-  }
-}
+@media (max-width: 760px) { .project-grid { grid-template-columns: 1fr; } .projects-cta { align-items: flex-start; flex-direction: column; gap: 1rem; } }
+@media (max-width: 420px) { .ownership-tabs { width: 100%; gap: 0.6rem; } .ownership-tab { flex: 1 1 0; align-items: center; gap: 0.35rem; padding-inline: 0.1rem; font-size: 0.78rem; line-height: 1.2; } .tab-label { text-align: center; } .archive-item { align-items: flex-start; gap: 0.8rem; } }
+@media (prefers-reduced-motion: reduce) { .loading-mark { animation: none; } .ownership-tab,.project-archive summary svg,.contact-link { transition: none; } }
 </style>
