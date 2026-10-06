@@ -1,4 +1,5 @@
 import { prisma } from "../../../utils/prisma";
+import { isValidMaterialId } from "../../../utils/auth-route-policy";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -6,6 +7,10 @@ export default defineEventHandler(async (event) => {
 
     const materialId = getRouterParam(event, "id");
     console.log("🔐 PDF Simple: materialId", materialId);
+
+    if (!isValidMaterialId(materialId)) {
+      throw createError({ statusCode: 400, statusMessage: "Invalid material ID" });
+    }
 
     // Получаем пользователя из контекста (устанавливается middleware)
     const user = event.context.user;
@@ -84,6 +89,9 @@ ${material.content}
     return content;
   } catch (error) {
     console.error("Ошибка генерации файла:", error);
+    if (error && typeof error === "object" && "statusCode" in error) {
+      throw error;
+    }
     throw createError({
       statusCode: 500,
       statusMessage: "Error generating file",

@@ -1,20 +1,9 @@
-# Используем официальный Node.js образ
-FROM node:20-alpine AS base
+# Используем поддерживаемую LTS-ветку Node.js
+FROM node:22-alpine AS base
 
-# Устанавливаем зависимости только при необходимости
-FROM base AS deps
-# Проверяем https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine для понимания, почему libc6-compat
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-
-# Копируем файлы зависимостей
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
-
-# Пересобираем зависимости для продакшена
+# Сборка приложения и генерация Prisma client
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Устанавливаем все зависимости (включая dev) для сборки
@@ -30,7 +19,15 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
+ARG VCS_REF=unknown
+ARG SOURCE_URL=https://github.com/kiruhak11/kiruhak
+ARG IMAGE_VERSION=development
+LABEL org.opencontainers.image.revision=$VCS_REF \
+      org.opencontainers.image.source=$SOURCE_URL \
+      org.opencontainers.image.title="Kiruhak Portfolio" \
+      org.opencontainers.image.version=$IMAGE_VERSION
+
+ENV NODE_ENV=production
 # Создаем пользователя для безопасности
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nuxtjs
@@ -52,8 +49,8 @@ USER nuxtjs
 
 EXPOSE 3015
 
-ENV PORT 3015
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3015
+ENV HOSTNAME=0.0.0.0
 
 # Запускаем приложение
 CMD ["node", ".output/server/index.mjs"]

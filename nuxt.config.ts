@@ -26,6 +26,7 @@ export default defineNuxtConfig({
     sitemap: `${siteUrl}/sitemap.xml`,
   },
   routeRules: {
+    "/projects": { prerender: false },
     "/login": { robots: "noindex, nofollow" },
     "/analytics": { robots: "noindex, nofollow" },
     "/content": { robots: "noindex, nofollow" },
@@ -84,7 +85,7 @@ export default defineNuxtConfig({
   },
   nitro: {
     prerender: {
-      routes: ["/", "/projects", "/contact"],
+      routes: ["/", "/contact"],
     },
   },
   runtimeConfig: {

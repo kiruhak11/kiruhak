@@ -16,6 +16,11 @@ import {
   isHashedPassword,
   verifyPassword,
 } from "../server/utils/password";
+import {
+  isAuthenticatedRoute,
+  isPublicApiRoute,
+  isValidMaterialId,
+} from "../server/utils/auth-route-policy";
 
 const payload = {
   userId: "user-1",
@@ -93,4 +98,28 @@ test("auth tokens verify signatures, expiration, and malformed input", () => {
 
   const unsignedLegacy = Buffer.from(JSON.stringify(payload)).toString("base64");
   assert.equal(verifyAuthToken(unsignedLegacy, secret, 1_750_000_000), null);
+});
+
+test("material text downloads are authenticated while material reads remain public", () => {
+  assert.equal(isPublicApiRoute("/api/materials", "GET"), true);
+  assert.equal(isPublicApiRoute("/api/materials/material-123", "GET"), true);
+
+  for (const path of [
+    "/api/materials/material-123/download-pdf-simple",
+    "/api/materials/material-123/download-pdf",
+  ]) {
+    assert.equal(isPublicApiRoute(path, "GET"), false);
+    assert.equal(isAuthenticatedRoute(path, "GET"), true);
+  }
+
+  assert.equal(isAuthenticatedRoute("/api/materials/material-123/download-pdf-simple", "POST"), false);
+});
+
+test("material download IDs accept expected identifiers and reject malformed input", () => {
+  assert.equal(isValidMaterialId("cmm7zid0n0004o301rk66jffv"), true);
+  assert.equal(isValidMaterialId("material_123-abc"), true);
+  assert.equal(isValidMaterialId(""), false);
+  assert.equal(isValidMaterialId("../secret"), false);
+  assert.equal(isValidMaterialId("x".repeat(129)), false);
+  assert.equal(isValidMaterialId(undefined), false);
 });

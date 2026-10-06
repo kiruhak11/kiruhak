@@ -20,7 +20,7 @@
 
         <div v-else-if="error" class="page-state error-state" role="alert">
           <p>{{ error }}</p>
-          <button type="button" class="text-action" @click="fetchProjects">Попробовать снова</button>
+          <button type="button" class="text-action" @click="retryProjects">Попробовать снова</button>
         </div>
 
         <template v-else>
@@ -137,11 +137,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import type { DeepReadonly } from "vue";
 import ProjectCard from "~/components/ProjectCard.vue";
 import ProjectModal from "~/components/ProjectModal.vue";
-import { useProjects } from "~/composables/useProjects";
 import type { Project } from "~/composables/useProjects";
 import { groupProjectsByOwnership } from "~/utils/project-ownership";
 import { getProjectCaseView } from "~/utils/project-case-view";
@@ -160,7 +159,20 @@ useSeoMeta({
 });
 useHead({ link: [{ rel: "canonical", href: new URL("/projects", useRuntimeConfig().public.siteUrl).href }] });
 
-const { projects, loading, error, fetchProjects } = useProjects();
+const {
+  data: projectsData,
+  status: projectsStatus,
+  error: projectsLoadError,
+  refresh: fetchProjects,
+} = await useAsyncData<Project[]>("public-projects", () => $fetch<Project[]>("/api/projects" as string), {
+  default: () => [],
+});
+const retryProjects = () => fetchProjects();
+const projects = computed(() => projectsData.value ?? []);
+const loading = computed(() => projectsStatus.value === "pending");
+const error = computed(() =>
+  projectsLoadError.value ? "Ошибка при загрузке проектов" : null,
+);
 const selectedOwnership = ref<"OWN" | "PARTICIPATION">("OWN");
 const ownTab = ref<HTMLButtonElement | null>(null);
 const participationTab = ref<HTMLButtonElement | null>(null);
@@ -200,7 +212,6 @@ const handleTabKeydown = (event: KeyboardEvent, current: "OWN" | "PARTICIPATION"
 const openProjectModal = (project: DeepReadonly<Project>) => { selectedProject.value = project; };
 const closeProjectModal = () => { selectedProject.value = null; };
 
-onMounted(() => { fetchProjects(); });
 </script>
 
 <style scoped lang="scss">
