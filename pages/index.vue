@@ -93,6 +93,25 @@ import { getProjectCaseView } from "~/utils/project-case-view";
 useSeoMeta({
   title: "Кирилл Коваленко — веб-разработчик Vue/Nuxt",
   description: "Портфолио Кирилла Коваленко: коммерческие сайты, веб-приложения и собственные проекты на Vue, Nuxt и TypeScript. О задачах, реализации и технологиях каждого проекта.",
+  ogTitle: "Кирилл Коваленко — веб-разработчик Vue/Nuxt",
+  ogDescription: "Веб-продукты на Vue/Nuxt: собственные проекты, коммерческий опыт и технические кейсы.",
+  ogType: "website",
+  ogUrl: new URL("/", useRuntimeConfig().public.siteUrl).href,
+  twitterCard: "summary",
+  twitterTitle: "Кирилл Коваленко — веб-разработчик Vue/Nuxt",
+  twitterDescription: "Веб-продукты на Vue/Nuxt: проекты, коммерческий опыт и технические кейсы.",
+  robots: "index, follow",
+});
+useHead({
+  link: [{ rel: "canonical", href: new URL("/", useRuntimeConfig().public.siteUrl).href }],
+  script: [{ type: "application/ld+json", innerHTML: JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: "Кирилл Коваленко",
+    url: new URL("/", useRuntimeConfig().public.siteUrl).href,
+    jobTitle: "Веб-разработчик Vue/Nuxt",
+    sameAs: [publicContact.github.href, publicContact.telegram.href],
+  }) }],
 });
 
 const mainCtaText = "Отправить заявку";

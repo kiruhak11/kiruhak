@@ -4,8 +4,11 @@
     :src="src ?? undefined"
     :alt="alt"
     :class="imgClass"
-    loading="lazy"
+    :loading="priority ? 'eager' : 'lazy'"
+    :fetchpriority="priority ? 'high' : 'auto'"
     decoding="async"
+    width="1600"
+    height="790"
     @error="visible = false"
   />
   <div
@@ -28,8 +31,9 @@ withDefaults(
     alt: string;
     imgClass?: string;
     fallbackClass?: string;
+    priority?: boolean;
   }>(),
-  { src: "", imgClass: "", fallbackClass: "" }
+  { src: "", imgClass: "", fallbackClass: "", priority: false }
 );
 
 const visible = ref(true);

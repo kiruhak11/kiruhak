@@ -17,7 +17,7 @@
               :href="publicContact.telegram.href"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Написать Кириллу в Telegram, откроется в новой вкладке"
+              aria-label="Написать в Telegram Кириллу; откроется в новой вкладке"
             >
               <span class="channel-eyebrow">ПРЕДПОЧТИТЕЛЬНЫЙ КАНАЛ</span>
               <span class="channel-title">Telegram</span>
@@ -46,7 +46,7 @@
                 :href="publicContact.github.href"
                 target="_blank"
                 rel="noopener noreferrer"
-                :aria-label="`Открыть GitHub ${publicContact.github.label} в новой вкладке`"
+                :aria-label="`Открыть профиль GitHub ${publicContact.github.label} в новой вкладке`"
               >
                 <span class="channel-icon-wrap" aria-hidden="true">
                   <svg viewBox="0 0 24 24"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.9a3.4 3.4 0 0 0-.9-2.6c3-.3 6.1-1.5 6.1-6.6A5.1 5.1 0 0 0 18.8 5a4.7 4.7 0 0 0-.1-3S17.5 1.7 15 3.4a13.3 13.3 0 0 0-7 0C5.5 1.7 4.3 2 4.3 2A4.7 4.7 0 0 0 4.2 5a5.1 5.1 0 0 0-1.4 3.9c0 5.1 3.1 6.3 6.1 6.6a3.4 3.4 0 0 0-.9 2.6V22" /></svg>
@@ -87,7 +87,16 @@ import { publicContact } from "~/constants/public-contact";
 useSeoMeta({
   title: "Контакты — Кирилл Коваленко",
   description: "Написать Кириллу Коваленко по поводу работы в команде, сотрудничества или разработки продукта: Telegram и email.",
+  ogTitle: "Контакты — Кирилл Коваленко",
+  ogDescription: "Написать по поводу работы в команде, сотрудничества или разработки продукта.",
+  ogType: "website",
+  ogUrl: new URL("/contact", useRuntimeConfig().public.siteUrl).href,
+  twitterCard: "summary",
+  twitterTitle: "Контакты — Кирилл Коваленко",
+  twitterDescription: "Связаться по поводу работы, сотрудничества или разработки продукта.",
+  robots: "index, follow",
 });
+useHead({ link: [{ rel: "canonical", href: new URL("/contact", useRuntimeConfig().public.siteUrl).href }] });
 </script>
 
 <style scoped lang="scss">

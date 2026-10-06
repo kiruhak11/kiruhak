@@ -74,9 +74,10 @@
           >
             <div v-if="selectedProjects.length" class="project-grid">
               <ProjectCard
-                v-for="project in selectedProjects"
+                v-for="(project, index) in selectedProjects"
                 :key="project.id"
                 :project="project"
+                :priority="index === 0"
                 @open-modal="openProjectModal"
               />
             </div>
@@ -148,7 +149,16 @@ import { getProjectCaseView } from "~/utils/project-case-view";
 useSeoMeta({
   title: "Проекты — Кирилл Коваленко",
   description: "Кейсы Кирилла Коваленко: собственные продукты и подтверждённый вклад в командные веб-проекты, технологии и production-примеры.",
+  ogTitle: "Проекты — Кирилл Коваленко",
+  ogDescription: "Собственные продукты и подтверждённый вклад в командные веб-проекты.",
+  ogType: "website",
+  ogUrl: new URL("/projects", useRuntimeConfig().public.siteUrl).href,
+  twitterCard: "summary",
+  twitterTitle: "Проекты — Кирилл Коваленко",
+  twitterDescription: "Собственные продукты и подтверждённый вклад в командные веб-проекты.",
+  robots: "index, follow",
 });
+useHead({ link: [{ rel: "canonical", href: new URL("/projects", useRuntimeConfig().public.siteUrl).href }] });
 
 const { projects, loading, error, fetchProjects } = useProjects();
 const selectedOwnership = ref<"OWN" | "PARTICIPATION">("OWN");

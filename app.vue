@@ -5,6 +5,13 @@
   </div>
 </template>
 <script setup lang="ts">
+const route = useRoute();
+const robotsIndexing = computed(() =>
+  /^\/(login|analytics|content|auth-callback|bot-login|admin)(\/|$)/.test(route.path) || ["/success", "/error"].includes(route.path)
+    ? "noindex, nofollow"
+    : "index, follow"
+);
+
 useSeoMeta({
   titleTemplate: (title) =>
     title && title.includes("Кирилл Коваленко")
@@ -18,20 +25,8 @@ useSeoMeta({
   ogDescription:
     "Сайты и веб-приложения на Vue/Nuxt — описание продукта, моя реализация, технические задачи и стек.",
   ogType: "website",
-  twitterCard: "summary_large_image",
-});
-
-// Добавляем аналитику Kiruhak
-useHead({
-  script: [
-    {
-      innerHTML: 'window.KIRUHAK_SITE_ID = "cmetglx3f0001ri3lsfzyscli";',
-    },
-    {
-      src: process.env.NODE_ENV === 'production' ? "https://kiruhak11.ru/analytics.js" : "/analytics.js",
-      async: true,
-    },
-  ],
+  twitterCard: "summary",
+  robots: robotsIndexing,
 });
 </script>
 

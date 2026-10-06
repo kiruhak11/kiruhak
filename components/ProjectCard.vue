@@ -4,6 +4,7 @@
       <ProjectPreview
         :src="project.image"
         :alt="`Превью проекта «${project.title}»`"
+        :priority="priority"
         img-class="project-image"
         fallback-class="project-image-fallback"
       />
@@ -21,7 +22,7 @@
         <span v-if="project.featured && caseView.ownershipType !== 'UNVERIFIED'" class="featured-label">Избранный кейс</span>
       </div>
 
-      <h3 class="project-title">{{ project.title }}</h3>
+      <h2 class="project-title">{{ project.title }}</h2>
       <p class="project-summary">{{ caseView.productSummary }}</p>
 
       <p v-if="caseView.role && caseView.ownershipType !== 'UNVERIFIED'" class="project-role">
@@ -80,7 +81,7 @@ import { getVerifiedProjectLinks } from "~/utils/project-case-links";
 import { getProjectCaseView } from "~/utils/project-case-view";
 import type { Project } from "~/composables/useProjects";
 
-const props = defineProps<{ project: DeepReadonly<Project> }>();
+const props = withDefaults(defineProps<{ project: DeepReadonly<Project>; priority?: boolean }>(), { priority: false });
 defineEmits<{ (event: "open-modal", project: DeepReadonly<Project>): void }>();
 
 const caseView = computed(() => getProjectCaseView(props.project));

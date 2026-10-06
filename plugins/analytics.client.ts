@@ -1,10 +1,6 @@
 export default defineNuxtPlugin(() => {
   // Добавляем аналитику Kiruhak
-  const config = useRuntimeConfig();
-  const isDev = process.env.NODE_ENV !== 'production';
-  
-  // В режиме разработки используем локальный путь
-  const analyticsUrl = isDev ? '/analytics.js' : 'https://kiruhak11.ru/analytics.js';
+  const analyticsUrl = "/analytics.js";
   
   useHead({
     script: [

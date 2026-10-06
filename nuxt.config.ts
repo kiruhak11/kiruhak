@@ -3,6 +3,7 @@ const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || "https://kiruhak11.ru";
 const yandexMetrikaId = process.env.YANDEX_METRIKA_ID || "";
 export default defineNuxtConfig({
   compatibilityDate: "2024-04-03",
+  experimental: { appManifest: false },
   devtools: { enabled: process.env.NODE_ENV !== "production" },
   modules: [
     "@nuxtjs/device",
@@ -13,23 +14,36 @@ export default defineNuxtConfig({
   ],
   sitemap: {
     strictNuxtContentPaths: false,
-    sitemaps: true,
+    sitemaps: false,
+    excludeAppSources: true,
+    urls: ["/", "/projects", "/contact"],
     defaults: {
       changefreq: "weekly",
       priority: 0.7,
     },
   },
   robots: {
-    disallow: ["/success", "/error"],
     sitemap: `${siteUrl}/sitemap.xml`,
   },
+  routeRules: {
+    "/login": { robots: "noindex, nofollow" },
+    "/analytics": { robots: "noindex, nofollow" },
+    "/content": { robots: "noindex, nofollow" },
+    "/auth-callback": { robots: "noindex, nofollow" },
+    "/bot-login": { robots: "noindex, nofollow" },
+    "/admin/**": { robots: "noindex, nofollow" },
+    "/success": { robots: "noindex, nofollow" },
+    "/error": { robots: "noindex, nofollow" },
+  },
   googleFonts: {
+    display: "optional",
     families: {
       Ubuntu: [400, 500, 600, 700],
     },
   },
   app: {
     head: {
+      htmlAttrs: { lang: "ru" },
       script: yandexMetrikaId
         ? [
             {
@@ -60,22 +74,7 @@ export default defineNuxtConfig({
           content:
             "Портфолио Кирилла Коваленко: коммерческие сайты, веб-приложения и собственные проекты на Vue, Nuxt и TypeScript. О задачах, реализации и технологиях каждого проекта.",
         },
-        {
-          name: "keywords",
-          content:
-            "Кирилл Коваленко, веб-разработчик, Vue, Nuxt, TypeScript, веб-приложения, портфолио, интеграции, production",
-        },
         { name: "yandex-verification", content: "44f17adb3814c2c5" },
-        {
-          property: "og:title",
-          content: "Кирилл Коваленко — веб-разработчик Vue/Nuxt",
-        },
-        {
-          property: "og:description",
-          content:
-            "Сайты и веб-приложения на Vue/Nuxt: описание продукта, моя реализация, технические задачи и стек.",
-        },
-        { property: "og:type", content: "website" },
       ],
       link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
     },

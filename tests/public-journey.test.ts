@@ -224,7 +224,9 @@ test("project media retains lazy loading, stable intrinsic size, and visible fal
   const preview = readFileSync(new URL("../components/ProjectPreview.vue", import.meta.url), "utf8");
   const card = readFileSync(new URL("../components/ProjectCard.vue", import.meta.url), "utf8");
   const modal = readFileSync(new URL("../components/ProjectModal.vue", import.meta.url), "utf8");
-  assert.match(preview, /loading="lazy"/);
+  assert.match(preview, /priority \? 'eager' : 'lazy'/);
+  assert.match(preview, /width="1600"/);
+  assert.match(preview, /height="790"/);
   assert.match(preview, /decoding="async"/);
   assert.match(preview, /превью недоступно/i);
   assert.match(card, /aspect-ratio: 2 \/ 1/);
