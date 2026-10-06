@@ -1,5 +1,11 @@
 <template>
-  <button class="theme-toggle" @click="toggleTheme" :title="isDark ? 'Переключить на светлую тему' : 'Переключить на темную тему'">
+  <button
+    class="theme-toggle"
+    type="button"
+    :aria-label="isDark ? 'Переключить на светлую тему' : 'Переключить на темную тему'"
+    :title="isDark ? 'Переключить на светлую тему' : 'Переключить на темную тему'"
+    @click="toggleTheme"
+  >
     <div class="toggle-icon">
       <svg v-if="isDark" class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/>
@@ -63,6 +69,11 @@ onMounted(() => {
   &:active {
     transform: scale(0.95);
   }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
 }
 
 .toggle-icon {
@@ -95,4 +106,8 @@ onMounted(() => {
     height: 40px;
   }
 }
-</style> 
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle,.toggle-icon,.sun-icon,.moon-icon { transition: none; animation: none; }
+}
+</style>

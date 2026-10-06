@@ -2,25 +2,58 @@
   <NuxtLayout>
     <main class="landing-page">
       <section class="hero-section">
-        <div class="container">
-          <p class="hero-eyebrow">Кирилл Коваленко · веб-разработчик</p>
-          <h1 class="hero-title">Разрабатываю веб-продукты на Vue и Nuxt — от интерфейса до запуска.</h1>
-          <p class="hero-subtitle">
-            В портфолио — коммерческие сайты, прикладные веб-приложения и собственные проекты.
-            В кейсах отдельно показаны продукт, задача и моя реализация.
-          </p>
-          <div class="hero-actions">
-            <NuxtLink class="cta-button primary" to="/projects">Посмотреть проекты</NuxtLink>
-            <NuxtLink class="cta-button secondary" to="/contact">Связаться со мной</NuxtLink>
+        <div class="container hero-layout">
+          <div class="hero-copy">
+            <p class="hero-eyebrow"><span aria-hidden="true"></span>КИРИЛЛ КОВАЛЕНКО <i>/</i> VUE · NUXT</p>
+            <h1 class="hero-title">Создаю веб-продукты <span>— от интерфейса до запуска.</span></h1>
+            <p class="hero-subtitle">
+              Проектирую интерфейсы, соединяю их с серверной логикой и интеграциями, затем довожу проект до production.
+            </p>
+            <div class="hero-actions">
+              <NuxtLink class="cta-button primary" to="/projects">
+                Посмотреть проекты
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" /></svg>
+              </NuxtLink>
+              <NuxtLink class="cta-button secondary" to="/contact">Обсудить задачу</NuxtLink>
+            </div>
+            <a
+              class="hero-github-link"
+              :href="publicContact.github.href"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub {{ publicContact.github.label }}
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5h8v8m-.5-7.5-8 8" /></svg>
+            </a>
           </div>
-          <a
-            class="hero-github-link"
-            :href="publicContact.github.href"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub {{ publicContact.github.label }}
-          </a>
+
+          <aside class="hero-visual" aria-label="Этапы разработки продукта: интерфейс, логика, запуск">
+            <div class="visual-heading">
+              <span>ПОЛНЫЙ ЦИКЛ РАЗРАБОТКИ</span>
+              <span class="visual-code">01—03</span>
+            </div>
+            <ol class="build-flow">
+              <li>
+                <span class="flow-index">01</span>
+                <span class="flow-rail" aria-hidden="true"><i></i></span>
+                <span class="flow-copy"><strong>Интерфейс</strong><small>Vue · Nuxt · TypeScript</small></span>
+              </li>
+              <li>
+                <span class="flow-index">02</span>
+                <span class="flow-rail" aria-hidden="true"><i></i></span>
+                <span class="flow-copy"><strong>Логика продукта</strong><small>API · данные · интеграции</small></span>
+              </li>
+              <li>
+                <span class="flow-index">03</span>
+                <span class="flow-rail" aria-hidden="true"><i></i></span>
+                <span class="flow-copy"><strong>Запуск</strong><small>Docker · production</small></span>
+              </li>
+            </ol>
+            <div class="visual-footer">
+              <span class="visual-line" aria-hidden="true"></span>
+              <span>ОТ ИДЕИ ДО РАБОТАЮЩЕГО ПРОДУКТА</span>
+            </div>
+          </aside>
         </div>
       </section>
 
@@ -445,42 +478,14 @@ onMounted(() => {
 .landing-page {
   position: relative;
   isolation: isolate;
-  color: var(--color-text);
-  padding-bottom: 72px;
-  background:
-    radial-gradient(circle at 2% 3%, rgba(79, 172, 254, 0.08), transparent 26%),
-    radial-gradient(circle at 98% 5%, rgba(250, 112, 154, 0.1), transparent 30%);
-  overflow: hidden;
+  padding-bottom: var(--portfolio-space-16);
+  background: var(--portfolio-bg);
+  color: var(--portfolio-text);
+  font-family: var(--portfolio-font-sans);
 }
 
-.landing-page::before {
-  content: "";
-  position: absolute;
-  left: -8%;
-  right: -8%;
-  top: -120px;
-  height: 260px;
-  background:
-    radial-gradient(
-      44% 90% at 15% 100%,
-      color-mix(in srgb, var(--color-accent) 32%, transparent),
-      transparent 72%
-    ),
-    radial-gradient(
-      44% 90% at 85% 100%,
-      rgba(250, 112, 154, 0.24),
-      transparent 72%
-    ),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--background-color) 58%, transparent) 0%,
-      transparent 100%
-    );
-  filter: blur(26px);
-  opacity: 0.9;
-  pointer-events: none;
-  z-index: 0;
-}
+.landing-page,
+.landing-page * { font-family: var(--portfolio-font-sans); }
 
 .landing-page > section {
   position: relative;
@@ -488,126 +493,210 @@ onMounted(() => {
 }
 
 .container {
-  max-width: 1200px;
+  width: min(var(--portfolio-content-width), calc(100% - 2 * var(--portfolio-gutter)));
+  max-width: var(--portfolio-content-width);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0;
 }
 
 .section {
-  padding: 72px 0;
+  padding: var(--portfolio-space-16) 0;
   position: relative;
 }
 
 .hero-section {
-  padding: 94px 0 88px;
+  padding: clamp(3.5rem, 7vw, 6.25rem) 0 clamp(3rem, 6vw, 5rem);
 }
 
 .hero-section::before {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
-  top: -42px;
-  height: 120px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--background-color) 62%, transparent) 0%,
-    transparent 100%
-  );
-  filter: blur(20px);
+  inset: 0 0 auto;
+  height: 100%;
+  background-image: linear-gradient(var(--portfolio-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--portfolio-grid) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(180deg, #000 0%, transparent 92%);
   pointer-events: none;
   z-index: 0;
 }
 
-.hero-section .container {
+.hero-layout {
   position: relative;
   z-index: 1;
-  padding: 48px;
-  border: 1px solid var(--border-color);
-  border-radius: 24px;
-  background:
-    linear-gradient(120deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
-    radial-gradient(circle at 10% 10%, rgba(102, 126, 234, 0.17), transparent 38%),
-    radial-gradient(circle at 90% 90%, rgba(240, 147, 251, 0.21), transparent 38%),
-    color-mix(in srgb, var(--background-color) 82%, transparent);
-  box-shadow: 0 18px 35px rgba(20, 29, 55, 0.09);
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(290px, 0.85fr);
+  align-items: center;
+  gap: clamp(2.5rem, 7vw, 7rem);
 }
+
+.hero-copy { min-width: 0; animation: hero-enter 380ms ease-out both; }
 
 .hero-eyebrow {
-  margin: 0 0 12px;
-  font-size: 0.95rem;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 var(--portfolio-space-6);
+  color: var(--portfolio-text-secondary);
+  font-size: var(--portfolio-label);
+  font-weight: 650;
+  letter-spacing: 0.1em;
 }
+
+.hero-eyebrow > span {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+}
+
+.hero-eyebrow i { color: var(--portfolio-text-muted); font-style: normal; }
 
 .hero-title {
+  max-width: 780px;
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1.15;
+  color: var(--portfolio-text);
+  font-size: var(--portfolio-h1);
+  font-weight: 650;
+  letter-spacing: -0.065em;
+  line-height: 1.02;
 }
 
+.hero-title span { color: var(--portfolio-accent); }
+
 .hero-subtitle {
-  margin: 20px 0 0;
-  font-size: 1.12rem;
-  line-height: 1.7;
-  color: var(--color-text-secondary);
-  max-width: 760px;
+  max-width: 590px;
+  margin: var(--portfolio-space-6) 0 0;
+  color: var(--portfolio-text-secondary);
+  font-size: var(--portfolio-body-large);
+  line-height: 1.65;
 }
 
 .hero-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 28px;
   flex-wrap: wrap;
+  gap: 10px;
+  margin-top: var(--portfolio-space-8);
 }
 
 .hero-github-link {
   display: inline-flex;
-  margin-top: 16px;
-  color: var(--color-text-secondary);
-  font-size: 0.92rem;
-  text-underline-offset: 3px;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--portfolio-space-6);
+  color: var(--portfolio-text-secondary);
+  font-size: var(--portfolio-small);
+  text-underline-offset: 4px;
+  transition: color 160ms ease;
 }
 
-.hero-github-link:hover { color: var(--color-text); }
+.hero-github-link:hover { color: var(--portfolio-text); }
+.hero-github-link svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
+
+.hero-visual {
+  position: relative;
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--portfolio-border);
+  border-radius: var(--portfolio-radius-lg);
+  background: var(--portfolio-bg-elevated);
+  box-shadow: var(--portfolio-shadow-soft);
+  animation: hero-enter 420ms 70ms ease-out both;
+}
+
+.visual-heading,
+.visual-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--portfolio-text-muted);
+  font-family: var(--portfolio-font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+}
+
+.visual-heading > span:first-child,
+.visual-footer > span:last-child { font-family: var(--portfolio-font-mono); }
+.visual-code { color: var(--portfolio-accent); font-variant-numeric: tabular-nums; }
+
+.build-flow {
+  display: grid;
+  margin: var(--portfolio-space-8) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.build-flow li {
+  display: grid;
+  min-height: 76px;
+  grid-template-columns: 28px 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.flow-index { align-self: start; padding-top: 25px; color: var(--portfolio-text-muted); font-family: var(--portfolio-font-mono); font-size: 0.68rem; }
+.flow-rail { position: relative; display: grid; height: 100%; place-items: center; }
+.flow-rail::before { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--portfolio-border); content: ""; }
+.build-flow li:first-child .flow-rail::before { top: 50%; }
+.build-flow li:last-child .flow-rail::before { bottom: 50%; }
+.flow-rail i { position: relative; z-index: 1; width: 9px; height: 9px; border: 2px solid var(--portfolio-accent); border-radius: 50%; background: var(--portfolio-bg-elevated); }
+.flow-copy { display: grid; gap: 5px; }
+.flow-copy strong { color: var(--portfolio-text); font-size: 1.05rem; font-weight: 620; letter-spacing: -0.02em; }
+.flow-copy small { color: var(--portfolio-text-secondary); font-size: 0.82rem; }
+.visual-line { width: 26px; height: 1px; flex: 0 0 26px; background: var(--portfolio-accent); }
+
+@keyframes hero-enter {
+  from { opacity: 0.72; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 .cta-button {
   display: inline-flex;
   justify-content: center;
   align-items: center;
   border: 1px solid transparent;
-  border-radius: 12px;
-  padding: 14px 20px;
-  font-size: 0.98rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  min-height: 48px;
+  gap: 10px;
+  padding: 0 18px;
+  border-radius: var(--portfolio-radius-sm);
+  font-size: 0.92rem;
+  font-weight: 650;
   text-decoration: none;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
 .cta-button.primary {
-  background: var(--gradient-primary);
-  color: #fff;
+  border-color: var(--portfolio-accent);
+  background: var(--portfolio-accent);
+  color: var(--portfolio-accent-contrast);
 }
 
+.cta-button.primary svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+
 .cta-button.secondary {
-  background: var(--background-color);
-  color: var(--color-text);
-  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--portfolio-text);
+  border: 1px solid var(--portfolio-border);
 }
 
 .cta-button.ghost {
   background: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--color-text);
+  border: 1px solid var(--portfolio-border);
+  color: var(--portfolio-text);
 }
 
 .cta-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.2);
+  transform: translateY(-1px);
+  border-color: var(--portfolio-border-hover);
 }
+
+.cta-button.primary:hover { border-color: var(--portfolio-accent-hover); background: var(--portfolio-accent-hover); }
+.cta-button.secondary:hover,.cta-button.ghost:hover { background: var(--portfolio-surface-hover); }
+.cta-button:focus-visible,.hero-github-link:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
 
 .cta-button:disabled {
   cursor: not-allowed;
@@ -637,7 +726,7 @@ onMounted(() => {
 
 .section-header h2 {
   margin: 0;
-  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  font-size: var(--portfolio-h2);
 }
 
 .section-header p {
@@ -1039,26 +1128,17 @@ onMounted(() => {
   }
 }
 
+@media (max-width: 960px) {
+  .hero-section { padding: 56px 0 44px; }
+  .hero-layout { grid-template-columns: minmax(0, 1fr); gap: 30px; }
+  .hero-copy { max-width: 760px; }
+  .hero-title { max-width: 740px; }
+  .hero-visual { width: min(100%, 600px); }
+}
+
 @media (max-width: 768px) {
   .section {
     padding: 56px 0;
-  }
-
-  .hero-section {
-    padding: 56px 0;
-  }
-
-  .hero-section .container {
-    padding: 28px 20px;
-  }
-
-  .container {
-    padding: 0 16px;
-  }
-
-  .hero-actions {
-    flex-direction: column;
-    align-items: stretch;
   }
 
   .packages-grid,
@@ -1071,5 +1151,28 @@ onMounted(() => {
   .case-image {
     height: 180px;
   }
+}
+
+@media (max-width: 520px) {
+  .hero-section { padding: 48px 0 36px; }
+  .hero-layout { gap: 28px; }
+  .hero-eyebrow { gap: 7px; margin-bottom: 18px; font-size: 0.62rem; letter-spacing: 0.07em; }
+  .hero-title { font-size: clamp(2.25rem, 9.5vw, 3.1rem); line-height: 1.04; letter-spacing: -0.06em; }
+  .hero-subtitle { margin-top: 18px; font-size: 1rem; line-height: 1.55; }
+  .hero-actions { flex-direction: column; align-items: stretch; margin-top: 24px; }
+  .hero-actions .cta-button { width: 100%; }
+  .hero-github-link { margin-top: 15px; }
+  .hero-visual { padding: 18px; }
+  .visual-heading,.visual-footer { font-size: 0.58rem; }
+  .build-flow { margin: 20px 0; }
+  .build-flow li { min-height: 68px; }
+  .flow-copy strong { font-size: 0.98rem; }
+  .flow-copy small { font-size: 0.75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-copy,.hero-visual { animation: none; }
+  .cta-button,.hero-github-link { transition: none; }
+  .cta-button:hover { transform: none; }
 }
 </style>

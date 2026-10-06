@@ -1,18 +1,19 @@
 <template>
-  <header class="header container">
-    <div class="logo">
-      <LoaderIcon />
-      <div class="logo__text">
-        <NuxtLink to="/" aria-label="Портфолио Кирилла Коваленко — главная">
-          <span class="logo-title">K-Studio</span>
-        </NuxtLink>
-      </div>
-    </div>
+  <header class="header container" :class="{ 'is-scrolled': isScrolled }">
+    <NuxtLink class="brand" to="/" aria-label="Портфолио Кирилла Коваленко — главная">
+      <span class="brand-mark" aria-hidden="true">К</span>
+      <span class="brand-copy">
+        <strong>Кирилл Коваленко</strong>
+        <small>WEB DEVELOPER</small>
+      </span>
+    </NuxtLink>
 
     <nav class="desktop-navigation" aria-label="Основная навигация">
       <ul>
         <li v-for="item in publicNavigation" :key="item.to">
-          <NuxtLink :to="item.to">{{ item.label }}</NuxtLink>
+          <NuxtLink :to="item.to" :aria-current="isActive(item.to) ? 'page' : undefined">
+            {{ item.label }}
+          </NuxtLink>
         </li>
         <li v-if="isAuthenticated" class="user-menu">
           <button
@@ -56,14 +57,27 @@
         </li>
       </ul>
     </nav>
-    <NuxtLink class="header-contact-cta" to="/contact">Обсудить проект</NuxtLink>
-    <ThemeToggle class="desktop-theme" />
+    <div class="header-actions">
+      <a class="header-github" :href="publicContact.github.href" target="_blank" rel="noopener noreferrer">
+        GitHub
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5h8v8m-.5-7.5-8 8" /></svg>
+      </a>
+      <ThemeToggle class="desktop-theme" />
+      <NuxtLink class="header-contact-cta" to="/contact">Обсудить проект</NuxtLink>
+    </div>
     <HamburgerMenu class="mobile-navigation" />
   </header>
 </template>
 
 <script lang="ts" setup>
 import { publicNavigation } from "~/constants/public-navigation";
+import { publicContact } from "~/constants/public-contact";
+
+const route = useRoute();
+const isScrolled = ref(false);
+const handleScroll = () => { isScrolled.value = window.scrollY > 24; };
+const isActive = (to: string) =>
+  to === "/" ? route.path === "/" : route.path === to || route.path.startsWith(`${to}/`);
 
 const {
   user,
@@ -73,6 +87,8 @@ const {
 } = useAuth();
 
 onMounted(async () => {
+  handleScroll();
+  window.addEventListener("scroll", handleScroll, { passive: true });
   await initAuth();
   if (isAuthenticated.value) {
     await refreshUser();
@@ -91,201 +107,205 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => document.removeEventListener("click", closeProfile));
+onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
 </script>
 
 <style lang="scss" scoped>
 .header {
   position: sticky;
-  top: 0;
-  z-index: 10;
+  top: 10px;
+  z-index: 20;
   display: flex;
-  justify-content: space-between;
+  width: min(var(--portfolio-content-width), calc(100% - 2 * var(--portfolio-gutter)));
+  min-height: 68px;
   align-items: center;
-  padding: 16px 32px;
-  border-radius: 0 0 16px 16px;
-  background-color: var(--background-color);
-  backdrop-filter: blur(10px);
-  color: var(--color-text);
-  box-shadow: 0 8px 16px var(--box-shadow-color);
-  transition: background-color 0.3s, box-shadow 0.3s;
-
-  &:hover {
-    background-color: var(--background-color-hover);
-    box-shadow: 0 12px 24px var(--box-shadow-color-hover);
-  }
+  justify-content: space-between;
+  gap: 24px;
+  margin: 10px auto 0;
+  padding: 10px 18px;
+  border: 1px solid var(--portfolio-border);
+  border-radius: var(--portfolio-radius-lg);
+  background: color-mix(in srgb, var(--portfolio-bg-elevated) 88%, transparent);
+  color: var(--portfolio-text);
+  box-shadow: var(--portfolio-shadow-soft);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
-@media (max-width: 768px) {
+.header.is-scrolled {
+  border-color: var(--portfolio-border-hover);
+  background: var(--portfolio-bg-elevated);
+  box-shadow: var(--portfolio-shadow);
+}
+
+.header,
+.header * { font-family: var(--portfolio-font-sans); }
+
+.brand {
+  display: inline-flex;
+  min-width: max-content;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border: 1px solid var(--portfolio-border);
+  border-radius: 12px;
+  background: var(--portfolio-surface-hover);
+  color: var(--portfolio-accent);
+  font-size: 1rem;
+  font-weight: 750;
+}
+
+.brand-copy { display: grid; gap: 3px; }
+.brand-copy strong { font-size: 0.9rem; font-weight: 650; letter-spacing: -0.02em; }
+.brand-copy small { color: var(--portfolio-text-muted); font-size: 0.625rem; font-weight: 650; letter-spacing: 0.11em; }
+
+.desktop-navigation ul {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.desktop-navigation li { position: relative; }
+
+.desktop-navigation > ul > li > a {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  padding: 0 13px;
+  border-radius: var(--portfolio-radius-sm);
+  color: var(--portfolio-text-secondary);
+  font-size: 0.9rem;
+  font-weight: 550;
+  text-decoration: none;
+  transition: color 160ms ease, background-color 160ms ease;
+}
+
+.desktop-navigation > ul > li > a:hover,
+.desktop-navigation > ul > li > a[aria-current="page"] {
+  background: var(--portfolio-surface-hover);
+  color: var(--portfolio-text);
+}
+
+.header-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 12px; }
+
+.header-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--portfolio-text-secondary);
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.header-github:hover { color: var(--portfolio-text); }
+.header-github svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
+
+.header-contact-cta {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 15px;
+  border: 1px solid var(--portfolio-accent);
+  border-radius: var(--portfolio-radius-sm);
+  background: var(--portfolio-accent);
+  color: var(--portfolio-accent-contrast);
+  font-size: 0.875rem;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.header-contact-cta:hover { transform: translateY(-1px); background: var(--portfolio-accent-hover); }
+.header-contact-cta:active { transform: translateY(0); }
+.mobile-navigation { display: none; }
+
+.header :deep(.theme-toggle) {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--portfolio-border);
+  border-radius: var(--portfolio-radius-sm);
+  background: transparent;
+  box-shadow: none;
+  color: var(--portfolio-text-secondary);
+}
+
+.header :deep(.theme-toggle:hover) {
+  transform: none;
+  border-color: var(--portfolio-border-hover);
+  background: var(--portfolio-surface-hover);
+  box-shadow: none;
+}
+
+.desktop-navigation a:focus-visible,
+.brand:focus-visible,
+.header-github:focus-visible,
+.header-contact-cta:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
+
+.user-menu .user-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: var(--portfolio-radius-sm);
+  background: transparent;
+  color: var(--portfolio-text);
+  cursor: pointer;
+  font: inherit;
+}
+
+.user-button:hover { background: var(--portfolio-surface-hover); }
+.user-avatar { display: grid; width: 30px; height: 30px; place-items: center; overflow: hidden; border-radius: 50%; background: var(--portfolio-accent); color: var(--portfolio-accent-contrast); }
+.avatar-image { width: 100%; height: 100%; object-fit: cover; }
+.avatar-placeholder { font-size: 0.75rem; font-weight: 700; }
+.user-name { font-size: 0.875rem; }
+.dropdown-icon { transition: transform 160ms ease; }
+.user-button[aria-expanded="true"] .dropdown-icon { transform: rotate(180deg); }
+.profile-dropdown { position: absolute; top: calc(100% + 8px); right: 0; z-index: 30; min-width: 280px; }
+
+@media (max-width: 900px) {
   .header {
-    padding: 8px 12px 0;
+    top: 8px;
+    min-height: 0;
+    margin-top: 8px;
+    padding: 0;
+    border: 0;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
-}
 
-.logo {
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-
-  &__text {
-    padding-left: 16px;
-
-    .logo-title {
-      font-size: 1.8rem;
-      font-weight: bold;
-      color: var(--color-text);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      transition: color 0.3s;
-    }
-  }
-}
-
-.desktop-navigation {
-  ul {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    align-items: center;
-  }
-
-  li {
-    margin: 0 16px;
-    position: relative;
-
-    &:hover::after,
-    &.active::after {
-      content: "";
-      position: absolute;
-      width: 100%;
-      height: 2px;
-      background-color: var(--color-accent);
-      bottom: -4px;
-      left: 0;
-      transition: width 0.3s ease;
-    }
-
-    &::after {
-      width: 0;
-    }
-  }
-
-  a {
-    color: var(--color-text);
-    font-weight: bold;
-    text-decoration: none;
-    font-size: 1rem;
-    text-transform: uppercase;
-    transition: color 0.3s, letter-spacing 0.3s;
-
-    &:hover {
-      color: var(--color-text-hover);
-      letter-spacing: 1px;
-    }
-  }
-
-  .user-menu {
-    position: relative;
-
-    .user-button {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: transparent;
-      border: none;
-      color: var(--color-text);
-      cursor: pointer;
-      padding: 0.5rem;
-      border-radius: 8px;
-      transition: all 0.3s ease;
-      font-weight: bold;
-      text-transform: uppercase;
-      font-size: 1rem;
-
-      &:hover {
-        background: var(--background-color-hover);
-      }
-
-      .user-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        overflow: hidden;
-        background: var(--gradient-primary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        .avatar-image {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .avatar-placeholder {
-          color: white;
-          font-size: 0.9rem;
-          font-weight: bold;
-        }
-      }
-
-      .user-name {
-        font-weight: 500;
-      }
-
-      .dropdown-icon {
-        transition: transform 0.3s ease;
-      }
-    }
-
-    .profile-dropdown {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      margin-top: 0.5rem;
-      z-index: 1000;
-      min-width: 280px;
-    }
-  }
-}
-
-.logo a:hover .logo-title { color: var(--color-text-hover); }
-
-.mobile-navigation { display: none; }
-
-.header-contact-cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--gradient-primary);
-  color: #fff;
-  font-weight: 700;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.header-contact-cta:focus-visible,
-.desktop-navigation a:focus-visible,
-.logo a:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
-
-@media (max-width: 768px) {
-  .logo,
+  .brand,
   .desktop-navigation,
-  .header-contact-cta,
-  .desktop-theme { display: none; }
+  .header-actions { display: none; }
 
-  .mobile-navigation { display: block; width: 100%; }
+  .mobile-navigation { display: flex; width: 100%; }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 901px) {
   .mobile-navigation { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header,
+  .header * { scroll-behavior: auto; transition-duration: 0.01ms !important; }
 }
 </style>

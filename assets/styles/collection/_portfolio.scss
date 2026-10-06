@@ -1,0 +1,69 @@
+:root {
+  color-scheme: light;
+  --portfolio-bg: #f4f6f2;
+  --portfolio-bg-elevated: #ffffff;
+  --portfolio-surface: #ffffff;
+  --portfolio-surface-hover: #edf1eb;
+  --portfolio-text: #1b241e;
+  --portfolio-text-secondary: #47544a;
+  --portfolio-text-muted: #637067;
+  --portfolio-border: rgba(31, 48, 37, 0.14);
+  --portfolio-border-hover: rgba(48, 91, 57, 0.32);
+  --portfolio-accent: #41674b;
+  --portfolio-accent-hover: #33543c;
+  --portfolio-accent-contrast: #ffffff;
+  --portfolio-success: #28744a;
+  --portfolio-error: #a83f36;
+  --portfolio-grid: rgba(45, 77, 54, 0.07);
+
+  --portfolio-font-sans: Inter, "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --portfolio-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --portfolio-display: clamp(2.65rem, 5.2vw, 5rem);
+  --portfolio-h1: clamp(2.4rem, 4.2vw, 3.7rem);
+  --portfolio-h2: clamp(1.75rem, 3vw, 2.5rem);
+  --portfolio-h3: 1.125rem;
+  --portfolio-body-large: clamp(1.05rem, 1.35vw, 1.2rem);
+  --portfolio-body: 1rem;
+  --portfolio-small: 0.875rem;
+  --portfolio-label: 0.75rem;
+
+  --portfolio-space-1: 0.25rem;
+  --portfolio-space-2: 0.5rem;
+  --portfolio-space-3: 0.75rem;
+  --portfolio-space-4: 1rem;
+  --portfolio-space-6: 1.5rem;
+  --portfolio-space-8: 2rem;
+  --portfolio-space-12: 3rem;
+  --portfolio-space-16: 4rem;
+  --portfolio-space-24: 6rem;
+
+  --portfolio-content-width: 1280px;
+  --portfolio-gutter: clamp(1rem, 4vw, 4rem);
+  --portfolio-radius-sm: 0.5rem;
+  --portfolio-radius-md: 0.875rem;
+  --portfolio-radius-lg: 1.25rem;
+  --portfolio-radius-pill: 999px;
+  --portfolio-shadow: 0 18px 50px rgba(11, 20, 14, 0.12);
+  --portfolio-shadow-soft: 0 8px 24px rgba(11, 20, 14, 0.08);
+}
+
+.dark {
+  color-scheme: dark;
+  --portfolio-bg: #0b100e;
+  --portfolio-bg-elevated: #101713;
+  --portfolio-surface: #121a15;
+  --portfolio-surface-hover: #19231c;
+  --portfolio-text: #f0f4ef;
+  --portfolio-text-secondary: #c0ccc2;
+  --portfolio-text-muted: #9aa89c;
+  --portfolio-border: rgba(221, 235, 223, 0.13);
+  --portfolio-border-hover: rgba(187, 220, 169, 0.34);
+  --portfolio-accent: #b9d9a7;
+  --portfolio-accent-hover: #c9e6b9;
+  --portfolio-accent-contrast: #182018;
+  --portfolio-success: #8dcc9d;
+  --portfolio-error: #f09c91;
+  --portfolio-grid: rgba(198, 224, 203, 0.075);
+  --portfolio-shadow: 0 22px 60px rgba(0, 0, 0, 0.28);
+  --portfolio-shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.2);
+}

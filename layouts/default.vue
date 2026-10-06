@@ -1,6 +1,5 @@
 <template>
   <div class="app">
-    <ParticleBackground />
     <TheHeader />
     <div class="content"><slot></slot></div>
 
@@ -55,7 +54,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
-import ParticleBackground from "~/components/ParticleBackground.vue";
 import { publicContact } from "~/constants/public-contact";
 
 const goTop = () => {

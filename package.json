@@ -9,7 +9,7 @@
     "preview": "nuxt preview",
     "typecheck": "nuxt typecheck",
     "lint": "eslint . --ext .ts,.js,.vue",
-    "lint:portfolio": "eslint pages/index.vue pages/projects.vue pages/contact.vue components/TheHeader.vue components/HamburgerMenu.vue components/ProjectCard.vue components/ProjectModal.vue components/ProjectPreview.vue components/GradientText.vue composables/useProjects.ts composables/useAuth.ts composables/useApi.ts constants/public-navigation.ts constants/public-contact.ts types/project-case-study.ts utils/project-case-view.ts utils/project-links.ts server/utils/public-project.ts util/sanitize-html.ts tests/public-journey.test.ts tests/security.test.ts",
+    "lint:portfolio": "eslint pages/index.vue pages/projects.vue pages/contact.vue components/TheHeader.vue components/HamburgerMenu.vue components/ThemeToggle.vue components/ProjectCard.vue components/ProjectModal.vue components/ProjectPreview.vue components/GradientText.vue composables/useProjects.ts composables/useAuth.ts composables/useApi.ts constants/public-navigation.ts constants/public-contact.ts types/project-case-study.ts utils/project-case-view.ts utils/project-links.ts server/utils/public-project.ts util/sanitize-html.ts tests/public-journey.test.ts tests/security.test.ts",
     "verify:portfolio": "npm run lint:portfolio && npm run test:public && npm run test:security && npm run build",
     "postinstall": "nuxt prepare",
     "db:generate": "prisma generate",
