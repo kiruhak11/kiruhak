@@ -152,9 +152,10 @@
 </template>
 
 <script setup lang="ts">
+import { publicNavigation } from "~/constants/public-navigation";
+
 const route = useRoute();
 const router = useRouter();
-import { publicNavigation } from "~/constants/public-navigation";
 const {
   user,
   isAuthenticated,
@@ -216,7 +217,7 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 
   if (event.key !== "Tab" || !menuPanel.value) return;
-  const focusable = Array.from(
+  const focusable: HTMLElement[] = Array.from(
     menuPanel.value.querySelectorAll<HTMLElement>(
       'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
     )
@@ -259,7 +260,7 @@ const handleBalanceUpdated = () => {
   showTopUpForm.value = false;
 };
 
-watch(isOpen, async (open) => {
+watch(isOpen, async (open: boolean) => {
   if (!import.meta.client) return;
 
   document.body.classList.toggle("no-scroll", open);

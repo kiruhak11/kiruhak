@@ -139,7 +139,7 @@
               v-for="project in filteredProjects"
               :key="project.id"
               :project="project"
-              @openModal="openProjectModal"
+              @open-modal="openProjectModal"
             />
           </div>
           <div v-else class="category-empty-state">
@@ -160,7 +160,7 @@
                 v-for="project in unverifiedProjects"
                 :key="project.id"
                 :project="project"
-                @openModal="openProjectModal"
+                @open-modal="openProjectModal"
               />
             </div>
           </details>

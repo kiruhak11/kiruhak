@@ -30,7 +30,7 @@ export const useAuth = () => {
 
   // Инициализация из localStorage
   const initAuth = async () => {
-    if (process.client) {
+    if (import.meta.client) {
       const savedToken = localStorage.getItem("auth_token");
       const savedUser = localStorage.getItem("auth_user");
       const parsedUser = safeParseUser(savedUser);
@@ -58,7 +58,7 @@ export const useAuth = () => {
         token.value = response.token;
 
         // Сохраняем в localStorage
-        if (process.client) {
+        if (import.meta.client) {
           localStorage.setItem("auth_token", response.token);
           localStorage.setItem("auth_user", JSON.stringify(response.user));
 
@@ -81,7 +81,7 @@ export const useAuth = () => {
     user.value = null;
     token.value = null;
 
-    if (process.client) {
+    if (import.meta.client) {
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
 
@@ -104,7 +104,7 @@ export const useAuth = () => {
       if (response.success) {
         user.value = response.user;
 
-        if (process.client) {
+        if (import.meta.client) {
           localStorage.setItem("auth_user", JSON.stringify(response.user));
         }
       } else {
@@ -134,7 +134,7 @@ export const useAuth = () => {
 
   // Проверка состояния токена
   const checkTokenStatus = () => {
-    if (process.client) {
+    if (import.meta.client) {
       const savedToken = localStorage.getItem("auth_token");
       const savedUser = localStorage.getItem("auth_user");
 
@@ -149,7 +149,7 @@ export const useAuth = () => {
 
   // Принудительное обновление токена
   const forceRefreshToken = async () => {
-    if (process.client) {
+    if (import.meta.client) {
       const savedToken = localStorage.getItem("auth_token");
       const savedUser = localStorage.getItem("auth_user");
       const parsedUser = safeParseUser(savedUser);
@@ -175,7 +175,7 @@ export const useAuth = () => {
 
   // Проверка валидности токена
   const validateToken = () => {
-    if (process.client && token.value) {
+    if (import.meta.client && token.value) {
       try {
         const payloadPart = token.value.includes(".")
           ? token.value.split(".")[0]

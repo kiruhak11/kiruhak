@@ -220,7 +220,7 @@ const handleModalKeydown = (event: KeyboardEvent) => {
   if (event.key !== "Tab") return;
   const content = closeButton.value?.closest<HTMLElement>(".project-modal-content");
   if (!content) return;
-  const focusable = Array.from(
+  const focusable: HTMLElement[] = Array.from(
     content.querySelectorAll<HTMLElement>(
       'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
     )

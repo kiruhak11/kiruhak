@@ -14,8 +14,6 @@ logs
 *.log
 server.log
 
-package-lock.json
-
 # Misc
 .DS_Store
 .fleet

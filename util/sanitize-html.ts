@@ -1,15 +1,50 @@
-const SCRIPT_LIKE_TAGS =
-  /<(script|iframe|object|embed|link|meta|base|form|input|button|textarea|select)[\s\S]*?>[\s\S]*?<\/\1>/gi;
-const SELF_CLOSING_DANGEROUS =
-  /<(script|iframe|object|embed|link|meta|base|form|input|button|textarea|select)[^>]*\/?>/gi;
-const EVENT_HANDLER_ATTR = /\son[a-z]+\s*=\s*(".*?"|'.*?'|[^\s>]+)/gi;
-const JS_PROTOCOL_ATTR = /\s(href|src)\s*=\s*("javascript:[^"]*"|'javascript:[^']*'|javascript:[^\s>]+)/gi;
+import sanitizeHtmlLibrary from "sanitize-html";
+
+const ALLOWED_TAGS = [
+  "a",
+  "b",
+  "blockquote",
+  "br",
+  "code",
+  "del",
+  "div",
+  "em",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "hr",
+  "i",
+  "img",
+  "li",
+  "ol",
+  "p",
+  "pre",
+  "s",
+  "span",
+  "strong",
+  "sub",
+  "sup",
+  "table",
+  "tbody",
+  "td",
+  "th",
+  "thead",
+  "tr",
+  "u",
+  "ul",
+];
 
 export function sanitizeHtml(html: string): string {
   if (!html) return "";
-  return html
-    .replace(SCRIPT_LIKE_TAGS, "")
-    .replace(SELF_CLOSING_DANGEROUS, "")
-    .replace(EVENT_HANDLER_ATTR, "")
-    .replace(JS_PROTOCOL_ATTR, ' $1="#"');
+
+  return sanitizeHtmlLibrary(html, {
+    allowedTags: ALLOWED_TAGS,
+    allowedAttributes: {
+      a: ["href", "title"],
+      img: ["src", "alt", "title", "width", "height"],
+    },
+    allowedSchemes: ["http", "https", "mailto", "tel"],
+    allowProtocolRelative: false,
+  });
 }

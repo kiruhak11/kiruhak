@@ -11,7 +11,7 @@
         class="image-overlay"
         type="button"
         :aria-label="`Подробнее о проекте ${project.title}`"
-        @click="$emit('openModal', project)"
+        @click="$emit('open-modal', project)"
       >
         <div class="overlay-content">
           <svg
@@ -212,7 +212,7 @@
         </a>
         <button
           class="action-button secondary"
-          @click="$emit('openModal', project)"
+          @click="$emit('open-modal', project)"
         >
           <svg
             width="16"
@@ -254,7 +254,7 @@ const props = defineProps<{ project: Project }>();
 const externalLinks = computed(() => getProjectExternalLinks(props.project));
 const caseView = computed(() => getProjectCaseView(props.project));
 
-defineEmits(["openModal"]);
+defineEmits(["open-modal"]);
 </script>
 
 <style lang="scss" scoped>

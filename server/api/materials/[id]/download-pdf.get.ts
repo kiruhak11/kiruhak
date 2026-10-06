@@ -1,5 +1,6 @@
 import { prisma } from "../../../utils/prisma";
 import puppeteer from "puppeteer";
+import { sanitizeHtml } from "../../../../util/sanitize-html";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -122,7 +123,7 @@ export default defineEventHandler(async (event) => {
           </div>
           
           <div class="content">
-            ${material.content}
+            ${sanitizeHtml(material.content)}
           </div>
           
           <div class="footer">

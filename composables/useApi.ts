@@ -1,6 +1,6 @@
 export const useApi = () => {
   const getAuthHeaders = () => {
-    if (process.client) {
+    if (import.meta.client) {
       const token = localStorage.getItem("auth_token");
       if (token) {
         return {

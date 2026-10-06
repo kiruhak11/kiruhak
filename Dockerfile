@@ -8,8 +8,8 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Копируем файлы зависимостей
-COPY package.json ./
-RUN npm install --omit=dev
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 
 # Пересобираем зависимости для продакшена
 FROM base AS builder
@@ -18,7 +18,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Устанавливаем все зависимости (включая dev) для сборки
-RUN npm install
+RUN npm ci
 
 # Генерируем Prisma клиент
 RUN npx prisma generate

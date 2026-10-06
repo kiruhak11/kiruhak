@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { sanitizeHtml } from "../util/sanitize-html";
 import {
   createAuthToken,
   verifyAuthToken,
@@ -70,6 +71,15 @@ test("password verification accepts secure hashes and upgrades legacy plaintext 
   const migrated = hashPassword(legacy);
   assert.equal(isHashedPassword(migrated), true);
   assert.equal(verifyPassword(legacy, migrated), true);
+});
+
+test("rich text sanitizer removes executable markup and unsafe URL schemes", () => {
+  const sanitized = sanitizeHtml(
+    '<p>Safe <strong>text</strong></p><script>alert(1)</script><img src="x" onerror="alert(1)"><a href="javascript:alert(1)">link</a><svg onload="alert(1)"></svg>'
+  );
+
+  assert.match(sanitized, /<p>Safe <strong>text<\/strong><\/p>/);
+  assert.doesNotMatch(sanitized, /<script|<svg|onerror|onload|javascript:/i);
 });
 
 test("auth tokens verify signatures, expiration, and malformed input", () => {
