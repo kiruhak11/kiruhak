@@ -1,3 +1,5 @@
+BEGIN;
+
 ALTER TABLE "public"."projects"
   ADD COLUMN "ownershipType" TEXT NOT NULL DEFAULT 'UNVERIFIED',
   ADD COLUMN "projectSummary" TEXT,
@@ -51,3 +53,5 @@ UPDATE "public"."projects" SET "projectSummary" = 'Приложение для �
 UPDATE "public"."projects" SET "projectSummary" = 'Интернет-магазин с каталогом товаров, корзиной и личным кабинетом.' WHERE "id" = 'cmqun63t30000me01yu4r2iax';
 UPDATE "public"."projects" SET "projectSummary" = 'Промо-сайт игры OVERHEAT с информацией об игре и релизных материалах.' WHERE "id" = 'cmowkh9cv0002qp014udt4cdl';
 UPDATE "public"."projects" SET "projectSummary" = 'Сайт строительной компании с перечнем услуг и примерами работ.', "liveUrl" = 'https://remdom22.ru' WHERE "id" = 'cmowkemul0001qp01741xqdo9';
+
+COMMIT;

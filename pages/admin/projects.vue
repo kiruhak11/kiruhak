@@ -21,7 +21,7 @@
         <form id="project-editor" class="editor-form" novalidate @submit.prevent="saveProject">
           <section class="form-section"><h3>Основное</h3><div class="fields-two"><Field label="Название" :error="errors.title"><input v-model="form.title" required /></Field><Field label="Категория"><input v-model="form.category" required /></Field></div><Field label="Краткое описание"><textarea v-model="form.description" rows="2" required /></Field><div class="fields-two"><Field label="Превью · путь или https URL" :error="errors.image"><input v-model="form.image" placeholder="/images/projects/example.webp" required /></Field><Field label="Порядок"><input v-model.number="form.order" type="number" min="0" /></Field></div></section>
 
-          <section class="form-section"><h3>Тип проекта</h3><div class="ownership-options" role="radiogroup" aria-label="Тип проекта"><button v-for="option in ownershipOptions" :key="option.value" type="button" class="ownership-option" :class="{ 'is-selected': form.ownershipType === option.value }" role="radio" :aria-checked="form.ownershipType === option.value" @click="form.ownershipType = option.value"><strong>{{ option.label }}</strong><span>{{ option.description }}</span></button></div></section>
+          <section class="form-section"><h3>Тип проекта</h3><div class="ownership-options" role="radiogroup" aria-label="Тип проекта"><button v-for="option in ownershipOptions" :key="option.value" type="button" class="ownership-option" :class="{ 'is-selected': form.ownershipType === option.value }" role="radio" :aria-checked="form.ownershipType === option.value" :tabindex="form.ownershipType === option.value ? 0 : -1" @click="form.ownershipType = option.value" @keydown="handleOwnershipKeydown($event, option.value)"><strong>{{ option.label }}</strong><span>{{ option.description }}</span></button></div></section>
 
           <section class="form-section"><h3>Case study</h3><Field label="О продукте" :error="errors.projectSummary"><textarea v-model="form.projectSummary" rows="3" :required="form.ownershipType !== 'UNVERIFIED'" /></Field><template v-if="form.ownershipType !== 'UNVERIFIED'"><div class="fields-two"><Field label="Моя роль" :error="errors.role"><input v-model="form.role" /></Field><Field label="Компания / команда"><input v-model="form.company" /></Field></div><RepeatableField v-model="form.responsibilities" label="Мой вклад" placeholder="Что конкретно реализовали" :error="errors.responsibilities" /><RepeatableField v-model="form.technicalHighlights" label="Технические решения" placeholder="Компонент, подсистема или решение" /><RepeatableField v-model="form.technologies" label="Стек" placeholder="Например, Nuxt 3" :error="errors.technologies" /></template><p v-else class="muted-note">Роль, вклад и технологии сохраняются скрытыми до подтверждения проекта.</p></section>
 
@@ -62,6 +62,18 @@ const errors = reactive<Record<string, string>>({});
 const safePreview = computed(() => isUsableProjectPreview(form.image) ? form.image : "");
 onMounted(fetchAdminProjects);
 function ownershipLabel(type: ProjectOwnershipType) { return ({ OWN: "Мой проект", PARTICIPATION: "Участие", UNVERIFIED: "Не подтверждён" })[type]; }
+function handleOwnershipKeydown(event: KeyboardEvent, currentType: ProjectOwnershipType) {
+  const currentIndex = ownershipOptions.findIndex((option) => option.value === currentType);
+  let nextIndex = currentIndex;
+  if (event.key === "ArrowRight" || event.key === "ArrowDown") nextIndex = (currentIndex + 1) % ownershipOptions.length;
+  else if (event.key === "ArrowLeft" || event.key === "ArrowUp") nextIndex = (currentIndex - 1 + ownershipOptions.length) % ownershipOptions.length;
+  else if (event.key === "Home") nextIndex = 0;
+  else if (event.key === "End") nextIndex = ownershipOptions.length - 1;
+  else return;
+  event.preventDefault();
+  form.ownershipType = ownershipOptions[nextIndex].value;
+  nextTick(() => document.querySelector<HTMLButtonElement>(`.ownership-option[aria-checked="true"]`)?.focus());
+}
 function openCreate() { editingId.value = null; Object.assign(form, emptyForm()); clearErrors(); original.value = JSON.stringify(form); editorOpen.value = true; saveError.value = ""; }
 function openEdit(project: AdminProject) { editingId.value = project.id; Object.assign(form, { ...emptyForm(), ...project, shortDescription: project.shortDescription || project.projectSummary || "", projectSummary: project.projectSummary || project.shortDescription || "", role: project.role || "", company: project.company || "", responsibilities: project.responsibilities?.length ? [...project.responsibilities] : [""], technicalHighlights: project.technicalHighlights?.length ? [...project.technicalHighlights] : [""], technologies: [...(project.technologies || []), ...(project.technologies?.length ? [] : [""])], liveUrl: project.liveUrl || "", githubUrl: project.githubUrl || "" }); clearErrors(); original.value = JSON.stringify(form); editorOpen.value = true; saveError.value = ""; }
 function clearErrors() { for (const key of Object.keys(errors)) errors[key] = ""; }

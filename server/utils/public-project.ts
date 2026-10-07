@@ -42,7 +42,7 @@ export function toPublicProject<T extends { id: string }>(project: T): PublicPro
   const isVerified = ownershipType !== "UNVERIFIED";
   const caseStudy = {
     ownershipType,
-    projectSummary: summary || "Описание проекта уточняется.",
+    projectSummary: isVerified ? summary || "Описание проекта уточняется." : "Описание проекта уточняется.",
     ...(isVerified && (validType ? row.role : registry?.role) ? { role: validType ? row.role : registry?.role } : {}),
     ...(isVerified && (validType ? row.company : registry?.company) ? { company: validType ? row.company : registry?.company } : {}),
     responsibilities: isVerified ? (validType ? row.responsibilities ?? [] : registry?.responsibilities ?? []) : [],
