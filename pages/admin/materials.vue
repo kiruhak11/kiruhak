@@ -136,9 +136,14 @@
                 required
               ></textarea>
             </div>
+            <p v-if="saveError" class="admin-error" role="alert">{{ saveError }}</p>
 
           </form>
           <template #footer><div class="form-actions"><button type="button" @click="requestClose" class="cancel-button">Отмена</button><button type="submit" form="material-editor" :disabled="submitting" class="submit-button">{{ submitting ? "Сохранение..." : showEditModal ? "Обновить" : "Создать" }}</button></div></template>
+      </AdminDialog>
+      <AdminDialog v-model="deleteDialogOpen" title="Удалить материал?" :description="`«${deleteTarget?.title ?? ''}» будет удалён.`" size="sm" @request-close="closeDeleteDialog">
+        <p>Материал исчезнет из каталога только после подтверждения сервером.</p><p v-if="deleteError" class="admin-error" role="alert">{{ deleteError }}</p>
+        <template #footer><div class="form-actions"><button type="button" class="cancel-button" :disabled="deleting" @click="deleteDialogOpen = false">Отмена</button><button type="button" class="delete-button" :disabled="deleting" @click="confirmDeleteMaterial">{{ deleting ? "Удаляем…" : "Удалить материал" }}</button></div></template>
       </AdminDialog>
     </div>
   </div>
@@ -156,6 +161,11 @@ const showCreateModal = ref(false);
 const showEditModal = ref(false);
 const editingMaterial = ref(null);
 const originalForm = ref("");
+const saveError = ref("");
+const deleteDialogOpen = ref(false);
+const deleteTarget = ref(null);
+const deleteError = ref("");
+const deleting = ref(false);
 
 // Form
 const form = ref({
@@ -235,6 +245,7 @@ const editMaterial = (material) => {
     isActive: material.isActive,
     content: material.content,
   };
+  saveError.value = "";
   originalForm.value = JSON.stringify(form.value);
   showEditModal.value = true;
 };
@@ -242,6 +253,7 @@ const editMaterial = (material) => {
 const openCreateModal = () => {
   editingMaterial.value = null;
   resetForm();
+  saveError.value = "";
   originalForm.value = JSON.stringify(form.value);
   showCreateModal.value = true;
 };
@@ -275,6 +287,7 @@ const resetForm = () => {
 const submitMaterial = async () => {
   try {
     submitting.value = true;
+    saveError.value = "";
 
     const materialData = {
       ...form.value,
@@ -296,25 +309,36 @@ const submitMaterial = async () => {
     await fetchMaterials();
   } catch (err) {
     console.error("Ошибка сохранения материала:", err);
-    alert("Ошибка сохранения материала");
+    saveError.value = "Не удалось сохранить материал. Попробуйте ещё раз.";
   } finally {
     submitting.value = false;
   }
 };
 
-const handleDeleteMaterial = async (id) => {
-  if (!confirm("Вы уверены, что хотите удалить этот материал?")) {
-    return;
-  }
+const handleDeleteMaterial = (id) => {
+  deleteTarget.value = materials.value.find((material) => material.id === id) || null;
+  deleteError.value = "";
+  deleteDialogOpen.value = true;
+};
 
+const closeDeleteDialog = () => { if (!deleting.value) deleteDialogOpen.value = false; };
+
+const confirmDeleteMaterial = async () => {
+  if (!deleteTarget.value) return;
+  deleting.value = true;
+  deleteError.value = "";
   try {
-    await apiFetch(`/api/materials/${id}`, {
+    await apiFetch(`/api/materials/${deleteTarget.value.id}`, {
       method: "DELETE",
     });
+    deleteDialogOpen.value = false;
+    deleteTarget.value = null;
     await fetchMaterials();
   } catch (err) {
     console.error("Ошибка удаления материала:", err);
-    alert("Ошибка удаления материала");
+    deleteError.value = "Не удалось удалить материал. Попробуйте ещё раз.";
+  } finally {
+    deleting.value = false;
   }
 };
 
@@ -574,6 +598,8 @@ onMounted(() => {
   justify-content: flex-end;
   margin-top: 1rem;
 }
+
+.admin-error { margin: 0; color: #b4232f; font-size: .84rem; }
 
 .cancel-button,
 .submit-button {

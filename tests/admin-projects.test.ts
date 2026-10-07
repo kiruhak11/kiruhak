@@ -49,6 +49,11 @@ test("admin editors use one accessible dialog primitive with dirty-form safeguar
     assert.match(page, /несохранённые изменения/);
     assert.doesNotMatch(page, /class="modal-overlay"/);
   }
+  for (const path of ["../pages/admin/materials.vue", "../pages/admin/tutorials.vue"]) {
+    const page = read(path);
+    assert.match(page, /deleteDialogOpen/);
+    assert.doesNotMatch(page, /confirm\("Вы уверены/);
+  }
   assert.match(dialog, /role="dialog"/);
   assert.match(dialog, /aria-modal="true"/);
   assert.match(dialog, /event\.key === "Escape"/);

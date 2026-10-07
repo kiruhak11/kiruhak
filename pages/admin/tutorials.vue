@@ -244,9 +244,14 @@
                 </button>
               </div>
             </div>
+            <p v-if="saveError" class="admin-error" role="alert">{{ saveError }}</p>
 
           </form>
           <template #footer><div class="form-actions"><button type="button" @click="requestClose" class="cancel-button">Отмена</button><button type="submit" form="tutorial-editor" :disabled="submitting" class="submit-button">{{ submitting ? "Сохранение..." : showEditModal ? "Обновить" : "Создать" }}</button></div></template>
+      </AdminDialog>
+      <AdminDialog v-model="deleteDialogOpen" title="Удалить туториал?" :description="`«${deleteTarget?.title ?? ''}» будет удалён.`" size="sm" @request-close="closeDeleteDialog">
+        <p>Туториал исчезнет из каталога только после подтверждения сервером.</p><p v-if="deleteError" class="admin-error" role="alert">{{ deleteError }}</p>
+        <template #footer><div class="form-actions"><button type="button" class="cancel-button" :disabled="deleting" @click="deleteDialogOpen = false">Отмена</button><button type="button" class="delete-button" :disabled="deleting" @click="confirmDeleteTutorial">{{ deleting ? "Удаляем…" : "Удалить туториал" }}</button></div></template>
       </AdminDialog>
     </div>
   </div>
@@ -264,6 +269,11 @@ const showCreateModal = ref(false);
 const showEditModal = ref(false);
 const editingTutorial = ref(null);
 const originalForm = ref("");
+const saveError = ref("");
+const deleteDialogOpen = ref(false);
+const deleteTarget = ref(null);
+const deleteError = ref("");
+const deleting = ref(false);
 
 // Form
 const form = ref({
@@ -357,6 +367,7 @@ const editTutorial = (tutorial) => {
           })) || [],
       })) || [],
   };
+  saveError.value = "";
   originalForm.value = JSON.stringify(form.value);
   showEditModal.value = true;
 };
@@ -364,6 +375,7 @@ const editTutorial = (tutorial) => {
 const openCreateModal = () => {
   editingTutorial.value = null;
   resetForm();
+  saveError.value = "";
   originalForm.value = JSON.stringify(form.value);
   showCreateModal.value = true;
 };
@@ -451,6 +463,7 @@ const { apiFetch } = useApi();
 const submitTutorial = async () => {
   try {
     submitting.value = true;
+    saveError.value = "";
 
     const tutorialData = {
       ...form.value,
@@ -472,25 +485,36 @@ const submitTutorial = async () => {
     await fetchTutorials();
   } catch (err) {
     console.error("Ошибка сохранения туториала:", err);
-    alert("Ошибка сохранения туториала");
+    saveError.value = "Не удалось сохранить туториал. Попробуйте ещё раз.";
   } finally {
     submitting.value = false;
   }
 };
 
-const handleDeleteTutorial = async (id) => {
-  if (!confirm("Вы уверены, что хотите удалить этот туториал?")) {
-    return;
-  }
+const handleDeleteTutorial = (id) => {
+  deleteTarget.value = tutorials.value.find((tutorial) => tutorial.id === id) || null;
+  deleteError.value = "";
+  deleteDialogOpen.value = true;
+};
 
+const closeDeleteDialog = () => { if (!deleting.value) deleteDialogOpen.value = false; };
+
+const confirmDeleteTutorial = async () => {
+  if (!deleteTarget.value) return;
+  deleting.value = true;
+  deleteError.value = "";
   try {
-    await apiFetch(`/api/tutorials/${id}`, {
+    await apiFetch(`/api/tutorials/${deleteTarget.value.id}`, {
       method: "DELETE",
     });
+    deleteDialogOpen.value = false;
+    deleteTarget.value = null;
     await fetchTutorials();
   } catch (err) {
     console.error("Ошибка удаления туториала:", err);
-    alert("Ошибка удаления туториала");
+    deleteError.value = "Не удалось удалить туториал. Попробуйте ещё раз.";
+  } finally {
+    deleting.value = false;
   }
 };
 
@@ -924,6 +948,8 @@ onMounted(() => {
   justify-content: flex-end;
   margin-top: 1rem;
 }
+
+.admin-error { margin: 0; color: #b4232f; font-size: .84rem; }
 
 .cancel-button,
 .submit-button {
