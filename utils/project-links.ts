@@ -34,6 +34,13 @@ function isAvailableRepositoryUrl(value: string | null): boolean {
   return isRepositoryUrl(value) && !unavailableRepositories.has(value!.replace(/\/$/, "").toLowerCase());
 }
 
+function hasControlCharacters(value: string): boolean {
+  return [...value].some((character) => {
+    const code = character.charCodeAt(0);
+    return code <= 0x1f || code === 0x7f;
+  });
+}
+
 export function getProjectExternalLinks(project: ProjectExternalLinks) {
   const rawLiveUrl = normalizedUrl(project.liveUrl);
   const rawGithubUrl = normalizedUrl(project.githubUrl);
@@ -58,6 +65,36 @@ export function getProjectExternalLinks(project: ProjectExternalLinks) {
 }
 
 export function isUsableProjectPreview(value?: string | null): boolean {
+  if (!value || value !== value.trim() || hasControlCharacters(value)) return false;
+
+  // Local portfolio assets are intentionally root-relative. Keep this rule
+  // confined to previews; external project links still require absolute URLs.
+  if (value.startsWith("/")) {
+    if (value.startsWith("//") || value.includes("\\")) return false;
+
+    const pathname = value.split(/[?#]/, 1)[0] ?? "";
+    try {
+      if (
+        pathname.split("/").some((segment) => {
+          const decoded = decodeURIComponent(segment);
+          return (
+            decoded === "." ||
+            decoded === ".." ||
+            decoded.includes("\\") ||
+            decoded.includes("/") ||
+            hasControlCharacters(decoded)
+          );
+        })
+      ) {
+        return false;
+      }
+    } catch {
+      return false;
+    }
+
+    return true;
+  }
+
   const url = normalizedUrl(value);
   return Boolean(url && !isRepositoryUrl(url));
 }

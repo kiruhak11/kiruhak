@@ -73,13 +73,44 @@ test("project links suppress repository URLs masquerading as production sites", 
   );
 });
 
-test("project preview URLs reject repository pages and accept image URLs", () => {
+test("project preview URLs allow safe local assets without loosening external links", () => {
   assert.equal(isUsableProjectPreview("https://github.com/kiruhak11/lexid"), false);
   assert.equal(
     isUsableProjectPreview("https://ltdfoto.ru/images/2026/05/19/AVATARKA.png"),
     true
   );
+  assert.equal(isUsableProjectPreview("/images/projects/k-studio.webp"), true);
+  assert.equal(isUsableProjectPreview("//evil.example/image.png"), false);
+  assert.equal(isUsableProjectPreview("/images/../secret.png"), false);
+  assert.equal(isUsableProjectPreview("/images/%2e%2e/secret.png"), false);
+  assert.equal(isUsableProjectPreview("/images/%ZZ.png"), false);
+  assert.equal(isUsableProjectPreview("/images\\evil.png"), false);
   assert.equal(isUsableProjectPreview("javascript:alert(1)"), false);
+  assert.equal(isUsableProjectPreview("data:image/png;base64,AAAA"), false);
+  assert.equal(isUsableProjectPreview("file:///etc/passwd"), false);
+  assert.equal(isUsableProjectPreview("ftp://example.com/image.png"), false);
+  assert.equal(isUsableProjectPreview("https://["), false);
+  assert.equal(isUsableProjectPreview(""), false);
+  assert.equal(isUsableProjectPreview("   "), false);
+  assert.deepEqual(
+    getProjectExternalLinks({ liveUrl: "/projects", githubUrl: "/repo" }),
+    { liveUrl: null, githubUrl: null }
+  );
+});
+
+test("reviewed project previews resolve to safe same-origin image paths", () => {
+  const previews = [
+    ["cmm7zid0n0004o301rk66jffv", "/images/projects/k-studio.webp"],
+    ["cmewb3qvv0003o11ge17zb005", "/images/projects/kes.webp"],
+    ["cmm7z9yya0003o3013vri6scs", "/images/projects/okna.webp"],
+    ["cmmth95p90000qp017bjtfbkt", "/images/projects/malina.webp"],
+  ] as const;
+
+  for (const [id, expectedImage] of previews) {
+    const project = toPublicProject({ id });
+    assert.equal(project.image, expectedImage);
+    assert.equal(isUsableProjectPreview(project.image), true);
+  }
 });
 
 test("project case view separates product from implementation and omits unverified results", () => {
