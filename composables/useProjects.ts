@@ -1,7 +1,7 @@
 import { ref, readonly } from "vue";
-import type { PublicProjectCaseStudy } from "~/types/project-case-study";
+import type { AdminProjectCaseStudy, ProjectFormInput, PublicProjectCaseStudy } from "~/types/project-case-study";
 
-export interface Project {
+export interface PublicProject {
   id: string;
   title: string;
   description: string;
@@ -25,6 +25,19 @@ export interface Project {
   updatedAt: string;
 }
 
+export interface AdminProject extends PublicProject {
+  ownershipType: "OWN" | "PARTICIPATION" | "UNVERIFIED";
+  projectSummary: string | null;
+  role: string | null;
+  company: string | null;
+  responsibilities: string[];
+  technicalHighlights: string[];
+  caseStudy?: AdminProjectCaseStudy;
+}
+
+/** @deprecated Use PublicProject or AdminProject explicitly. */
+export type Project = PublicProject;
+
 export const useProjects = () => {
   const projects = ref<Project[]>([]);
   const loading = ref(false);
@@ -41,6 +54,19 @@ export const useProjects = () => {
     } catch (err) {
       error.value = "Ошибка при загрузке проектов";
       console.error("Error fetching projects:", err);
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchAdminProjects = async () => {
+    loading.value = true;
+    error.value = null;
+    try {
+      projects.value = await $fetch<AdminProject[]>("/api/admin/projects", { headers: getAuthHeaders() }) as unknown as Project[];
+    } catch (err) {
+      error.value = "Ошибка при загрузке проектов";
+      console.error("Error fetching admin projects:", err);
     } finally {
       loading.value = false;
     }
@@ -63,7 +89,7 @@ export const useProjects = () => {
   };
 
   const createProject = async (
-    projectData: Omit<Project, "id" | "createdAt" | "updatedAt">
+    projectData: ProjectFormInput
   ) => {
     loading.value = true;
     error.value = null;
@@ -74,7 +100,7 @@ export const useProjects = () => {
         body: projectData,
         headers: getAuthHeaders(),
       });
-      await fetchProjects(); // Обновляем список
+      await fetchAdminProjects();
       return response;
     } catch (err) {
       console.error("Error creating project:", err);
@@ -94,7 +120,7 @@ export const useProjects = () => {
     }
   };
 
-  const updateProject = async (id: string, projectData: Partial<Project>) => {
+  const updateProject = async (id: string, projectData: Partial<ProjectFormInput>) => {
     loading.value = true;
     error.value = null;
 
@@ -104,7 +130,7 @@ export const useProjects = () => {
         body: projectData,
         headers: getAuthHeaders(),
       });
-      await fetchProjects(); // Обновляем список
+      await fetchAdminProjects();
       return response;
     } catch (err) {
       console.error("Error updating project:", err);
@@ -133,7 +159,7 @@ export const useProjects = () => {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
-      await fetchProjects(); // Обновляем список
+      await fetchAdminProjects();
       return true;
     } catch (err) {
       console.error("Error deleting project:", err);
@@ -158,6 +184,7 @@ export const useProjects = () => {
     loading: readonly(loading),
     error: readonly(error),
     fetchProjects,
+    fetchAdminProjects,
     fetchProject,
     createProject,
     updateProject,

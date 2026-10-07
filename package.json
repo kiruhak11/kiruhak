@@ -10,6 +10,8 @@
     "typecheck": "nuxt typecheck",
     "lint": "eslint . --ext .ts,.js,.vue",
     "lint:portfolio": "eslint pages/index.vue pages/projects.vue pages/contact.vue components/TheHeader.vue components/HamburgerMenu.vue components/ThemeToggle.vue components/ProjectCard.vue components/ProjectModal.vue components/ProjectPreview.vue components/GradientText.vue components/portfolio/FeaturedProjects.vue components/portfolio/CapabilitiesSection.vue components/portfolio/ProcessSection.vue components/portfolio/ServicesSection.vue composables/useProjects.ts composables/useAuth.ts composables/useApi.ts constants/public-navigation.ts constants/public-contact.ts types/project-case-study.ts utils/featured-projects.ts utils/project-ownership.ts utils/project-case-links.ts utils/project-case-view.ts utils/project-links.ts server/utils/public-project.ts server/middleware/auth.ts server/utils/auth-route-policy.ts 'server/api/materials/[id]/download-pdf-simple.get.ts' util/sanitize-html.ts tests/public-journey.test.ts tests/security.test.ts",
+    "lint:admin": "eslint pages/admin components/AdminDialog.vue components/admin composables/useProjects.ts types/project-case-study.ts server/utils/project-input.ts server/utils/require-admin.ts server/api/admin/projects.get.ts server/api/projects.post.ts 'server/api/projects/[id].put.ts' tests/admin-projects.test.ts",
+    "test:admin": "tsx --test tests/admin-projects.test.ts",
     "verify:portfolio": "npm run lint:portfolio && npm run test:public && npm run test:security && npm run build",
     "postinstall": "nuxt prepare",
     "db:generate": "prisma generate",

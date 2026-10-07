@@ -8,26 +8,32 @@ datasource db {
 }
 
 model Project {
-  id               String   @id @default(cuid())
-  title            String
-  description      String
-  shortDescription String
-  image            String
-  technologies     String[]
-  category         String
-  client           String?
-  duration         String?
-  budget           String?
-  features         String[]
-  challenges       String?
-  solutions        String?
-  results          String?
-  liveUrl          String?
-  githubUrl        String?
-  featured         Boolean  @default(false)
-  order            Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  title               String
+  description         String
+  shortDescription    String
+  image               String
+  technologies        String[]
+  category            String
+  client              String?
+  duration            String?
+  budget              String?
+  features            String[]
+  challenges          String?
+  solutions           String?
+  results             String?
+  liveUrl             String?
+  githubUrl           String?
+  ownershipType       String   @default("UNVERIFIED")
+  projectSummary      String?
+  role                String?
+  company             String?
+  responsibilities    String[] @default([])
+  technicalHighlights String[] @default([])
+  featured            Boolean  @default(false)
+  order               Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   @@map("projects")
 }
@@ -40,7 +46,7 @@ model User {
   lastName              String?
   photoUrl              String?
   login                 String    @unique // Логин для входа
-  password              String    // Хешированный пароль
+  password              String // Хешированный пароль
   isAdmin               Boolean   @default(false)
   balance               Int       @default(15000) // Баланс в копейках (15000 = 150 рублей)
   isSubscribed          Boolean   @default(false) // Подписка на Telegram канал
@@ -48,13 +54,13 @@ model User {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  sites Site[]
-  transactions Transaction[]
-  tutorialProgress TutorialProgress[]
-  materialRatings MaterialRating[]
+  sites             Site[]
+  transactions      Transaction[]
+  tutorialProgress  TutorialProgress[]
+  materialRatings   MaterialRating[]
   materialDownloads MaterialDownload[]
-  uiComponents UiComponent[]
-  uiComponentViews UiComponentView[]
+  uiComponents      UiComponent[]
+  uiComponentViews  UiComponentView[]
 
   @@map("users")
 }
@@ -65,7 +71,7 @@ model Site {
   domain      String   @unique
   description String?
   isActive    Boolean  @default(true)
-  userId      String   // Владелец сайта
+  userId      String // Владелец сайта
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -94,8 +100,8 @@ model Visit {
 model Transaction {
   id          String   @id @default(cuid())
   userId      String
-  type        String   // "credit" | "debit"
-  amount      Int      // Сумма в копейках
+  type        String // "credit" | "debit"
+  amount      Int // Сумма в копейках
   description String
   createdAt   DateTime @default(now())
 
@@ -105,38 +111,38 @@ model Transaction {
 }
 
 model UiComponent {
-  id             String   @id @default(cuid())
-  name           String   // Название компонента
-  description    String?  // Описание
-  category       String   // Категория (buttons, inputs, cards, etc.)
-  code           String   // HTML/CSS/JS код компонента (для обратной совместимости)
-  html           String?  // HTML код компонента
-  css            String?  // CSS код компонента
-  js             String?  // JavaScript код компонента
-  preview        String?  // URL превью изображения
-  tags           String[] // Теги для поиска
-  isActive       Boolean  @default(true)
-  order          Int      @default(0)
-  authorId       String?  // ID автора (если пользовательский)
-  moderationStatus String @default("approved") // pending, approved, rejected
-  rejectionReason String? // Причина отклонения
-  viewCount      Int      @default(0) // Количество просмотров
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id               String   @id @default(cuid())
+  name             String // Название компонента
+  description      String? // Описание
+  category         String // Категория (buttons, inputs, cards, etc.)
+  code             String // HTML/CSS/JS код компонента (для обратной совместимости)
+  html             String? // HTML код компонента
+  css              String? // CSS код компонента
+  js               String? // JavaScript код компонента
+  preview          String? // URL превью изображения
+  tags             String[] // Теги для поиска
+  isActive         Boolean  @default(true)
+  order            Int      @default(0)
+  authorId         String? // ID автора (если пользовательский)
+  moderationStatus String   @default("approved") // pending, approved, rejected
+  rejectionReason  String? // Причина отклонения
+  viewCount        Int      @default(0) // Количество просмотров
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  author User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  author User?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
   views  UiComponentView[]
 
   @@map("ui_components")
 }
 
 model UiComponentView {
-  id            String   @id @default(cuid())
-  componentId   String
-  userId        String?  // ID пользователя (если авторизован)
-  ip            String?  // IP адрес
-  userAgent     String?  // User agent
-  viewedAt      DateTime @default(now())
+  id          String   @id @default(cuid())
+  componentId String
+  userId      String? // ID пользователя (если авторизован)
+  ip          String? // IP адрес
+  userAgent   String? // User agent
+  viewedAt    DateTime @default(now())
 
   component UiComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
   user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -148,18 +154,18 @@ model Tutorial {
   id          String   @id @default(cuid())
   title       String
   description String
-  difficulty  String   // "beginner" | "intermediate" | "advanced"
-  category    String   // "vue" | "nuxt" | "typescript" | "performance"
-  duration    String   // "15 мин", "25 мин", etc.
+  difficulty  String // "beginner" | "intermediate" | "advanced"
+  category    String // "vue" | "nuxt" | "typescript" | "performance"
+  duration    String // "15 мин", "25 мин", etc.
   features    String[]
-  test        String?  // JSON с вопросами теста (для обратной совместимости)
+  test        String? // JSON с вопросами теста (для обратной совместимости)
   isActive    Boolean  @default(true)
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  steps TutorialStep[]
-  userProgress TutorialProgress[]
+  steps         TutorialStep[]
+  userProgress  TutorialProgress[]
   testQuestions TutorialTestQuestion[]
 
   @@map("tutorials")
@@ -169,7 +175,7 @@ model TutorialStep {
   id         String   @id @default(cuid())
   tutorialId String
   title      String
-  content    String   // HTML контент шага
+  content    String // HTML контент шага
   order      Int
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -185,7 +191,7 @@ model TutorialProgress {
   userId      String
   completed   Boolean   @default(false)
   completedAt DateTime?
-  testScore   Int?      // Результат теста в процентах
+  testScore   Int? // Результат теста в процентах
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -193,33 +199,32 @@ model TutorialProgress {
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tutorialId, userId])
-
   @@map("tutorial_progress")
 }
 
 model TutorialTestQuestion {
-  id          String   @id @default(cuid())
-  tutorialId  String
-  question    String
-  type        String   // "single" | "multiple" | "text"
-  order       Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  tutorialId String
+  question   String
+  type       String // "single" | "multiple" | "text"
+  order      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  tutorial Tutorial @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
-  answers   TutorialTestAnswer[]
+  tutorial Tutorial             @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
+  answers  TutorialTestAnswer[]
 
   @@map("tutorial_test_questions")
 }
 
 model TutorialTestAnswer {
-  id          String   @id @default(cuid())
-  questionId  String
-  answer      String
-  isCorrect   Boolean  @default(false)
-  order       Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  questionId String
+  answer     String
+  isCorrect  Boolean  @default(false)
+  order      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   question TutorialTestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
@@ -230,11 +235,11 @@ model Material {
   id          String   @id @default(cuid())
   title       String
   description String
-  type        String   // "checklist" | "template" | "architecture" | "guide"
-  category    String   // "performance" | "security" | "ui" | "deployment"
+  type        String // "checklist" | "template" | "architecture" | "guide"
+  category    String // "performance" | "security" | "ui" | "deployment"
   pages       Int
   features    String[]
-  content     String   // HTML контент материала
+  content     String // HTML контент материала
   isActive    Boolean  @default(true)
   order       Int      @default(0)
   createdAt   DateTime @default(now())
@@ -250,14 +255,13 @@ model MaterialRating {
   id         String   @id @default(cuid())
   materialId String
   userId     String
-  rating     Int      // Оценка от 1 до 5
+  rating     Int // Оценка от 1 до 5
   createdAt  DateTime @default(now())
 
   material Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([materialId, userId])
-
   @@map("material_ratings")
 }
 

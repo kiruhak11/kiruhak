@@ -234,6 +234,61 @@ test("public project adapter sanitizes legacy claims and fails closed for unknow
   assert.equal(unknown.solutions, null);
 });
 
+test("persisted case study is the public source of truth and admin fields stay private", () => {
+  const output = toPublicProject({
+    id: "persisted-case-study",
+    title: "Persisted case",
+    description: "legacy description",
+    shortDescription: "legacy short description",
+    image: "/image.webp",
+    technologies: ["Nuxt"],
+    category: "web",
+    featured: true,
+    order: 0,
+    ownershipType: "PARTICIPATION",
+    projectSummary: "Описание продукта из БД",
+    role: "Frontend Developer",
+    company: "Команда",
+    responsibilities: ["Реализовал интерфейс"],
+    technicalHighlights: ["SSR"],
+  });
+  assert.equal(output.caseStudy.projectSummary, "Описание продукта из БД");
+  assert.equal(output.caseStudy.role, "Frontend Developer");
+  assert.deepEqual(output.caseStudy.responsibilities, ["Реализовал интерфейс"]);
+  assert.equal("ownershipType" in output, false);
+  assert.equal("responsibilities" in output, false);
+});
+
+test("UNVERIFIED stored projects expose no unconfirmed claims or links", () => {
+  const output = toPublicProject({
+    id: "unverified-case-study",
+    title: "Unverified",
+    description: "legacy",
+    shortDescription: "legacy",
+    image: "/image.webp",
+    technologies: ["secret stack"],
+    category: "web",
+    featured: true,
+    order: 0,
+    liveUrl: "https://unconfirmed.example",
+    githubUrl: "https://github.com/unconfirmed/repo",
+    ownershipType: "UNVERIFIED",
+    projectSummary: "Кратко о продукте",
+    role: "secret role",
+    company: "secret company",
+    responsibilities: ["secret contribution"],
+    technicalHighlights: ["secret details"],
+  });
+  assert.equal(output.caseStudy.ownershipType, "UNVERIFIED");
+  assert.equal(output.caseStudy.role, undefined);
+  assert.deepEqual(output.caseStudy.responsibilities, []);
+  assert.deepEqual(output.technologies, []);
+  assert.equal(output.liveUrl, null);
+  assert.equal(output.githubUrl, null);
+  assert.equal(output.featured, false);
+  assert.equal(JSON.stringify(output).includes("secret"), false);
+});
+
 test("case modal supports roles/contributions while unverified entries receive no role badge", () => {
   const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
   const modal = read("../components/ProjectModal.vue");

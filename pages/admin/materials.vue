@@ -4,7 +4,7 @@
     <div class="admin-container">
       <div class="header">
         <h1>Управление материалами</h1>
-        <button @click="showCreateModal = true" class="create-button">
+        <button @click="openCreateModal" class="create-button">
           + Добавить материал
         </button>
       </div>
@@ -54,36 +54,21 @@
             </div>
           </div>
           <div class="material-actions">
-            <button @click="editMaterial(material)" class="edit-button">
-              ✏️ Редактировать
-            </button>
+            <button @click="editMaterial(material)" class="edit-button">Редактировать</button>
             <button
               @click="handleDeleteMaterial(material.id)"
               class="delete-button"
             >
-              🗑️ Удалить
+              Удалить
             </button>
           </div>
         </div>
       </div>
 
       <!-- Create/Edit Modal -->
-      <div
-        v-if="showCreateModal || showEditModal"
-        class="modal-overlay"
-        @click="closeModal"
-      >
-        <div class="modal-content" @click.stop>
-          <div class="modal-header">
-            <h2>
-              {{
-                showEditModal ? "Редактировать материал" : "Создать материал"
-              }}
-            </h2>
-            <button @click="closeModal" class="close-button">×</button>
-          </div>
+      <AdminDialog :model-value="showCreateModal || showEditModal" :title="showEditModal ? 'Редактировать материал' : 'Создать материал'" size="lg" @request-close="requestClose">
 
-          <form @submit.prevent="submitMaterial" class="material-form">
+          <form id="material-editor" @submit.prevent="submitMaterial" class="material-form">
             <div class="form-group">
               <label>Название *</label>
               <input v-model="form.title" type="text" required />
@@ -152,27 +137,9 @@
               ></textarea>
             </div>
 
-            <div class="form-actions">
-              <button type="button" @click="closeModal" class="cancel-button">
-                Отмена
-              </button>
-              <button
-                type="submit"
-                :disabled="submitting"
-                class="submit-button"
-              >
-                {{
-                  submitting
-                    ? "Сохранение..."
-                    : showEditModal
-                    ? "Обновить"
-                    : "Создать"
-                }}
-              </button>
-            </div>
           </form>
-        </div>
-      </div>
+          <template #footer><div class="form-actions"><button type="button" @click="requestClose" class="cancel-button">Отмена</button><button type="submit" form="material-editor" :disabled="submitting" class="submit-button">{{ submitting ? "Сохранение..." : showEditModal ? "Обновить" : "Создать" }}</button></div></template>
+      </AdminDialog>
     </div>
   </div>
 </template>
@@ -188,6 +155,7 @@ const submitting = ref(false);
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
 const editingMaterial = ref(null);
+const originalForm = ref("");
 
 // Form
 const form = ref({
@@ -267,7 +235,20 @@ const editMaterial = (material) => {
     isActive: material.isActive,
     content: material.content,
   };
+  originalForm.value = JSON.stringify(form.value);
   showEditModal.value = true;
+};
+
+const openCreateModal = () => {
+  editingMaterial.value = null;
+  resetForm();
+  originalForm.value = JSON.stringify(form.value);
+  showCreateModal.value = true;
+};
+
+const requestClose = () => {
+  if (JSON.stringify(form.value) !== originalForm.value && !window.confirm("Есть несохранённые изменения. Закрыть редактор?")) return;
+  closeModal();
 };
 
 const closeModal = () => {
@@ -334,23 +315,6 @@ const handleDeleteMaterial = async (id) => {
   } catch (err) {
     console.error("Ошибка удаления материала:", err);
     alert("Ошибка удаления материала");
-  }
-};
-
-const handleRatingChanged = async ({
-  rating,
-  materialId,
-  newAvgRating,
-  newRatingCount,
-}) => {
-  console.log(`Рейтинг изменен для материала ${materialId}: ${rating}`);
-
-  // Обновляем локальное состояние материала
-  const materialIndex = materials.value.findIndex((m) => m.id === materialId);
-  if (materialIndex !== -1) {
-    materials.value[materialIndex].avgRating = newAvgRating;
-    materials.value[materialIndex].ratingCount = newRatingCount;
-    materials.value[materialIndex].userRating = rating;
   }
 };
 
@@ -559,44 +523,6 @@ onMounted(() => {
 .edit-button:hover,
 .delete-button:hover {
   transform: translateY(-1px);
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: var(--background-color);
-  border-radius: 12px;
-  padding: 2rem;
-  max-width: 800px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--color-text-secondary);
 }
 
 .material-form {

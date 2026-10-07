@@ -4,7 +4,7 @@
     <div class="admin-container">
       <div class="header">
         <h1>Управление туториалами</h1>
-        <button @click="showCreateModal = true" class="create-button">
+        <button @click="openCreateModal" class="create-button">
           + Добавить туториал
         </button>
       </div>
@@ -55,36 +55,21 @@
             </div>
           </div>
           <div class="tutorial-actions">
-            <button @click="editTutorial(tutorial)" class="edit-button">
-              ✏️ Редактировать
-            </button>
+            <button @click="editTutorial(tutorial)" class="edit-button">Редактировать</button>
             <button
               @click="handleDeleteTutorial(tutorial.id)"
               class="delete-button"
             >
-              🗑️ Удалить
+              Удалить
             </button>
           </div>
         </div>
       </div>
 
       <!-- Create/Edit Modal -->
-      <div
-        v-if="showCreateModal || showEditModal"
-        class="modal-overlay"
-        @click="closeModal"
-      >
-        <div class="modal-content" @click.stop>
-          <div class="modal-header">
-            <h2>
-              {{
-                showEditModal ? "Редактировать туториал" : "Создать туториал"
-              }}
-            </h2>
-            <button @click="closeModal" class="close-button">×</button>
-          </div>
+      <AdminDialog :model-value="showCreateModal || showEditModal" :title="showEditModal ? 'Редактировать туториал' : 'Создать туториал'" size="lg" @request-close="requestClose">
 
-          <form @submit.prevent="submitTutorial" class="tutorial-form">
+          <form id="tutorial-editor" @submit.prevent="submitTutorial" class="tutorial-form">
             <div class="form-group">
               <label>Название *</label>
               <input v-model="form.title" type="text" required />
@@ -260,27 +245,9 @@
               </div>
             </div>
 
-            <div class="form-actions">
-              <button type="button" @click="closeModal" class="cancel-button">
-                Отмена
-              </button>
-              <button
-                type="submit"
-                :disabled="submitting"
-                class="submit-button"
-              >
-                {{
-                  submitting
-                    ? "Сохранение..."
-                    : showEditModal
-                    ? "Обновить"
-                    : "Создать"
-                }}
-              </button>
-            </div>
           </form>
-        </div>
-      </div>
+          <template #footer><div class="form-actions"><button type="button" @click="requestClose" class="cancel-button">Отмена</button><button type="submit" form="tutorial-editor" :disabled="submitting" class="submit-button">{{ submitting ? "Сохранение..." : showEditModal ? "Обновить" : "Создать" }}</button></div></template>
+      </AdminDialog>
     </div>
   </div>
 </template>
@@ -296,6 +263,7 @@ const submitting = ref(false);
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
 const editingTutorial = ref(null);
+const originalForm = ref("");
 
 // Form
 const form = ref({
@@ -389,7 +357,20 @@ const editTutorial = (tutorial) => {
           })) || [],
       })) || [],
   };
+  originalForm.value = JSON.stringify(form.value);
   showEditModal.value = true;
+};
+
+const openCreateModal = () => {
+  editingTutorial.value = null;
+  resetForm();
+  originalForm.value = JSON.stringify(form.value);
+  showCreateModal.value = true;
+};
+
+const requestClose = () => {
+  if (JSON.stringify(form.value) !== originalForm.value && !window.confirm("Есть несохранённые изменения. Закрыть редактор?")) return;
+  closeModal();
 };
 
 const closeModal = () => {
@@ -717,44 +698,6 @@ onMounted(() => {
 .edit-button:hover,
 .delete-button:hover {
   transform: translateY(-1px);
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: var(--background-color);
-  border-radius: 12px;
-  padding: 2rem;
-  max-width: 800px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--color-text-secondary);
 }
 
 .tutorial-form {

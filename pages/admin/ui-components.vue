@@ -323,7 +323,7 @@ const saveComponent = async (componentData) => {
       console.error("🔐 UI Components: 401 ошибка - проблема с авторизацией");
       console.error("🔐 UI Components: Проверьте токен в localStorage");
 
-      if (process.client) {
+      if (import.meta.client) {
         const token = localStorage.getItem("auth_token");
         console.error("🔐 UI Components: Текущий токен:", {
           hasToken: !!token,

@@ -1,9 +1,9 @@
 import type { ProjectOwnershipType } from "~/types/project-case-study";
 
 type ProjectCaseViewSource = {
-  [key: string]: unknown;
   id?: string;
   title?: string;
+  image?: string;
   description: string;
   shortDescription?: string | null;
   caseStudy?: {
@@ -21,7 +21,7 @@ type ProjectCaseViewSource = {
  * Public presentation for the current legacy Project record.
  * Numeric/result claims stay out of the public case until they have evidence.
  */
-export function getProjectCaseView(project: ProjectCaseViewSource) {
+export function getProjectCaseView<T extends ProjectCaseViewSource>(project: T) {
   const caseStudy = project.caseStudy;
 
   return {
