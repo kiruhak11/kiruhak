@@ -14,12 +14,13 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, watch } from "vue";
+import { nextTick, onBeforeUnmount, useId, watch } from "vue";
 const props = withDefaults(defineProps<{ modelValue: boolean; title: string; description?: string; size?: "sm" | "md" | "lg" | "xl"; closeOnBackdrop?: boolean }>(), { description: "", size: "md", closeOnBackdrop: true });
 const emit = defineEmits<{ "request-close": [] }>();
 const dialog = ref<HTMLElement | null>(null);
-const titleId = "admin-dialog-title";
-const descriptionId = "admin-dialog-description";
+const instanceId = useId();
+const titleId = `admin-dialog-title-${instanceId}`;
+const descriptionId = `admin-dialog-description-${instanceId}`;
 let previousFocus: HTMLElement | null = null;
 let previousOverflow = "";
 const focusable = () => [...(dialog.value?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])') ?? [])];

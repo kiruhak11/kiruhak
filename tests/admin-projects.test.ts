@@ -102,7 +102,7 @@ test("admin editors use one accessible dialog primitive with dirty-form safeguar
   for (const path of ["../pages/admin/projects.vue", "../pages/admin/materials.vue", "../pages/admin/tutorials.vue"]) {
     const page = read(path);
     assert.match(page, /<AdminDialog/);
-    assert.match(page, /несохранённые изменения/);
+    assert.match(page, /несохранённые изменения/i);
     assert.doesNotMatch(page, /class="modal-overlay"/);
   }
   for (const path of ["../pages/admin/materials.vue", "../pages/admin/tutorials.vue"]) {
@@ -117,7 +117,12 @@ test("admin editors use one accessible dialog primitive with dirty-form safeguar
   assert.match(dialog, /previousFocus\?\.focus\(\)/);
   assert.match(dialog, /document\.body\.style\.overflow = "hidden"/);
   assert.match(dialog, /100dvh/);
+  assert.match(dialog, /useId/);
+  assert.match(dialog, /admin-dialog-title-\$\{instanceId\}/);
   const projects = read("../pages/admin/projects.vue");
+  assert.doesNotMatch(projects, /window\.confirm/);
+  assert.match(projects, /function setOwnershipType[\s\S]*clearErrors\(\); saveError\.value = ""/);
+  assert.match(projects, /@media\(max-width:768px\)\{\.admin-layout\{flex-direction:column\}/);
   assert.match(projects, /role="radiogroup"/);
   assert.match(projects, /ArrowRight.*ArrowDown/);
   assert.match(projects, /ArrowLeft.*ArrowUp/);
