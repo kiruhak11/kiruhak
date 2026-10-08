@@ -46,4 +46,4 @@ input[type=number]{ -moz-appearance:textfield }
 .container{ width:100%; max-width:1290px; margin:0 auto }
 .no-scroll{ overflow:hidden }
 body{ background-color:var(--background-color) }
-*{ font-family:"Ubuntu" }
+body{ font-family:"Ubuntu",sans-serif }

@@ -178,7 +178,7 @@ onBeforeUnmount(() => {
 
 <style scoped lang="scss">
 .project-modal-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1.25rem; background: var(--portfolio-backdrop); }
-.project-modal-content { width: min(100%, 1080px); max-height: calc(100dvh - 2.5rem); overflow: auto; overscroll-behavior: contain; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-lg); background: var(--portfolio-bg-elevated); color: var(--portfolio-text); box-shadow: var(--portfolio-shadow); animation: modal-enter 180ms ease-out both; }
+.project-modal-content { width: min(100%, 1080px); max-height: calc(100dvh - 2.5rem); overflow: auto; overscroll-behavior: contain; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-lg); background: var(--portfolio-bg-elevated); color: var(--portfolio-text); font-family: var(--portfolio-font-sans); box-shadow: var(--portfolio-shadow); animation: modal-enter 180ms ease-out both; }
 .modal-topbar { position: sticky; top: 0; z-index: 3; display: flex; min-height: 58px; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.55rem clamp(1rem, 3vw, 1.5rem); border-bottom: 1px solid var(--portfolio-border); background: var(--portfolio-bg-elevated); }
 .modal-labels { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.7rem; color: var(--portfolio-text-muted); font-size: 0.72rem; }
 .ownership-label { color: var(--portfolio-accent); font-weight: 650; }

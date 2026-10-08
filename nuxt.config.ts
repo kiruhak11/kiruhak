@@ -37,9 +37,10 @@ export default defineNuxtConfig({
     "/error": { robots: "noindex, nofollow" },
   },
   googleFonts: {
-    display: "optional",
+    display: "swap",
+    subsets: ["cyrillic", "latin"],
     families: {
-      Ubuntu: [400, 500, 600, 700],
+      Inter: ["400..700"],
     },
   },
   app: {

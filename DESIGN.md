@@ -20,24 +20,24 @@ colors:
   border-dark: "rgba(221, 235, 223, 0.13)"
 typography:
   display:
-    fontFamily: "Ubuntu, sans-serif"
+    fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
     fontSize: "clamp(2.65rem, 5.2vw, 5rem)"
     fontWeight: 700
     lineHeight: 1.04
     letterSpacing: "-0.06em"
   headline:
-    fontFamily: "Ubuntu, sans-serif"
+    fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
     fontSize: "clamp(2.4rem, 4.2vw, 3.7rem)"
     fontWeight: 650
     lineHeight: 1.08
     letterSpacing: "-0.05em"
   body:
-    fontFamily: "Ubuntu, sans-serif"
+    fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.6
   navigation:
-    fontFamily: "Inter, SF Pro Display, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
+    fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
     fontSize: "0.9rem"
     fontWeight: 550
   label:
@@ -136,15 +136,15 @@ A restrained green accent sits against pale sage and white surfaces in light mod
 
 ## Typography
 
-**Display Font:** Ubuntu (current rendered content; sans-serif fallback)
+**Public Font:** Inter variable (weights 400–700; Cyrillic and Latin subsets; `font-display: swap`)
 
-**Body Font:** Ubuntu (current global rule; sans-serif fallback)
+**Fallback:** `-apple-system`, BlinkMacSystemFont, “Segoe UI”, sans-serif
 
-**Navigation Font Token:** Inter, “SF Pro Display”, system sans-serif
+**Scope:** `/`, `/projects`, and `/contact` inherit the public Inter stack through `.app--portfolio` and `--portfolio-font-sans`.
 
 **Label/Mono Font:** SFMono-Regular, Consolas, “Liberation Mono”, monospace
 
-**Character:** Current text is compact and contemporary, with tight display tracking and monospaced metadata. The declared Inter navigation token and global Ubuntu rule conflict; the intended final public type pairing is unresolved and should be unified in a later, reviewed refinement.
+**Character:** Calm, precise, compact typography with tight display tracking and monospaced technical metadata. The same Inter family is used across public headings, body copy, controls, navigation, cards, footer, and case dialogs. The case dialog sets the token explicitly because it is teleported outside the public layout root.
 
 ### Hierarchy
 - **Display** (700, clamp(2.65rem, 5.2vw, 5rem) token): Large hero display; individual pages may override it.
@@ -153,8 +153,8 @@ A restrained green accent sits against pale sage and white surfaces in light mod
 - **Body** (400, 1rem token): Main summaries and explanatory text, commonly 1.5–1.65 line height in page components.
 - **Label** (500–700, 0.75rem token): Small section labels and monospace technical metadata; actual sizes vary by component.
 
-### Current implementation discrepancy
-`assets/styles/collection/_portfolio.scss` declares `--portfolio-font-sans` as Inter with system fallbacks. The public header explicitly applies that token in `components/TheHeader.vue`. Meanwhile, `assets/styles/global/_base.scss` and generated `assets/styles/index.css` apply `font-family: "Ubuntu"` to every element. Project, contact, and case content therefore resolve through Ubuntu on many elements while the header uses Inter. This is confirmed code-level drift and was also noticed visually. The mixed pair is not an intentional design requirement; resolve it only in a separately reviewed typography task.
+### Typography scope and legacy boundary
+The public portfolio loads Inter self-hosted through `@nuxtjs/google-fonts`, limited to the variable 400–700 range and Cyrillic/Latin subsets. `font-display: swap` avoids invisible text while the local font loads. `--portfolio-font-sans` is the single public sans token; `--portfolio-font-mono` remains for code and technical labels. The default body and the legacy `$mainFont` remain Ubuntu for non-portfolio/legacy surfaces; Ubuntu is not a public portfolio fallback and no universal element selector overrides Inter. This boundary keeps the change from restyling the admin, learning materials, and other legacy UI.
 
 ## Layout
 
@@ -195,7 +195,7 @@ Project/contact cards use an elevated theme surface, 20px radius, fine border, a
 The homepage project form uses a page-background fill, border, 8px radius, and 44px minimum height; the textarea is taller and vertically resizable. Focus shifts the border to the accent and adds a 2px outline with a 2px offset. Inputs inherit type and text colors.
 
 ### Navigation
-The public header is a compact sticky surface with fine border, large radius, soft shadow, and translucent elevated background with backdrop blur. Desktop links are 44px high; hover/active states use the surface-hover tone. Mobile navigation replaces desktop links at 900px. Header typography explicitly uses the Inter token; see the discrepancy above.
+The public header is a compact sticky surface with fine border, large radius, soft shadow, and translucent elevated background with backdrop blur. Desktop links are 44px high; hover/active states use the surface-hover tone. Mobile navigation replaces desktop links at 900px. Both explicitly use the shared Inter token.
 
 ### Signature: Project Case Modal
 The project dialog uses a sticky top bar, ownership/category labels, a two-column overview and product preview. The body separates responsibilities/technical decisions from the technology/link sidebar; it becomes one column on mobile. It is scroll-contained, closes with Escape, traps/restores focus, and locks page scrolling. Reduced motion removes its entrance animation.
@@ -213,5 +213,5 @@ The project dialog uses a sticky top bar, ownership/category labels, a two-colum
 ### Don't:
 - **Don't** imply a large agency or team that does not exist.
 - **Don't** add fabricated metrics, loud promises, unsupported outcomes, or decorative noise.
-- **Don't** treat the current Ubuntu/Inter conflict as intentional or extend it to new public surfaces.
+- **Don't** reintroduce a universal font-family rule that overrides the public Inter token; keep legacy Ubuntu scoped to legacy surfaces.
 - **Don't** use project categories or role labels to suggest authorship beyond the confirmed contribution.

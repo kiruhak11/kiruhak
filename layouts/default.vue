@@ -1,5 +1,5 @@
 <template>
-  <div class="app">
+  <div class="app" :class="{ 'app--portfolio': isPortfolioPage }">
     <TheHeader />
     <div class="content"><slot></slot></div>
 
@@ -55,8 +55,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import { publicContact } from "~/constants/public-contact";
+
+const route = useRoute();
+const isPortfolioPage = computed(() => ["/", "/projects", "/contact"].includes(route.path));
 
 const goTop = () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -93,6 +96,10 @@ body {
   flex-direction: column;
   min-height: 100dvh;
   isolation: isolate;
+}
+
+.app--portfolio {
+  font-family: var(--portfolio-font-sans);
 }
 
 .site-footer {

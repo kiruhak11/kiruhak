@@ -231,16 +231,16 @@
     },
     "typographyMeta": {
       "display": {
-        "displayName": "Ubuntu Display (current)",
-        "purpose": "Current rendered portfolio headline family; subject to the documented font-system mismatch."
+        "displayName": "Inter Variable Display",
+        "purpose": "Public portfolio headings; variable weights 400–700 with Cyrillic and Latin subsets."
       },
       "body": {
-        "displayName": "Ubuntu Body (current)",
-        "purpose": "Current global content family; recorded as observed, not as the resolved design choice."
+        "displayName": "Inter Variable Body",
+        "purpose": "Public portfolio copy and controls; locally served with font-display swap."
       },
       "navigation": {
-        "displayName": "Inter System Stack (current)",
-        "purpose": "Explicitly applied by the public header."
+        "displayName": "Inter System Fallback Stack",
+        "purpose": "Shared public navigation, cards, footer, and modal typography; system sans fallback."
       },
       "label": {
         "displayName": "System Monospace",
@@ -410,7 +410,7 @@
     "donts": [
       "Don't imply a large agency or team that does not exist.",
       "Don't add fabricated metrics, loud promises, unsupported outcomes, or decorative noise.",
-      "Don't treat the current Ubuntu/Inter conflict as intentional or extend it to new public surfaces.",
+      "Don't reintroduce a universal font-family rule that overrides public Inter; keep legacy Ubuntu scoped to legacy surfaces.",
       "Don't use project categories or role labels to suggest authorship beyond the confirmed contribution."
     ]
   }
