@@ -22,6 +22,19 @@ test("public navigation only promotes portfolio routes", () => {
   assert.ok(!publicNavigation.some(({ to }) => ["/analytics", "/content", "/login"].includes(to)));
 });
 
+test("project case modal is portaled to the document body and keeps its interaction hooks", () => {
+  const modal = readFileSync(new URL("../components/ProjectModal.vue", import.meta.url), "utf8");
+  const projectsPage = readFileSync(new URL("../pages/projects.vue", import.meta.url), "utf8");
+
+  assert.match(modal, /<Teleport\s+to="body">[\s\S]*?class="project-modal-overlay"[\s\S]*?<\/Teleport>/);
+  assert.match(modal, /window\.addEventListener\("keydown", handleModalKeydown\)/);
+  assert.match(modal, /closeButton\.value\?\.focus\(\)/);
+  assert.match(modal, /previousFocus\?\.focus\(\)/);
+  assert.match(modal, /document\.body\.classList\.add\("no-scroll"\)/);
+  assert.match(modal, /document\.body\.classList\.remove\("no-scroll"\)/);
+  assert.match(projectsPage, /<ProjectModal[\s\S]*?v-if="selectedProject"[\s\S]*?@close="closeProjectModal"/);
+});
+
 test("public contact data is centralized and points to one profile", () => {
   assert.equal(publicContact.email.href, "mailto:web@kiruhak11.ru");
   assert.equal(publicContact.telegram.href, "https://t.me/kiruhak11");

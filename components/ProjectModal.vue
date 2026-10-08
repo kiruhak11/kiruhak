@@ -1,114 +1,116 @@
 <template>
-  <div class="project-modal-overlay" @click.self="emitClose">
-    <section
-      ref="dialog"
-      class="project-modal-content"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="project-modal-title"
-      aria-describedby="project-modal-summary"
-      tabindex="-1"
-      @click.stop
-    >
-      <div class="modal-topbar">
-        <div class="modal-labels">
-          <span v-if="caseView.ownershipType !== 'UNVERIFIED'" class="ownership-label">
-            {{ caseView.ownershipType === 'OWN' ? 'Собственный проект' : 'Участие в проекте' }}
-          </span>
-          <span v-else class="archive-label">Архивный проект</span>
-          <span v-if="project.category" class="category-label">{{ project.category }}</span>
-          <span v-if="caseView.company" class="company-label">{{ caseView.company }}</span>
-        </div>
-        <button
-          ref="closeButton"
-          class="close-button"
-          type="button"
-          :aria-label="`Закрыть кейс «${project.title}»`"
-          @click="emitClose"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
-        </button>
-      </div>
-
-      <header class="modal-overview">
-        <div class="overview-copy">
-          <p class="eyebrow">{{ caseView.ownershipType === 'UNVERIFIED' ? 'АРХИВ' : 'CASE STUDY' }}</p>
-          <h2 id="project-modal-title">{{ project.title }}</h2>
-          <p id="project-modal-summary" class="project-summary">{{ caseView.productSummary }}</p>
-          <p v-if="caseView.role && caseView.ownershipType !== 'UNVERIFIED'" class="project-role">
-            <span>Моя роль</span>{{ caseView.role }}
-          </p>
-        </div>
-        <div class="modal-media">
-          <ProjectPreview
-            :src="project.image"
-            :alt="`Превью проекта «${project.title}»`"
-            img-class="project-hero-image"
-            fallback-class="project-modal-image-fallback"
-          />
-        </div>
-      </header>
-
-      <div class="modal-body">
-        <div v-if="caseView.ownershipType === 'UNVERIFIED'" class="archive-note">
-          <h3>Архивный проект</h3>
-          <p>Сведения о моей роли, личном вкладе и использованном стеке здесь не публикую, пока не смогу их подтвердить.</p>
-        </div>
-
-        <template v-else>
-          <div class="case-details">
-            <div class="case-main">
-              <section v-if="caseView.responsibilities.length" class="detail-section">
-                <p class="section-label">{{ caseView.ownershipType === 'OWN' ? 'СОБСТВЕННЫЙ ПРОДУКТ' : 'МОЯ ЗОНА ОТВЕТСТВЕННОСТИ' }}</p>
-                <h3>{{ caseView.ownershipType === 'OWN' ? 'Моя работа' : 'Мой вклад' }}</h3>
-                <ul class="detail-list">
-                  <li v-for="item in caseView.responsibilities" :key="item">{{ item }}</li>
-                </ul>
-              </section>
-
-              <section v-if="caseView.technicalHighlights.length" class="detail-section">
-                <p class="section-label">{{ caseView.ownershipType === 'OWN' ? 'АРХИТЕКТУРА И РЕАЛИЗАЦИЯ' : 'ЧАСТИ ПРОДУКТА И РЕШЕНИЯ' }}</p>
-                <h3>{{ caseView.ownershipType === 'OWN' ? 'Ключевые технические решения' : 'Реализованные части и решения' }}</h3>
-                <ul class="detail-list">
-                  <li v-for="item in caseView.technicalHighlights" :key="item">{{ item }}</li>
-                </ul>
-              </section>
-
-              <section v-if="caseView.ownershipType === 'OWN' && externalLinks.liveUrl" class="detail-section current-state">
-                <p class="section-label">ТЕКУЩЕЕ СОСТОЯНИЕ</p>
-                <h3>Опубликован в production</h3>
-                <p>Рабочую версию можно открыть по ссылке в блоке проекта.</p>
-              </section>
-            </div>
-
-            <aside class="case-sidebar" aria-label="Технологии и ссылки проекта">
-              <section v-if="caseView.technologies.length" class="sidebar-section">
-                <p class="section-label">STACK</p>
-                <h3>Технологии</h3>
-                <ul class="tech-list">
-                  <li v-for="technology in caseView.technologies" :key="technology">{{ technology }}</li>
-                </ul>
-              </section>
-
-              <section v-if="externalLinks.liveUrl || externalLinks.githubUrl" class="sidebar-section">
-                <p class="section-label">ВНЕШНИЕ ССЫЛКИ</p>
-                <h3>Открыть проект</h3>
-                <div class="project-links">
-                  <a v-if="externalLinks.liveUrl" :href="externalLinks.liveUrl" target="_blank" rel="noopener noreferrer">
-                    Production <span aria-hidden="true">↗</span>
-                  </a>
-                  <a v-if="externalLinks.githubUrl" :href="externalLinks.githubUrl" target="_blank" rel="noopener noreferrer">
-                    Исходный код <span aria-hidden="true">↗</span>
-                  </a>
-                </div>
-                <p class="external-note">Ссылки откроются в новой вкладке.</p>
-              </section>
-            </aside>
+  <Teleport to="body">
+    <div class="project-modal-overlay" @click.self="emitClose">
+      <section
+        ref="dialog"
+        class="project-modal-content"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="project-modal-title"
+        aria-describedby="project-modal-summary"
+        tabindex="-1"
+        @click.stop
+      >
+        <div class="modal-topbar">
+          <div class="modal-labels">
+            <span v-if="caseView.ownershipType !== 'UNVERIFIED'" class="ownership-label">
+              {{ caseView.ownershipType === 'OWN' ? 'Собственный проект' : 'Участие в проекте' }}
+            </span>
+            <span v-else class="archive-label">Архивный проект</span>
+            <span v-if="project.category" class="category-label">{{ project.category }}</span>
+            <span v-if="caseView.company" class="company-label">{{ caseView.company }}</span>
           </div>
-        </template>
-      </div>
-    </section>
-  </div>
+          <button
+            ref="closeButton"
+            class="close-button"
+            type="button"
+            :aria-label="`Закрыть кейс «${project.title}»`"
+            @click="emitClose"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+
+        <header class="modal-overview">
+          <div class="overview-copy">
+            <p class="eyebrow">{{ caseView.ownershipType === 'UNVERIFIED' ? 'АРХИВ' : 'CASE STUDY' }}</p>
+            <h2 id="project-modal-title">{{ project.title }}</h2>
+            <p id="project-modal-summary" class="project-summary">{{ caseView.productSummary }}</p>
+            <p v-if="caseView.role && caseView.ownershipType !== 'UNVERIFIED'" class="project-role">
+              <span>Моя роль</span>{{ caseView.role }}
+            </p>
+          </div>
+          <div class="modal-media">
+            <ProjectPreview
+              :src="project.image"
+              :alt="`Превью проекта «${project.title}»`"
+              img-class="project-hero-image"
+              fallback-class="project-modal-image-fallback"
+            />
+          </div>
+        </header>
+
+        <div class="modal-body">
+          <div v-if="caseView.ownershipType === 'UNVERIFIED'" class="archive-note">
+            <h3>Архивный проект</h3>
+            <p>Сведения о моей роли, личном вкладе и использованном стеке здесь не публикую, пока не смогу их подтвердить.</p>
+          </div>
+
+          <template v-else>
+            <div class="case-details">
+              <div class="case-main">
+                <section v-if="caseView.responsibilities.length" class="detail-section">
+                  <p class="section-label">{{ caseView.ownershipType === 'OWN' ? 'СОБСТВЕННЫЙ ПРОДУКТ' : 'МОЯ ЗОНА ОТВЕТСТВЕННОСТИ' }}</p>
+                  <h3>{{ caseView.ownershipType === 'OWN' ? 'Моя работа' : 'Мой вклад' }}</h3>
+                  <ul class="detail-list">
+                    <li v-for="item in caseView.responsibilities" :key="item">{{ item }}</li>
+                  </ul>
+                </section>
+
+                <section v-if="caseView.technicalHighlights.length" class="detail-section">
+                  <p class="section-label">{{ caseView.ownershipType === 'OWN' ? 'АРХИТЕКТУРА И РЕАЛИЗАЦИЯ' : 'ЧАСТИ ПРОДУКТА И РЕШЕНИЯ' }}</p>
+                  <h3>{{ caseView.ownershipType === 'OWN' ? 'Ключевые технические решения' : 'Реализованные части и решения' }}</h3>
+                  <ul class="detail-list">
+                    <li v-for="item in caseView.technicalHighlights" :key="item">{{ item }}</li>
+                  </ul>
+                </section>
+
+                <section v-if="caseView.ownershipType === 'OWN' && externalLinks.liveUrl" class="detail-section current-state">
+                  <p class="section-label">ТЕКУЩЕЕ СОСТОЯНИЕ</p>
+                  <h3>Опубликован в production</h3>
+                  <p>Рабочую версию можно открыть по ссылке в блоке проекта.</p>
+                </section>
+              </div>
+
+              <aside class="case-sidebar" aria-label="Технологии и ссылки проекта">
+                <section v-if="caseView.technologies.length" class="sidebar-section">
+                  <p class="section-label">STACK</p>
+                  <h3>Технологии</h3>
+                  <ul class="tech-list">
+                    <li v-for="technology in caseView.technologies" :key="technology">{{ technology }}</li>
+                  </ul>
+                </section>
+
+                <section v-if="externalLinks.liveUrl || externalLinks.githubUrl" class="sidebar-section">
+                  <p class="section-label">ВНЕШНИЕ ССЫЛКИ</p>
+                  <h3>Открыть проект</h3>
+                  <div class="project-links">
+                    <a v-if="externalLinks.liveUrl" :href="externalLinks.liveUrl" target="_blank" rel="noopener noreferrer">
+                      Production <span aria-hidden="true">↗</span>
+                    </a>
+                    <a v-if="externalLinks.githubUrl" :href="externalLinks.githubUrl" target="_blank" rel="noopener noreferrer">
+                      Исходный код <span aria-hidden="true">↗</span>
+                    </a>
+                  </div>
+                  <p class="external-note">Ссылки откроются в новой вкладке.</p>
+                </section>
+              </aside>
+            </div>
+          </template>
+        </div>
+      </section>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
