@@ -206,6 +206,9 @@ body {
 }
 
 .platform-link:hover { color: var(--portfolio-text); text-decoration: underline; }
+.app--portfolio .footer-navigation a { display: inline-flex; min-height: var(--portfolio-control-compact); align-items: center; }
+.app--portfolio .footer-contacts a { min-height: var(--portfolio-control-compact); align-content: center; }
+.app--portfolio .platform-link { display: inline-flex; min-height: var(--portfolio-control-compact); align-items: center; }
 .footer-navigation a:focus-visible,.footer-contacts a:focus-visible,.platform-link:focus-visible,.button-go-top:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
 .footer-navigation a,.footer-contacts a,.platform-link { transition: color var(--portfolio-motion-fast) ease; }
 

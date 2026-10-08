@@ -12,6 +12,7 @@ import { getProjectCaseView } from "../utils/project-case-view";
 import { getFeaturedPortfolioProjects } from "../utils/featured-projects";
 import { getVerifiedProjectLinks } from "../utils/project-case-links";
 import { groupProjectsByOwnership } from "../utils/project-ownership";
+import { formatConfirmedCaseCount } from "../utils/project-count";
 import { toPublicProject } from "../server/utils/public-project";
 
 test("public navigation only promotes portfolio routes", () => {
@@ -20,6 +21,25 @@ test("public navigation only promotes portfolio routes", () => {
     ["/projects", "/contact"]
   );
   assert.ok(!publicNavigation.some(({ to }) => ["/analytics", "/content", "/login"].includes(to)));
+});
+
+test("confirmed project count uses correct Russian plural forms", () => {
+  const expected = new Map([
+    [0, "0 подтверждённых кейсов"],
+    [1, "1 подтверждённый кейс"],
+    [2, "2 подтверждённых кейса"],
+    [4, "4 подтверждённых кейса"],
+    [5, "5 подтверждённых кейсов"],
+    [11, "11 подтверждённых кейсов"],
+    [14, "14 подтверждённых кейсов"],
+    [21, "21 подтверждённый кейс"],
+    [22, "22 подтверждённых кейса"],
+    [25, "25 подтверждённых кейсов"],
+  ]);
+
+  for (const [count, label] of expected) {
+    assert.equal(formatConfirmedCaseCount(count), label);
+  }
 });
 
 test("project case modal is portaled to the document body and keeps its interaction hooks", () => {
@@ -319,7 +339,7 @@ test("case modal supports roles/contributions while unverified entries receive n
   assert.match(modal, /role="dialog"/);
   assert.match(modal, /aria-modal="true"/);
   assert.match(modal, /handleModalKeydown/);
-  assert.match(card, /Production/);
+  assert.match(card, /Открыть сайт/);
   assert.match(card, /noopener noreferrer/);
 });
 
@@ -364,6 +384,7 @@ test("key public copy is personal and does not surface unsupported result sectio
   const projectModal = read("../components/ProjectModal.vue");
   const app = read("../app.vue");
   const footer = read("../layouts/default.vue");
+  const hamburger = read("../components/HamburgerMenu.vue");
   const publicCopy = [homepage, projectPage, contactPage, app, footer].join("\n");
 
   assert.match(homepage, /Кирилл Коваленко/);
@@ -372,4 +393,6 @@ test("key public copy is personal and does not surface unsupported result sectio
   assert.doesNotMatch(homepage + projectPage + projectModal, /project\.results|caseItem\.result/);
   assert.doesNotMatch(projectPage + contactPage, /Поддержать проект|handleDonationClick/);
   assert.match(contactPage, /отвечаю лично/);
+  assert.match(hamburger, /\.mobile-menu-backdrop\s*\{[^}]*font-family:\s*var\(--portfolio-font-sans\)/s);
+  assert.doesNotMatch([homepage, projectModal, hamburger].join("\n"), /CASE STUDY|\bSTACK\b|\bPRODUCTION\b|\bProduction\b/);
 });

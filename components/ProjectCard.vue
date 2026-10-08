@@ -67,7 +67,7 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          Production <span aria-hidden="true">↗</span>
+          Открыть сайт <span aria-hidden="true">↗</span>
         </a>
       </div>
     </div>
@@ -152,7 +152,7 @@ const externalLinks = computed(() => getVerifiedProjectLinks(props.project));
 .details-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; transition: transform 160ms ease; }
 .details-button:hover { border-color: var(--portfolio-border-hover); background: var(--portfolio-surface-hover); color: var(--portfolio-accent); }
 .details-button:hover svg { transform: translateX(2px); }
-.production-link { color: var(--portfolio-text-secondary); font-size: 0.8rem; font-weight: 600; text-decoration: none; text-underline-offset: 4px; }
+.production-link { display: inline-flex; min-height: var(--portfolio-control-compact); align-items: center; color: var(--portfolio-text-secondary); font-size: 0.8rem; font-weight: 600; text-decoration: none; text-underline-offset: 4px; }
 .production-link:hover { color: var(--portfolio-accent); text-decoration: underline; }
 .details-button:focus-visible,.production-link:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
 .details-button { min-height: var(--portfolio-control-compact); }

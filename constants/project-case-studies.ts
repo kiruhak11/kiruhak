@@ -58,7 +58,7 @@ export const projectCaseStudies: Record<string, PublicProjectCaseStudy> = {
     ownershipType: "CLIENT",
     projectSummary:
       "Сайт оконного мастера в Барнауле с услугами, контактами и формой заявки.",
-    role: "Пролноая реализация от идеи до продакшена",
+    role: "Полная реализация от идеи до продакшена",
     company: "k-studio",
     responsibilities: [
       "Реализовал страницу услуг и адаптивный интерфейс на Nuxt 4/Vue 3.",
@@ -78,7 +78,7 @@ export const projectCaseStudies: Record<string, PublicProjectCaseStudy> = {
     ownershipType: "CLIENT",
     projectSummary:
       "Сайт кондитерского бренда с каталогом десертов, галереей, заказами и административной частью.",
-    role: "Пролноая реализация от идеи до продакшена",
+    role: "Полная реализация от идеи до продакшена",
     company: "k-studio",
     responsibilities: [
       "Разрабатывал каталог, страницы продукта и галерею на Nuxt 4/Vue 3.",

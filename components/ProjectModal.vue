@@ -33,7 +33,7 @@
 
         <header class="modal-overview">
           <div class="overview-copy">
-            <p class="eyebrow">{{ caseView.ownershipType === 'UNVERIFIED' ? 'АРХИВ' : 'CASE STUDY' }}</p>
+            <p class="eyebrow">{{ caseView.ownershipType === 'UNVERIFIED' ? 'АРХИВ' : 'КЕЙС ПРОЕКТА' }}</p>
             <h2 id="project-modal-title">{{ project.title }}</h2>
             <p id="project-modal-summary" class="project-summary">{{ caseView.productSummary }}</p>
             <p v-if="caseView.role && caseView.ownershipType !== 'UNVERIFIED'" class="project-role">
@@ -77,14 +77,14 @@
 
                 <section v-if="caseView.ownershipType === 'OWN' && externalLinks.liveUrl" class="detail-section current-state">
                   <p class="section-label">ТЕКУЩЕЕ СОСТОЯНИЕ</p>
-                  <h3>Опубликован в production</h3>
+                  <h3>Опубликован в интернете</h3>
                   <p>Рабочую версию можно открыть по ссылке в блоке проекта.</p>
                 </section>
               </div>
 
               <aside class="case-sidebar" aria-label="Технологии и ссылки проекта">
                 <section v-if="caseView.technologies.length" class="sidebar-section">
-                  <p class="section-label">STACK</p>
+                  <p class="section-label">ТЕХНОЛОГИИ</p>
                   <h3>Технологии</h3>
                   <ul class="tech-list">
                     <li v-for="technology in caseView.technologies" :key="technology">{{ technology }}</li>
@@ -96,7 +96,7 @@
                   <h3>Открыть проект</h3>
                   <div class="project-links">
                     <a v-if="externalLinks.liveUrl" :href="externalLinks.liveUrl" target="_blank" rel="noopener noreferrer">
-                      Production <span aria-hidden="true">↗</span>
+                      Открыть сайт <span aria-hidden="true">↗</span>
                     </a>
                     <a v-if="externalLinks.githubUrl" :href="externalLinks.githubUrl" target="_blank" rel="noopener noreferrer">
                       Исходный код <span aria-hidden="true">↗</span>

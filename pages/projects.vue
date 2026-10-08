@@ -9,7 +9,7 @@
             От собственных сервисов до коммерческой разработки — с контекстом проекта и моей конкретной ролью.
           </p>
           <p v-if="!loading && !error" class="case-count" aria-live="polite">
-            {{ ownProjects.length + clientProjects.length + participationProjects.length }} подтверждённых кейса
+            {{ formatConfirmedCaseCount(ownProjects.length + clientProjects.length + participationProjects.length) }}
           </p>
         </header>
 
@@ -127,6 +127,7 @@ import ProjectModal from "~/components/ProjectModal.vue";
 import type { Project } from "~/composables/useProjects";
 import { groupProjectsByOwnership } from "~/utils/project-ownership";
 import { getProjectCaseView } from "~/utils/project-case-view";
+import { formatConfirmedCaseCount } from "~/utils/project-count";
 
 useSeoMeta({
   title: "Проекты — Кирилл Коваленко",
@@ -245,7 +246,7 @@ h1 { margin: 0; color: var(--portfolio-text); font-size: clamp(2rem, 4vw, 3.3rem
 .archive-item > div { min-width: 0; }
 .archive-item h3 { margin: 0; color: var(--portfolio-text); font-size: 0.95rem; }
 .archive-item p { display: -webkit-box; overflow: hidden; max-width: 70ch; margin: 0.3rem 0 0; color: var(--portfolio-text-muted); font-size: 0.8rem; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.archive-details { flex: 0 0 auto; padding: 0.5rem 0; border: 0; background: transparent; color: var(--portfolio-text-secondary); font: inherit; font-size: 0.78rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.archive-details { display: inline-flex; min-width: var(--portfolio-control-compact); min-height: var(--portfolio-control-compact); flex: 0 0 auto; align-items: center; justify-content: center; padding: 0 0.4rem; border: 0; background: transparent; color: var(--portfolio-text-secondary); font: inherit; font-size: 0.78rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .archive-details:hover { color: var(--portfolio-accent); }
 .projects-cta { display: flex; align-items: center; justify-content: space-between; gap: 2rem; margin-top: clamp(2.5rem, 6vw, 4.5rem); padding: clamp(1.25rem, 3vw, 2rem) 0 0; border-top: 1px solid var(--portfolio-border); }
 .projects-cta .eyebrow { margin-bottom: 0.55rem; }

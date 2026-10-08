@@ -124,7 +124,7 @@
             </NuxtLink>
 
             <div class="menu-footer">
-              <span>WEB · FULLSTACK · PRODUCTION</span>
+              <span>ВЕБ · FULLSTACK · ЗАПУСК</span>
               <span>КИРИЛЛ КОВАЛЕНКО</span>
             </div>
             </div>
@@ -409,6 +409,7 @@ onBeforeUnmount(() => {
   z-index: 1200;
   inset: 0;
   display: flex;
+  font-family: var(--portfolio-font-sans);
   align-items: flex-end;
   justify-content: center;
   padding: 12px 12px calc(12px + env(safe-area-inset-bottom));

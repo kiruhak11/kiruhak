@@ -26,7 +26,7 @@
 
       <section id="about" class="about-section" aria-labelledby="about-title">
         <div class="container about-layout">
-          <p class="eyebrow">ОТ ИНТЕРФЕЙСА ДО PRODUCTION</p>
+          <p class="eyebrow">ОТ ИНТЕРФЕЙСА ДО ЗАПУСКА</p>
           <div>
             <h2 id="about-title">Думаю о продукте целиком — от пользовательского сценария до работающей системы.</h2>
             <p>Я Кирилл, веб-разработчик. В проектах соединяю интерфейс, серверную логику и интеграции, чтобы решение было не только удобным, но и готовым к реальному использованию.</p>
@@ -119,7 +119,7 @@ const mainCtaText = "Отправить заявку";
 const skillCatalog = [
   { title: "Web-интерфейсы", tools: ["Vue 3", "Nuxt 3", "Nuxt 4", "TypeScript", "SCSS"] },
   { title: "Backend и данные", tools: ["Nitro", "Prisma", "PostgreSQL", "MySQL"] },
-  { title: "Production и интеграции", tools: ["Docker", "Nginx", "Telegram Bot API"] },
+  { title: "Развёртывание и интеграции", tools: ["Docker", "Nginx", "Telegram Bot API"] },
 ];
 
 const packages = [
