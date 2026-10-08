@@ -14,7 +14,7 @@
         <div class="modal-topbar">
           <div class="modal-labels">
             <span v-if="caseView.ownershipType !== 'UNVERIFIED'" class="ownership-label">
-              {{ caseView.ownershipType === 'OWN' ? 'Собственный проект' : 'Участие в проекте' }}
+              {{ caseView.ownershipLabel }}
             </span>
             <span v-else class="archive-label">Архивный проект</span>
             <span v-if="project.category" class="category-label">{{ project.category }}</span>
@@ -60,16 +60,16 @@
             <div class="case-details">
               <div class="case-main">
                 <section v-if="caseView.responsibilities.length" class="detail-section">
-                  <p class="section-label">{{ caseView.ownershipType === 'OWN' ? 'СОБСТВЕННЫЙ ПРОДУКТ' : 'МОЯ ЗОНА ОТВЕТСТВЕННОСТИ' }}</p>
-                  <h3>{{ caseView.ownershipType === 'OWN' ? 'Моя работа' : 'Мой вклад' }}</h3>
+                  <p class="section-label">{{ caseView.ownershipType === 'OWN' ? 'СОБСТВЕННЫЙ ПРОДУКТ' : caseView.ownershipType === 'CLIENT' ? 'КЛИЕНТСКИЙ ПРОЕКТ' : 'МОЯ ЗОНА ОТВЕТСТВЕННОСТИ' }}</p>
+                  <h3>{{ caseView.contributionLabel }}</h3>
                   <ul class="detail-list">
                     <li v-for="item in caseView.responsibilities" :key="item">{{ item }}</li>
                   </ul>
                 </section>
 
                 <section v-if="caseView.technicalHighlights.length" class="detail-section">
-                  <p class="section-label">{{ caseView.ownershipType === 'OWN' ? 'АРХИТЕКТУРА И РЕАЛИЗАЦИЯ' : 'ЧАСТИ ПРОДУКТА И РЕШЕНИЯ' }}</p>
-                  <h3>{{ caseView.ownershipType === 'OWN' ? 'Ключевые технические решения' : 'Реализованные части и решения' }}</h3>
+                  <p class="section-label">{{ caseView.ownershipType === 'OWN' ? 'АРХИТЕКТУРА И РЕАЛИЗАЦИЯ' : caseView.ownershipType === 'CLIENT' ? 'ТЕХНИЧЕСКАЯ РЕАЛИЗАЦИЯ' : 'ЧАСТИ ПРОДУКТА И РЕШЕНИЯ' }}</p>
+                  <h3>{{ caseView.ownershipType === 'OWN' ? 'Ключевые технические решения' : caseView.ownershipType === 'CLIENT' ? 'Реализованные решения' : 'Реализованные части и решения' }}</h3>
                   <ul class="detail-list">
                     <li v-for="item in caseView.technicalHighlights" :key="item">{{ item }}</li>
                   </ul>

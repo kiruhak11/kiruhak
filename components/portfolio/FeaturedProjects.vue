@@ -33,7 +33,7 @@
             <div class="case-copy">
               <div class="case-meta">
                 <span class="ownership-label">
-                  {{ item.ownershipType === 'OWN' ? 'Собственный продукт' : 'Командный проект' }}
+                  {{ item.ownershipType === 'OWN' ? 'Собственный продукт' : item.ownershipType === 'CLIENT' ? 'Клиентский проект' : 'Командный проект' }}
                 </span>
                 <span v-if="item.company" class="case-company">{{ item.company }}</span>
               </div>
@@ -42,7 +42,7 @@
               <p v-if="item.role" class="case-role"><span>Роль</span>{{ item.role }}</p>
 
               <div v-if="item.responsibilities.length" class="case-contribution">
-                <h4>Мой вклад</h4>
+                <h4>{{ item.ownershipType === 'CLIENT' ? 'Что я реализовал' : 'Мой вклад' }}</h4>
                 <ul>
                   <li v-for="responsibility in item.responsibilities.slice(0, 3)" :key="responsibility">
                     {{ responsibility }}
@@ -85,7 +85,7 @@ defineProps<{
     title: string;
     image: string;
     summary: string;
-    ownershipType: "OWN" | "PARTICIPATION" | "UNVERIFIED";
+    ownershipType: "OWN" | "CLIENT" | "PARTICIPATION" | "UNVERIFIED";
     role: string | null;
     company: string | null;
     productionUrl?: string | null;

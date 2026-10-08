@@ -1,5 +1,6 @@
 export const projectOwnershipTypes = [
   "OWN",
+  "CLIENT",
   "PARTICIPATION",
   "UNVERIFIED",
 ] as const;

@@ -2,7 +2,7 @@ import { isUsableProjectPreview } from "../../utils/project-links";
 
 const projectInputError = (statusCode: number, statusMessage: string) => Object.assign(new Error(statusMessage), { statusCode, statusMessage });
 
-const ownershipTypes = ["OWN", "PARTICIPATION", "UNVERIFIED"] as const;
+const ownershipTypes = ["OWN", "CLIENT", "PARTICIPATION", "UNVERIFIED"] as const;
 const validExternalUrl = (value: unknown): value is string => {
   if (value === "" || value == null) return true;
   if (typeof value !== "string") return false;
@@ -15,7 +15,7 @@ export function parseProjectInput(body: unknown, partial = false) {
   if (!body || typeof body !== "object" || Array.isArray(body)) throw projectInputError(400, "Invalid project payload");
   const input = body as Record<string, unknown>;
   const type = input.ownershipType;
-  if (type !== undefined && !ownershipTypes.includes(type as typeof ownershipTypes[number])) throw projectInputError(400, "ownershipType must be OWN, PARTICIPATION, or UNVERIFIED");
+  if (type !== undefined && !ownershipTypes.includes(type as typeof ownershipTypes[number])) throw projectInputError(400, "ownershipType must be OWN, CLIENT, PARTICIPATION, or UNVERIFIED");
   const ownershipType = (type ?? "UNVERIFIED") as typeof ownershipTypes[number];
   const fields = ["title", "shortDescription", "description", "image", "category"] as const;
   const projectSummary = cleanText(input.projectSummary);
@@ -26,7 +26,9 @@ export function parseProjectInput(body: unknown, partial = false) {
   const technologies = cleanList(input.technologies);
   const role = cleanText(input.role);
   if (ownershipType === "OWN" && (!projectSummary || !role || !responsibilities.length || !technologies.length)) throw projectInputError(400, "Own projects require summary, role, responsibilities, and technologies");
-  if (ownershipType === "PARTICIPATION" && (!projectSummary || !role || !responsibilities.length)) throw projectInputError(400, "Participation projects require summary, role, and responsibilities");
+  if ((ownershipType === "CLIENT" || ownershipType === "PARTICIPATION") && (!projectSummary || !role || !responsibilities.length)) {
+    throw projectInputError(400, `${ownershipType} projects require summary, role, and responsibilities`);
+  }
 
   const data: Record<string, unknown> = {};
   for (const key of fields) if (input[key] !== undefined) data[key] = cleanText(input[key]);

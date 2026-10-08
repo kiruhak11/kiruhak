@@ -151,11 +151,12 @@ test("project case view separates product from implementation and omits unverifi
   assert.ok(!Object.values(view).some((value) => String(value).includes("90%")));
 });
 
-test("OWN, PARTICIPATION, and UNVERIFIED have evidence-backed exclusive categories", () => {
+test("OWN, CLIENT, PARTICIPATION, and UNVERIFIED have evidence-backed exclusive categories", () => {
   const records = Object.values(projectCaseStudies);
   assert.equal(records.filter((record) => record.ownershipType === "OWN").length, 1);
-  assert.equal(records.filter((record) => record.ownershipType === "PARTICIPATION").length, 3);
-  assert.equal(records.filter((record) => record.ownershipType === "UNVERIFIED").length, 4);
+  assert.equal(records.filter((record) => record.ownershipType === "CLIENT").length, 4);
+  assert.equal(records.filter((record) => record.ownershipType === "PARTICIPATION").length, 0);
+  assert.equal(records.filter((record) => record.ownershipType === "UNVERIFIED").length, 3);
   assert.ok(records.every((record) => record.ownershipType !== "UNVERIFIED" || !record.role));
   assert.ok(records.every((record) => record.ownershipType !== "UNVERIFIED" || record.responsibilities.length === 0));
   assert.ok(
@@ -169,8 +170,9 @@ test("project list grouping preserves all ownership categories and fails closed"
   const grouped = groupProjectsByOwnership([...projects, { id: "missing-metadata" }]);
 
   assert.equal(grouped.OWN.length, 1);
-  assert.equal(grouped.PARTICIPATION.length, 3);
-  assert.equal(grouped.UNVERIFIED.length, 5);
+  assert.equal(grouped.CLIENT.length, 4);
+  assert.equal(grouped.PARTICIPATION.length, 0);
+  assert.equal(grouped.UNVERIFIED.length, 4);
   assert.ok(grouped.UNVERIFIED.every((project) => project.caseStudy?.ownershipType === "UNVERIFIED" || !project.caseStudy));
 });
 
@@ -198,12 +200,13 @@ test("homepage featured cases require featured status, verified ownership, and p
   };
   const selected = getFeaturedPortfolioProjects([
     { id: "selected", ...base },
+    { id: "client", ...base, caseStudy: { ownershipType: "CLIENT", productionUrl: "https://example.test" } },
     { id: "not-featured", ...base, featured: false },
     { id: "unverified", ...base, caseStudy: { ownershipType: "UNVERIFIED", productionUrl: "https://example.test" } },
     { id: "no-production", ...base, caseStudy: { ownershipType: "PARTICIPATION", productionUrl: null } },
   ]);
 
-  assert.deepEqual(selected.map(({ id }) => id), ["selected"]);
+  assert.deepEqual(selected.map(({ id }) => id), ["selected", "client"]);
 });
 
 test("public project adapter sanitizes legacy claims and fails closed for unknown records", () => {
@@ -308,7 +311,8 @@ test("case modal supports roles/contributions while unverified entries receive n
   const card = read("../components/ProjectCard.vue");
 
   assert.match(modal, /Моя роль/);
-  assert.match(modal, /Мой вклад/);
+  assert.match(modal, /caseView\.contributionLabel/);
+  assert.match(modal, /ownershipType === 'CLIENT'/);
   assert.match(modal, /technicalHighlights/);
   assert.match(modal, /ownershipType === 'UNVERIFIED'/);
   assert.match(card, /caseView\.ownershipType !== 'UNVERIFIED'/);
@@ -332,10 +336,17 @@ test("project media retains lazy loading, stable intrinsic size, and visible fal
   assert.match(modal, /aspect-ratio: 2 \/ 1/);
 });
 
-test("ownership tabs are conditional and keyboard operable; unverified items stay separate", () => {
+test("three ownership tabs are always available and keyboard operable; unverified items stay separate", () => {
   const page = readFileSync(new URL("../pages/projects.vue", import.meta.url), "utf8");
   const gallery = readFileSync(new URL("../components/InteractiveGallery.vue", import.meta.url), "utf8");
-  assert.match(page, /v-if="ownProjects\.length && participationProjects\.length"/);
+  assert.match(page, /label: "Мои проекты"/);
+  assert.match(page, /label: "Клиентские проекты"/);
+  assert.match(page, /label: "Участие в проектах"/);
+  assert.match(page, /role="tablist"/);
+  assert.match(page, /role="tabpanel"/);
+  assert.match(page, /ArrowLeft/);
+  assert.match(page, /Home/);
+  assert.match(page, /End/);
   assert.match(page, /@keydown="handleTabKeydown/);
   assert.match(page, /ArrowRight/);
   assert.match(page, /details v-if="unverifiedProjects\.length"/);

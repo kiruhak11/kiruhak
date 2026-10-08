@@ -16,7 +16,7 @@
           v-if="caseView.ownershipType !== 'UNVERIFIED'"
           class="ownership-label"
         >
-          {{ caseView.ownershipType === 'OWN' ? 'Собственный проект' : 'Участие в проекте' }}
+          {{ caseView.ownershipLabel }}
         </span>
         <span class="category-label">{{ project.category }}</span>
         <span v-if="project.featured && caseView.ownershipType !== 'UNVERIFIED'" class="featured-label">Избранный кейс</span>
@@ -33,7 +33,7 @@
         v-if="caseView.ownershipType !== 'UNVERIFIED' && caseView.responsibilities.length"
         class="project-contribution"
       >
-        <span>Мой вклад</span>
+        <span>{{ caseView.contributionLabel }}</span>
         <ul>
           <li v-for="item in caseView.responsibilities.slice(0, 2)" :key="item">{{ item }}</li>
         </ul>

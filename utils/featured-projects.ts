@@ -11,7 +11,7 @@ export function getFeaturedPortfolioProjects<T extends FeaturedProjectCandidate>
   return projects.filter((project) => {
     const caseStudy = project.caseStudy;
     return project.featured && Boolean(caseStudy) &&
-      (caseStudy?.ownershipType === "OWN" || caseStudy?.ownershipType === "PARTICIPATION") &&
+      (caseStudy?.ownershipType === "OWN" || caseStudy?.ownershipType === "CLIENT" || caseStudy?.ownershipType === "PARTICIPATION") &&
       Boolean(caseStudy?.productionUrl);
   });
 }

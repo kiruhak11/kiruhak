@@ -9,7 +9,7 @@
             От собственных сервисов до коммерческой разработки — с контекстом проекта и моей конкретной ролью.
           </p>
           <p v-if="!loading && !error" class="case-count" aria-live="polite">
-            {{ ownProjects.length + participationProjects.length }} подтверждённых кейса
+            {{ ownProjects.length + clientProjects.length + participationProjects.length }} подтверждённых кейса
           </p>
         </header>
 
@@ -25,52 +25,35 @@
 
         <template v-else>
           <div
-            v-if="ownProjects.length && participationProjects.length"
             class="ownership-tabs"
             role="tablist"
-            aria-label="Тип участия в проектах"
+            aria-label="Категории проектов"
           >
             <button
-              id="own-projects-tab"
-              ref="ownTab"
+              v-for="tab in ownershipTabs"
+              :id="`${tab.value.toLowerCase()}-projects-tab`"
+              :key="tab.value"
+              :ref="(element) => setTabRef(tab.value, element)"
               type="button"
               role="tab"
-              :aria-selected="selectedOwnership === 'OWN'"
+              :aria-selected="selectedOwnership === tab.value"
               :aria-controls="'ownership-projects-panel'"
-              :tabindex="selectedOwnership === 'OWN' ? 0 : -1"
+              :tabindex="selectedOwnership === tab.value ? 0 : -1"
               class="ownership-tab"
-              :class="{ active: selectedOwnership === 'OWN' }"
-              @click="selectOwnership('OWN')"
-              @keydown="handleTabKeydown($event, 'OWN')"
+              :class="{ active: selectedOwnership === tab.value }"
+              @click="selectOwnership(tab.value)"
+              @keydown="handleTabKeydown($event, tab.value)"
             >
-              <span class="tab-label">Мои проекты</span><span class="tab-count">{{ ownProjects.length }}</span>
-            </button>
-            <button
-              id="participation-projects-tab"
-              ref="participationTab"
-              type="button"
-              role="tab"
-              :aria-selected="selectedOwnership === 'PARTICIPATION'"
-              :aria-controls="'ownership-projects-panel'"
-              :tabindex="selectedOwnership === 'PARTICIPATION' ? 0 : -1"
-              class="ownership-tab"
-              :class="{ active: selectedOwnership === 'PARTICIPATION' }"
-              @click="selectOwnership('PARTICIPATION')"
-              @keydown="handleTabKeydown($event, 'PARTICIPATION')"
-            >
-              <span class="tab-label">Участие в проектах</span><span class="tab-count">{{ participationProjects.length }}</span>
+              <span class="tab-label">{{ tab.label }}</span><span class="tab-count">{{ tab.count }}</span>
             </button>
           </div>
-          <h2 v-else-if="ownProjects.length" class="single-category-title">Мои проекты</h2>
-          <h2 v-else-if="participationProjects.length" class="single-category-title">Участие в проектах</h2>
 
           <section
-            v-if="ownProjects.length || participationProjects.length"
             id="ownership-projects-panel"
             class="ownership-panel"
-            :role="ownProjects.length && participationProjects.length ? 'tabpanel' : undefined"
-            :aria-labelledby="ownProjects.length && participationProjects.length ? (selectedOwnership === 'OWN' ? 'own-projects-tab' : 'participation-projects-tab') : undefined"
-            :tabindex="ownProjects.length && participationProjects.length ? 0 : undefined"
+            role="tabpanel"
+            :aria-labelledby="`${selectedOwnership.toLowerCase()}-projects-tab`"
+            tabindex="0"
           >
             <div v-if="selectedProjects.length" class="project-grid">
               <ProjectCard
@@ -82,7 +65,7 @@
               />
             </div>
             <div v-else class="empty-category">
-              <h2>{{ selectedOwnership === 'OWN' ? 'Мои проекты' : 'Участие в проектах' }}</h2>
+              <h2>{{ selectedOwnershipLabel }}</h2>
               <p>В этой категории пока нет опубликованных кейсов.</p>
             </div>
           </section>
@@ -147,14 +130,14 @@ import { getProjectCaseView } from "~/utils/project-case-view";
 
 useSeoMeta({
   title: "Проекты — Кирилл Коваленко",
-  description: "Кейсы Кирилла Коваленко: собственные продукты и подтверждённый вклад в командные веб-проекты, технологии и production-примеры.",
+  description: "Кейсы Кирилла Коваленко: собственные продукты, клиентские сайты и подтверждённые задачи в командных проектах.",
   ogTitle: "Проекты — Кирилл Коваленко",
-  ogDescription: "Собственные продукты и подтверждённый вклад в командные веб-проекты.",
+  ogDescription: "Собственные продукты, самостоятельная разработка для клиентов и опыт участия в командах.",
   ogType: "website",
   ogUrl: new URL("/projects", useRuntimeConfig().public.siteUrl).href,
   twitterCard: "summary",
   twitterTitle: "Проекты — Кирилл Коваленко",
-  twitterDescription: "Собственные продукты и подтверждённый вклад в командные веб-проекты.",
+  twitterDescription: "Собственные продукты, клиентские сайты и опыт участия в командах.",
   robots: "index, follow",
 });
 useHead({ link: [{ rel: "canonical", href: new URL("/projects", useRuntimeConfig().public.siteUrl).href }] });
@@ -173,35 +156,43 @@ const loading = computed(() => projectsStatus.value === "pending");
 const error = computed(() =>
   projectsLoadError.value ? "Ошибка при загрузке проектов" : null,
 );
-const selectedOwnership = ref<"OWN" | "PARTICIPATION">("OWN");
-const ownTab = ref<HTMLButtonElement | null>(null);
-const participationTab = ref<HTMLButtonElement | null>(null);
+type PortfolioOwnership = "OWN" | "CLIENT" | "PARTICIPATION";
+const selectedOwnership = ref<PortfolioOwnership>("OWN");
+const tabRefs = ref<Partial<Record<PortfolioOwnership, HTMLButtonElement>>>({});
 const selectedProject = ref<DeepReadonly<Project> | null>(null);
 
 const projectGroups = computed(() => groupProjectsByOwnership(projects.value));
 const ownProjects = computed(() => projectGroups.value.OWN);
+const clientProjects = computed(() => projectGroups.value.CLIENT);
 const participationProjects = computed(() => projectGroups.value.PARTICIPATION);
 const unverifiedProjects = computed(() => projectGroups.value.UNVERIFIED);
-const selectedProjects = computed(() => selectedOwnership.value === "OWN" ? ownProjects.value : participationProjects.value);
+const ownershipTabs = computed(() => [
+  { value: "OWN" as const, label: "Мои проекты", count: ownProjects.value.length },
+  { value: "CLIENT" as const, label: "Клиентские проекты", count: clientProjects.value.length },
+  { value: "PARTICIPATION" as const, label: "Участие в проектах", count: participationProjects.value.length },
+]);
+const selectedOwnershipLabel = computed(() => ownershipTabs.value.find((tab) => tab.value === selectedOwnership.value)?.label ?? "Проекты");
+const selectedProjects = computed(() => projectGroups.value[selectedOwnership.value]);
 
 watch(projects, (loadedProjects) => {
-  const { OWN, PARTICIPATION } = groupProjectsByOwnership(loadedProjects);
-  const hasOwn = OWN.length > 0;
-  const hasParticipation = PARTICIPATION.length > 0;
-  if (!hasOwn && hasParticipation) selectedOwnership.value = "PARTICIPATION";
-  else if (hasOwn) selectedOwnership.value = "OWN";
+  const groups = groupProjectsByOwnership(loadedProjects);
+  selectedOwnership.value = groups.OWN.length ? "OWN" : groups.CLIENT.length ? "CLIENT" : "PARTICIPATION";
 });
 
-const selectOwnership = (ownership: "OWN" | "PARTICIPATION", focus = false) => {
+const setTabRef = (type: PortfolioOwnership, element: unknown) => {
+  if (element instanceof HTMLButtonElement) tabRefs.value[type] = element;
+};
+const selectOwnership = (ownership: PortfolioOwnership, focus = false) => {
   selectedOwnership.value = ownership;
-  if (focus) {
-    nextTick(() => (ownership === "OWN" ? ownTab.value : participationTab.value)?.focus());
-  }
+  if (focus) nextTick(() => tabRefs.value[ownership]?.focus());
 };
 
-const handleTabKeydown = (event: KeyboardEvent, current: "OWN" | "PARTICIPATION") => {
-  let next: "OWN" | "PARTICIPATION" | null = null;
-  if (event.key === "ArrowRight" || event.key === "ArrowLeft") next = current === "OWN" ? "PARTICIPATION" : "OWN";
+const handleTabKeydown = (event: KeyboardEvent, current: PortfolioOwnership) => {
+  const values: PortfolioOwnership[] = ["OWN", "CLIENT", "PARTICIPATION"];
+  const index = values.indexOf(current);
+  let next: PortfolioOwnership | null = null;
+  if (event.key === "ArrowRight") next = values[(index + 1) % values.length];
+  else if (event.key === "ArrowLeft") next = values[(index - 1 + values.length) % values.length];
   else if (event.key === "Home") next = "OWN";
   else if (event.key === "End") next = "PARTICIPATION";
   if (!next) return;
@@ -265,6 +256,6 @@ h1 { margin: 0; color: var(--portfolio-text); font-size: clamp(2rem, 4vw, 3.3rem
 .contact-link:hover { border-color: var(--portfolio-border-hover); background: var(--portfolio-surface-hover); color: var(--portfolio-accent); }
 
 @media (max-width: 760px) { .project-grid { grid-template-columns: 1fr; } .projects-cta { align-items: flex-start; flex-direction: column; gap: 1rem; } }
-@media (max-width: 420px) { .ownership-tabs { width: 100%; gap: 0.6rem; } .ownership-tab { flex: 1 1 0; align-items: center; gap: 0.35rem; padding-inline: 0.1rem; font-size: 0.78rem; line-height: 1.2; } .tab-label { text-align: center; } .archive-item { align-items: flex-start; gap: 0.8rem; } }
+@media (max-width: 520px) { .ownership-tabs { display: grid; width: 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.3rem; } .ownership-tab { min-height: 56px; flex: 1 1 0; flex-direction: column; gap: 0.25rem; padding: 0.45rem 0.15rem; font-size: clamp(0.62rem, 2.6vw, 0.76rem); line-height: 1.15; text-align: center; } .tab-label { text-align: center; overflow-wrap: anywhere; } .archive-item { align-items: flex-start; gap: 0.8rem; } }
 @media (prefers-reduced-motion: reduce) { .loading-mark { animation: none; } .ownership-tab,.project-archive summary svg,.contact-link { transition: none; } }
 </style>

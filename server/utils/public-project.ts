@@ -35,7 +35,7 @@ export function toPublicProject<T extends { id: string }>(project: T): PublicPro
     technicalHighlights: _technicalHighlights, ...publicBase
   } = row;
   const storedType = row.ownershipType;
-  const validType = storedType === "OWN" || storedType === "PARTICIPATION" || storedType === "UNVERIFIED";
+  const validType = storedType === "OWN" || storedType === "CLIENT" || storedType === "PARTICIPATION" || storedType === "UNVERIFIED";
   const registry = validType ? null : getProjectCaseStudy(String(project.id));
   const ownershipType = validType ? storedType : registry?.ownershipType ?? "UNVERIFIED";
   const summary = validType ? row.projectSummary : registry?.projectSummary;

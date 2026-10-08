@@ -23,9 +23,12 @@ type ProjectCaseViewSource = {
  */
 export function getProjectCaseView<T extends ProjectCaseViewSource>(project: T) {
   const caseStudy = project.caseStudy;
+  const ownershipType = caseStudy?.ownershipType ?? "UNVERIFIED";
 
   return {
-    ownershipType: caseStudy?.ownershipType ?? "UNVERIFIED",
+    ownershipType,
+    ownershipLabel: ({ OWN: "Собственный проект", CLIENT: "Клиентский проект", PARTICIPATION: "Участие в проекте", UNVERIFIED: "Архив" })[ownershipType],
+    contributionLabel: ownershipType === "OWN" ? "Моя работа" : ownershipType === "CLIENT" ? "Что я реализовал" : "Мой вклад",
     productSummary:
       caseStudy?.projectSummary || project.shortDescription?.trim() || project.description.trim(),
     productDescription: caseStudy?.projectSummary || project.description.trim(),

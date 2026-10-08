@@ -12,6 +12,7 @@ export function getProjectOwnershipType(project: OwnershipRecord): ProjectOwners
 export function groupProjectsByOwnership<T extends OwnershipRecord>(projects: readonly T[]) {
   return {
     OWN: projects.filter((project) => getProjectOwnershipType(project) === "OWN"),
+    CLIENT: projects.filter((project) => getProjectOwnershipType(project) === "CLIENT"),
     PARTICIPATION: projects.filter((project) => getProjectOwnershipType(project) === "PARTICIPATION"),
     UNVERIFIED: projects.filter((project) => getProjectOwnershipType(project) === "UNVERIFIED"),
   };

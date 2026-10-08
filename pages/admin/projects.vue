@@ -23,7 +23,7 @@
 
           <section class="form-section"><h3>Тип проекта</h3><div class="ownership-options" role="radiogroup" aria-label="Тип проекта"><button v-for="option in ownershipOptions" :key="option.value" type="button" class="ownership-option" :class="{ 'is-selected': form.ownershipType === option.value }" role="radio" :aria-checked="form.ownershipType === option.value" :tabindex="form.ownershipType === option.value ? 0 : -1" @click="setOwnershipType(option.value)" @keydown="handleOwnershipKeydown($event, option.value)"><strong>{{ option.label }}</strong><span>{{ option.description }}</span></button></div></section>
 
-          <section class="form-section"><h3>Case study</h3><Field label="О продукте" :error="errors.projectSummary"><textarea v-model="form.projectSummary" rows="3" :required="form.ownershipType !== 'UNVERIFIED'" /></Field><template v-if="form.ownershipType !== 'UNVERIFIED'"><div class="fields-two"><Field label="Моя роль" :error="errors.role"><input v-model="form.role" /></Field><Field label="Компания / команда"><input v-model="form.company" /></Field></div><RepeatableField v-model="form.responsibilities" label="Мой вклад" placeholder="Что конкретно реализовали" :error="errors.responsibilities" /><RepeatableField v-model="form.technicalHighlights" label="Технические решения" placeholder="Компонент, подсистема или решение" /><RepeatableField v-model="form.technologies" label="Стек" placeholder="Например, Nuxt 3" :error="errors.technologies" /></template><p v-else class="muted-note">Роль, вклад и технологии сохраняются скрытыми до подтверждения проекта.</p></section>
+          <section class="form-section"><h3>Case study</h3><Field label="О продукте" :error="errors.projectSummary"><textarea v-model="form.projectSummary" rows="3" :required="form.ownershipType !== 'UNVERIFIED'" /></Field><template v-if="form.ownershipType !== 'UNVERIFIED'"><div class="fields-two"><Field label="Моя роль" :error="errors.role"><input v-model="form.role" /></Field><Field :label="form.ownershipType === 'CLIENT' ? 'Заказчик / компания' : 'Компания / команда'"><input v-model="form.company" /></Field></div><RepeatableField v-model="form.responsibilities" :label="form.ownershipType === 'CLIENT' ? 'Что я реализовал' : form.ownershipType === 'OWN' ? 'Моя работа' : 'Мой вклад'" placeholder="Конкретная задача, компонент или подсистема" :error="errors.responsibilities" /><RepeatableField v-model="form.technicalHighlights" label="Технические решения" placeholder="Компонент, подсистема или решение" /><RepeatableField v-model="form.technologies" label="Стек" placeholder="Например, Nuxt 3" :error="errors.technologies" /></template><p v-else class="muted-note">Роль, вклад и технологии сохраняются скрытыми до подтверждения проекта.</p></section>
 
           <section class="form-section"><h3>Ссылки и публикация</h3><div class="fields-two"><Field label="Production URL" :error="errors.liveUrl"><input v-model="form.liveUrl" type="url" placeholder="https://…" /></Field><Field label="Репозиторий"><input v-model="form.githubUrl" type="url" placeholder="https://github.com/…" /></Field></div><label class="check-row"><input v-model="form.featured" type="checkbox" :disabled="form.ownershipType === 'UNVERIFIED'" /> Показывать в избранном</label></section>
           <p v-if="saveError" class="form-error" role="alert">{{ saveError }}</p>
@@ -57,7 +57,8 @@ const projectItems = computed(() => projects.value as unknown as AdminProject[])
 const editorOpen = ref(false), discardChangesOpen = ref(false), deleteOpen = ref(false), submitting = ref(false), editingId = ref<string | null>(null), deletingProject = ref<AdminProject | null>(null), notice = ref(""), saveError = ref(""), deleteError = ref("");
 const ownershipOptions: { value: ProjectOwnershipType; label: string; description: string }[] = [
   { value: "OWN", label: "Мой проект", description: "Вы основной автор и отвечаете за продукт." },
-  { value: "PARTICIPATION", label: "Участие", description: "Вы реализовали часть командного продукта." },
+  { value: "CLIENT", label: "Клиентский проект", description: "Самостоятельная или основная реализация для заказчика." },
+  { value: "PARTICIPATION", label: "Участие", description: "Вы реализовали часть продукта другой команды." },
   { value: "UNVERIFIED", label: "Не подтверждён", description: "Публичные claims о роли и стеке скрыты." },
 ];
 function setOwnershipType(type: ProjectOwnershipType) { form.ownershipType = type; clearErrors(); saveError.value = ""; }
@@ -67,7 +68,7 @@ const original = ref("");
 const errors = reactive<Record<string, string>>({});
 const safePreview = computed(() => isUsableProjectPreview(form.image) ? form.image : "");
 onMounted(fetchAdminProjects);
-function ownershipLabel(type: ProjectOwnershipType) { return ({ OWN: "Мой проект", PARTICIPATION: "Участие", UNVERIFIED: "Не подтверждён" })[type]; }
+function ownershipLabel(type: ProjectOwnershipType) { return ({ OWN: "Мой проект", CLIENT: "Клиентский проект", PARTICIPATION: "Участие", UNVERIFIED: "Не подтверждён" })[type]; }
 function handleOwnershipKeydown(event: KeyboardEvent, currentType: ProjectOwnershipType) {
   const currentIndex = ownershipOptions.findIndex((option) => option.value === currentType);
   let nextIndex = currentIndex;

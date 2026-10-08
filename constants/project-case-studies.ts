@@ -35,10 +35,10 @@ export const projectCaseStudies: Record<string, PublicProjectCaseStudy> = {
     repositoryUrl: "https://github.com/kiruhak11/kiruhak",
   },
   cmewb3qvv0003o11ge17zb005: {
-    ownershipType: "PARTICIPATION",
+    ownershipType: "CLIENT",
     projectSummary:
       "Официальный сайт котельного завода с каталогом оборудования и формами обращений.",
-    role: "Разработчик веб-сайта",
+    role: "Полная реализация сайта от идеи до продакшена",
     company: "КотлоЭнергоСнаб",
     responsibilities: [
       "Разрабатывал страницы сайта и каталог продукции на Nuxt 3.",
@@ -55,11 +55,11 @@ export const projectCaseStudies: Record<string, PublicProjectCaseStudy> = {
     repositoryUrl: "https://github.com/kiruhak11/kes",
   },
   cmm7z9yya0003o3013vri6scs: {
-    ownershipType: "PARTICIPATION",
+    ownershipType: "CLIENT",
     projectSummary:
       "Сайт оконного мастера в Барнауле с услугами, контактами и формой заявки.",
-    role: "Разработчик веб-сайта",
-    company: "Частный мастер по ремонту окон",
+    role: "Пролноая реализация от идеи до продакшена",
+    company: "k-studio",
     responsibilities: [
       "Реализовал страницу услуг и адаптивный интерфейс на Nuxt 4/Vue 3.",
       "Подключил серверную обработку формы и Telegram-уведомления.",
@@ -75,11 +75,11 @@ export const projectCaseStudies: Record<string, PublicProjectCaseStudy> = {
     repositoryUrl: "https://github.com/kiruhak11/okna",
   },
   cmmth95p90000qp017bjtfbkt: {
-    ownershipType: "PARTICIPATION",
+    ownershipType: "CLIENT",
     projectSummary:
       "Сайт кондитерского бренда с каталогом десертов, галереей, заказами и административной частью.",
-    role: "Fullstack-разработчик",
-    company: "Бренд «МАЛИНА»",
+    role: "Пролноая реализация от идеи до продакшена",
+    company: "k-studio",
     responsibilities: [
       "Разрабатывал каталог, страницы продукта и галерею на Nuxt 4/Vue 3.",
       "Реализовал серверные API и работу с PostgreSQL через Prisma.",
@@ -133,14 +133,16 @@ export const projectCaseStudies: Record<string, PublicProjectCaseStudy> = {
     repositoryUrl: null,
   },
   cmowkemul0001qp01741xqdo9: {
-    ownershipType: "UNVERIFIED",
+    ownershipType: "CLIENT",
     projectSummary:
       "Сайт строительной компании с перечнем услуг и примерами работ.",
-    responsibilities: [],
+    role: "Полное ведение разработки от идеи до продакшена",
+    company: "k-studio",
+    responsibilities: ["Полная реализация всего сайта"],
     technicalHighlights: [],
-    technologies: [],
+    technologies: ["Nuxt 4", "Vue 3", "TypeScript", "SCSS", "Nitro", "Nodemailer"],
     productionUrl: "https://remdom22.ru",
-    repositoryUrl: null,
+    repositoryUrl: "https://github.com/kiruhak11/remdom",
   },
 };
 

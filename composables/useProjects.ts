@@ -1,5 +1,5 @@
 import { ref, readonly } from "vue";
-import type { AdminProjectCaseStudy, ProjectFormInput, PublicProjectCaseStudy } from "~/types/project-case-study";
+import type { AdminProjectCaseStudy, ProjectFormInput, ProjectOwnershipType, PublicProjectCaseStudy } from "~/types/project-case-study";
 
 export interface PublicProject {
   id: string;
@@ -26,7 +26,7 @@ export interface PublicProject {
 }
 
 export interface AdminProject extends PublicProject {
-  ownershipType: "OWN" | "PARTICIPATION" | "UNVERIFIED";
+  ownershipType: ProjectOwnershipType;
   projectSummary: string | null;
   role: string | null;
   company: string | null;
@@ -49,7 +49,7 @@ export const useProjects = () => {
     error.value = null;
 
     try {
-      const response = await $fetch("/api/projects");
+      const response = await $fetch<Project[]>("/api/projects");
       projects.value = response;
     } catch (err) {
       error.value = "Ошибка при загрузке проектов";
