@@ -1,0 +1,417 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-08T16:20:00+07:00",
+  "title": "Design System: K-Studio",
+  "extensions": {
+    "colorMeta": {
+      "sage-paper": {
+        "role": "neutral",
+        "displayName": "Pale Sage Paper",
+        "tonalRamp": [
+          "#11120f",
+          "#282926",
+          "#414340",
+          "#5d5e5b",
+          "#797b77",
+          "#979995",
+          "#b6b8b4",
+          "#eaece8"
+        ]
+      },
+      "white-surface": {
+        "role": "neutral",
+        "displayName": "White Surface",
+        "tonalRamp": [
+          "#121212",
+          "#292929",
+          "#424242",
+          "#5d5d5d",
+          "#7a7a7a",
+          "#989898",
+          "#b7b7b7",
+          "#ebebeb"
+        ]
+      },
+      "forest-accent": {
+        "role": "primary",
+        "displayName": "Muted Forest Green",
+        "tonalRamp": [
+          "#001903",
+          "#0b3119",
+          "#274c31",
+          "#42684c",
+          "#5e8568",
+          "#7ca485",
+          "#9ac3a4",
+          "#cdf8d7"
+        ]
+      },
+      "forest-accent-hover": {
+        "role": "primary",
+        "displayName": "Deep Forest Hover",
+        "tonalRamp": [
+          "#001805",
+          "#10311b",
+          "#2a4b33",
+          "#45674e",
+          "#62846a",
+          "#7fa387",
+          "#9ec2a6",
+          "#d0f7d9"
+        ]
+      },
+      "ink-primary": {
+        "role": "neutral",
+        "displayName": "Deep Green Ink",
+        "tonalRamp": [
+          "#0b140e",
+          "#222b25",
+          "#3b453f",
+          "#56615a",
+          "#737d76",
+          "#909c94",
+          "#afbbb3",
+          "#e3efe6"
+        ]
+      },
+      "ink-secondary": {
+        "role": "neutral",
+        "displayName": "Moss Secondary",
+        "tonalRamp": [
+          "#09150d",
+          "#202c23",
+          "#39463c",
+          "#546257",
+          "#717e74",
+          "#8e9d91",
+          "#adbcb0",
+          "#e0f0e4"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Quiet Sage",
+        "tonalRamp": [
+          "#0a140e",
+          "#212c24",
+          "#3a463e",
+          "#556159",
+          "#717e75",
+          "#8f9c93",
+          "#adbcb2",
+          "#e1f0e5"
+        ]
+      },
+      "dark-ground": {
+        "role": "neutral",
+        "displayName": "Night Green",
+        "tonalRamp": [
+          "#0e1311",
+          "#252a28",
+          "#3e4441",
+          "#595f5d",
+          "#757c79",
+          "#939a97",
+          "#b2b9b6",
+          "#e6edea"
+        ]
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Deep Surface",
+        "tonalRamp": [
+          "#0c140f",
+          "#232b26",
+          "#3c453f",
+          "#57605a",
+          "#737d77",
+          "#919b95",
+          "#b0bab3",
+          "#e3eee7"
+        ]
+      },
+      "dark-ink-primary": {
+        "role": "neutral",
+        "displayName": "Pale Text",
+        "tonalRamp": [
+          "#10120f",
+          "#272a26",
+          "#40433f",
+          "#5b5f5a",
+          "#787b77",
+          "#969995",
+          "#b5b9b4",
+          "#e8ece7"
+        ]
+      },
+      "dark-ink-secondary": {
+        "role": "neutral",
+        "displayName": "Soft Secondary",
+        "tonalRamp": [
+          "#0b140d",
+          "#222c24",
+          "#3b453d",
+          "#566158",
+          "#737e75",
+          "#909c92",
+          "#afbbb1",
+          "#e3efe5"
+        ]
+      },
+      "dark-ink-muted": {
+        "role": "neutral",
+        "displayName": "Muted Sage Text",
+        "tonalRamp": [
+          "#0a140c",
+          "#212c23",
+          "#3a463c",
+          "#556257",
+          "#717e73",
+          "#8f9d91",
+          "#aebcb0",
+          "#e1f0e3"
+        ]
+      },
+      "sage-accent": {
+        "role": "primary",
+        "displayName": "Soft Sage Accent",
+        "tonalRamp": [
+          "#021800",
+          "#173004",
+          "#314b1f",
+          "#4b673a",
+          "#678456",
+          "#85a373",
+          "#a3c392",
+          "#d6f7c4"
+        ]
+      },
+      "sage-accent-hover": {
+        "role": "primary",
+        "displayName": "Light Sage Hover",
+        "tonalRamp": [
+          "#041700",
+          "#1a3009",
+          "#334a24",
+          "#4d663f",
+          "#69835a",
+          "#87a278",
+          "#a5c296",
+          "#d9f6c8"
+        ]
+      },
+      "border-light": {
+        "role": "neutral",
+        "displayName": "Light Theme Border",
+        "tonalRamp": [
+          "#0f130f",
+          "#262a26",
+          "#3f4440",
+          "#5a5f5b",
+          "#777c77",
+          "#949a95",
+          "#b3b9b4",
+          "#e7ede8"
+        ]
+      },
+      "border-dark": {
+        "role": "neutral",
+        "displayName": "Dark Theme Border",
+        "tonalRamp": [
+          "#0b140e",
+          "#222c25",
+          "#3b453e",
+          "#566159",
+          "#727e76",
+          "#909c93",
+          "#afbbb2",
+          "#e2efe6"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Ubuntu Display (current)",
+        "purpose": "Current rendered portfolio headline family; subject to the documented font-system mismatch."
+      },
+      "body": {
+        "displayName": "Ubuntu Body (current)",
+        "purpose": "Current global content family; recorded as observed, not as the resolved design choice."
+      },
+      "navigation": {
+        "displayName": "Inter System Stack (current)",
+        "purpose": "Explicitly applied by the public header."
+      },
+      "label": {
+        "displayName": "System Monospace",
+        "purpose": "Technical labels and technology metadata."
+      }
+    },
+    "shadows": [
+      {
+        "name": "portfolio-shadow-soft-light",
+        "value": "0 8px 24px rgba(11, 20, 14, 0.08)",
+        "purpose": "Resting cards/header in light theme."
+      },
+      {
+        "name": "portfolio-shadow-light",
+        "value": "0 18px 50px rgba(11, 20, 14, 0.12)",
+        "purpose": "Raised card and scrolled header in light theme."
+      },
+      {
+        "name": "portfolio-shadow-soft-dark",
+        "value": "0 10px 30px rgba(0, 0, 0, 0.2)",
+        "purpose": "Resting elevated surfaces in dark theme."
+      },
+      {
+        "name": "portfolio-shadow-dark",
+        "value": "0 22px 60px rgba(0, 0, 0, 0.28)",
+        "purpose": "Raised cards and modal in dark theme."
+      }
+    ],
+    "motion": [
+      {
+        "name": "motion-fast",
+        "value": "150ms",
+        "purpose": "Compact interactive state changes."
+      },
+      {
+        "name": "motion-normal",
+        "value": "220ms",
+        "purpose": "Default duration token; components commonly use 140–180ms."
+      },
+      {
+        "name": "motion-slow",
+        "value": "380ms",
+        "purpose": "Longer tokenized transitions where used."
+      },
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.2, 0.7, 0.2, 1)",
+        "purpose": "Standard portfolio easing."
+      },
+      {
+        "name": "ease-enter",
+        "value": "cubic-bezier(0.2, 0.75, 0.3, 1)",
+        "purpose": "Entrance easing token."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "header-mobile",
+        "value": "900px"
+      },
+      {
+        "name": "content-mobile",
+        "value": "760px"
+      },
+      {
+        "name": "modal-stack",
+        "value": "700px"
+      },
+      {
+        "name": "compact-project-tabs",
+        "value": "520px"
+      },
+      {
+        "name": "compact-contact",
+        "value": "420px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Public Navigation",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Compact sticky header with a theme-aware floating surface.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#projects\">Проекты</a><a href=\"#contact\">Контакты</a><a class=\"ds-nav-cta\" href=\"#contact\">Обсудить проект</a></nav>",
+      "css": ".ds-nav{display:flex;align-items:center;gap:8px;padding:10px 18px;min-height:68px;border:1px solid var(--portfolio-border);border-radius:var(--portfolio-radius-lg);background:color-mix(in srgb,var(--portfolio-bg-elevated) 88%,transparent);color:var(--portfolio-text);box-shadow:var(--portfolio-shadow-soft);backdrop-filter:blur(14px);font-family:var(--portfolio-font-sans)}.ds-nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 13px;border-radius:var(--portfolio-radius-sm);color:var(--portfolio-text-secondary);text-decoration:none;font-size:.9rem}.ds-nav a:hover,.ds-nav a:focus-visible{background:var(--portfolio-surface-hover);color:var(--portfolio-text)}.ds-nav a:focus-visible{outline:2px solid var(--portfolio-accent);outline-offset:3px}.ds-nav .ds-nav-cta{background:var(--portfolio-accent);color:var(--portfolio-accent-contrast)}"
+    },
+    {
+      "name": "Contact CTA",
+      "kind": "button",
+      "refersTo": "button-contact",
+      "description": "Filled green action for starting a direct conversation.",
+      "html": "<a class=\"ds-button-contact\" href=\"#contact\">Обсудить проект</a>",
+      "css": ".ds-button-contact{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 .95rem;border:1px solid var(--portfolio-accent);border-radius:var(--portfolio-radius-sm);background:var(--portfolio-accent);color:var(--portfolio-accent-contrast);font:600 .85rem var(--portfolio-font-sans);text-decoration:none;transition:background-color 160ms ease,border-color 160ms ease}.ds-button-contact:hover{background:var(--portfolio-accent-hover);border-color:var(--portfolio-accent-hover)}.ds-button-contact:focus-visible{outline:2px solid var(--portfolio-accent);outline-offset:3px}"
+    },
+    {
+      "name": "Project Details Button",
+      "kind": "button",
+      "refersTo": "button-details",
+      "description": "Quiet bordered action opening a project case modal.",
+      "html": "<button class=\"ds-button-details\" type=\"button\">Подробнее о проекте</button>",
+      "css": ".ds-button-details{display:inline-flex;align-items:center;min-height:44px;padding:0 .8rem;border:1px solid var(--portfolio-border);border-radius:var(--portfolio-radius-sm);background:var(--portfolio-surface);color:var(--portfolio-text);font:600 .82rem var(--portfolio-font-sans);cursor:pointer;transition:background-color 160ms ease,border-color 160ms ease,color 160ms ease}.ds-button-details:hover,.ds-button-details:focus-visible{border-color:var(--portfolio-border-hover);background:var(--portfolio-surface-hover);color:var(--portfolio-accent)}.ds-button-details:focus-visible{outline:2px solid var(--portfolio-accent);outline-offset:3px}"
+    },
+    {
+      "name": "Lead Form Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Homepage inquiry input with visible accent focus.",
+      "html": "<label class=\"ds-field\"><span>Ваше имя</span><input type=\"text\" placeholder=\"Ваше имя\"></label>",
+      "css": ".ds-field{display:grid;gap:6px;color:var(--portfolio-text);font:500 .875rem var(--portfolio-font-sans)}.ds-field input{min-height:44px;padding:.7rem .8rem;border:1px solid var(--portfolio-border);border-radius:var(--portfolio-radius-sm);background:var(--portfolio-bg);color:var(--portfolio-text);font:400 .95rem var(--portfolio-font-sans)}.ds-field input::placeholder{color:var(--portfolio-text-muted)}.ds-field input:focus-visible{border-color:var(--portfolio-accent);outline:2px solid var(--portfolio-accent);outline-offset:2px}"
+    },
+    {
+      "name": "Project Card",
+      "kind": "card",
+      "refersTo": "project-card",
+      "description": "Preview with category, product context, and concise contribution.",
+      "html": "<article class=\"ds-project-card\"><div class=\"ds-project-media\" aria-hidden=\"true\"></div><div class=\"ds-project-content\"><p class=\"ds-project-meta\">Клиентский проект · Веб-платформа</p><h3>Название проекта</h3><p>Контекст продукта и конкретная зона ответственности.</p></div></article>",
+      "css": ".ds-project-card{overflow:hidden;border:1px solid var(--portfolio-border);border-radius:var(--portfolio-radius-lg);background:var(--portfolio-bg-elevated);color:var(--portfolio-text);box-shadow:var(--portfolio-shadow-soft);transition:border-color 180ms ease,box-shadow 180ms ease,transform 180ms ease}.ds-project-card:hover,.ds-project-card:focus-within{transform:translateY(-2px);border-color:var(--portfolio-border-hover);box-shadow:var(--portfolio-shadow)}.ds-project-media{aspect-ratio:2/1;border-bottom:1px solid var(--portfolio-border);background:var(--portfolio-surface-hover)}.ds-project-content{padding:1.35rem}.ds-project-meta{color:var(--portfolio-text-muted);font-size:.72rem}.ds-project-content h3{margin:.75rem 0 0;color:var(--portfolio-text);font-size:1.25rem;line-height:1.25;letter-spacing:-.035em}.ds-project-content p:last-child{margin:.6rem 0 0;color:var(--portfolio-text-secondary);font-size:.9rem;line-height:1.55}"
+    },
+    {
+      "name": "Technology Chip",
+      "kind": "chip",
+      "refersTo": "technology-chip",
+      "description": "Informational stack label in quiet monospace style.",
+      "html": "<span class=\"ds-chip\">Nuxt 3</span>",
+      "css": ".ds-chip{display:inline-flex;align-items:center;padding:.28rem .55rem;border:1px solid var(--portfolio-border);border-radius:var(--portfolio-radius-pill);color:var(--portfolio-text-secondary);font:500 .66rem var(--portfolio-font-mono)}"
+    },
+    {
+      "name": "Primary Contact Card",
+      "kind": "card",
+      "description": "Prominent preferred channel for direct contact.",
+      "html": "<a class=\"ds-contact-card\" href=\"#contact\"><span class=\"ds-contact-label\">ПРЕДПОЧТИТЕЛЬНЫЙ КАНАЛ</span><strong>Telegram</strong><span>Написать в Telegram ↗</span></a>",
+      "css": ".ds-contact-card{display:grid;justify-items:start;gap:12px;min-height:210px;padding:clamp(1.25rem,4vw,2rem);border:1px solid var(--portfolio-border-hover);border-radius:var(--portfolio-radius-lg);background:var(--portfolio-surface);color:var(--portfolio-text);box-shadow:var(--portfolio-shadow-soft);text-decoration:none;transition:transform 160ms ease,border-color 160ms ease,box-shadow 160ms ease}.ds-contact-card:hover{transform:translateY(-2px);border-color:var(--portfolio-accent);box-shadow:var(--portfolio-shadow)}.ds-contact-label{color:var(--portfolio-accent);font:650 .68rem var(--portfolio-font-mono);letter-spacing:.09em}.ds-contact-card strong{font-size:clamp(1.75rem,3.2vw,2.4rem);letter-spacing:-.05em}.ds-contact-card:focus-visible{outline:2px solid var(--portfolio-accent);outline-offset:3px}"
+    },
+    {
+      "name": "Project Case Dialog",
+      "kind": "custom",
+      "description": "Scrollable case-study dialog separating contribution from product context.",
+      "html": "<section class=\"ds-case-modal\" role=\"dialog\" aria-modal=\"true\"><header><span>Клиентский проект</span><button type=\"button\" aria-label=\"Закрыть\">×</button></header><h2>Название проекта</h2><p>Краткое описание продукта.</p><h3>Моя зона ответственности</h3><p>Реализованные части и технические решения.</p></section>",
+      "css": ".ds-case-modal{max-height:80vh;overflow:auto;border:1px solid var(--portfolio-border);border-radius:var(--portfolio-radius-lg);background:var(--portfolio-bg-elevated);color:var(--portfolio-text);box-shadow:var(--portfolio-shadow)}.ds-case-modal header{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;min-height:58px;padding:.55rem 1rem;border-bottom:1px solid var(--portfolio-border);background:var(--portfolio-bg-elevated)}.ds-case-modal button{display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--portfolio-border);border-radius:var(--portfolio-radius-sm);background:var(--portfolio-surface);color:var(--portfolio-text);font-size:1.3rem}.ds-case-modal h2,.ds-case-modal h3,.ds-case-modal p{margin:1rem;color:var(--portfolio-text)}.ds-case-modal button:focus-visible{outline:2px solid var(--portfolio-accent);outline-offset:3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Independent Product Studio",
+    "overview": "K-Studio should feel like the considered portfolio of an independent product developer: calm, precise, modern, and confident without implying a larger agency or team. The visual system keeps attention on real products and the person who designed and implemented them. Engineering Casebook is a content principle for cases—explain the product, the developer’s specific contribution, architecture, and technical decisions—not a visual costume.\n\nThe existing interface uses a quiet sage-and-green palette, generous spacing, a compact floating header, rounded white surfaces, and restrained transitions. Keep the light and dark themes, direct contact routes, and clear separation between product context and personal work. The code currently contains a typography mismatch (documented below); it is an implementation inconsistency, not an intentional pairing.",
+    "keyCharacteristics": [
+      "Independent and personal, never presented as a large agency.",
+      "Premium through clarity, material restraint, and consistent type—not ornament or noise.",
+      "Product evidence and concrete engineering contribution lead case presentation.",
+      "Calm, accurate copy; no invented metrics, inflated promises, or unsupported claims."
+    ],
+    "rules": [
+      {
+        "name": "The Two-Theme Accent Rule",
+        "body": "Preserve the theme-aware accent pairing: forest green in light mode and soft sage in dark mode. Do not substitute a new high-saturation accent.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do keep the studio independent and personal; describe Kirill’s actual role accurately.",
+      "Do lead cases with the product itself, then distinguish personal contribution, architecture, and technical decisions.",
+      "Do keep the green accent quiet and theme-aware.",
+      "Do use real product screens and substantiated outcomes when available and publishable.",
+      "Do keep motion subtle, purposeful, and optional under reduced-motion settings.",
+      "Do preserve generous spacing, compact navigation, and clean card hierarchy."
+    ],
+    "donts": [
+      "Don't imply a large agency or team that does not exist.",
+      "Don't add fabricated metrics, loud promises, unsupported outcomes, or decorative noise.",
+      "Don't treat the current Ubuntu/Inter conflict as intentional or extend it to new public surfaces.",
+      "Don't use project categories or role labels to suggest authorship beyond the confirmed contribution."
+    ]
+  }
+}
