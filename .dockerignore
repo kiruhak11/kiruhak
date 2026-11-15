@@ -27,3 +27,7 @@ Dockerfile
 Dockerfile.simple
 Dockerfile.bot
 .dockerignore
+
+# macOS AppleDouble resource-fork sidecars
+._*
+.DS_Store

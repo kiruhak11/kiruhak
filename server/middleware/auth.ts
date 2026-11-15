@@ -1,8 +1,16 @@
 import { prisma } from "../utils/prisma";
-import { verifyAuthToken } from "../utils/auth-token";
-import { getUserSessionsRevokedAt } from "../utils/session-control";
+import {
+  getAuthSessionKeyHash,
+  verifyAuthToken,
+  wasTokenIssuedBeforeRevocation,
+} from "../utils/auth-token";
+import {
+  getUserSessionsRevokedAt,
+  isAuthSessionRevoked,
+} from "../utils/session-control";
 import { getRuntimeAuthTokenSecret } from "../utils/security-config";
-import { isAuthenticatedRoute, isPublicApiRoute } from "../utils/auth-route-policy";
+import { isValidBotSecret } from "../utils/bot-secret";
+import { classifyApiRoute } from "../utils/auth-route-policy";
 
 function isStaticAsset(path: string): boolean {
   return (
@@ -14,31 +22,49 @@ function isStaticAsset(path: string): boolean {
   );
 }
 
-function isAdminRoute(path: string, method: string): boolean {
-  if (path.startsWith("/api/admin")) return true;
-  if (path === "/api/projects" && method === "POST") return true;
-  if (path.startsWith("/api/projects/") && method !== "GET") return true;
-  if (path === "/api/materials" && method === "POST") return true;
-  if (path.startsWith("/api/materials/") && !["GET", "POST"].includes(method)) return true;
-  if (path === "/api/tutorials" && method === "POST") return true;
-  if (path.startsWith("/api/tutorials/") && !["GET", "POST"].includes(method)) return true;
-  if (path === "/api/ui-components" && method === "POST") return true;
-  if (path.match(/^\/api\/ui-components\/[^/]+$/) && ["PUT", "DELETE"].includes(method)) return true;
-  if (path.match(/^\/api\/ui-components\/[^/]+\/moderate$/) && method === "POST") return true;
-  if (path === "/api/analytics/overview" && method === "GET") return true;
-  return false;
-}
-
 export default defineEventHandler(async (event) => {
   const path = getRequestURL(event).pathname;
   const method = getMethod(event);
 
   if (isStaticAsset(path)) return;
   if (!path.startsWith("/api/")) return;
-  if (isPublicApiRoute(path, method)) return;
 
-  const needsAuth = isAuthenticatedRoute(path, method) || isAdminRoute(path, method);
-  if (!needsAuth) return;
+  // CORS preflight обрабатывается в server/middleware/cors.ts и не требует
+  // авторизации — иначе браузер не смог бы выполнить запрос.
+  if (method === "OPTIONS") return;
+
+  // FAIL-CLOSED: маршрут должен быть явно описан в политике.
+  const decision = classifyApiRoute(path, method);
+
+  if (decision.kind === "unknown") {
+    throw createError({
+      statusCode: 404,
+      statusMessage: "Not Found",
+    });
+  }
+
+  if (decision.kind === "method-not-allowed") {
+    throw createError({
+      statusCode: 405,
+      statusMessage: "Method Not Allowed",
+    });
+  }
+
+  if (decision.policy === "public") return;
+
+  if (decision.policy === "bot") {
+    // Служебный API бота: требуется подтверждённый секрет, а не сессия.
+    const config = useRuntimeConfig();
+    if (!isValidBotSecret(getHeader(event, "x-bot-secret"), config.botSecret)) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Forbidden",
+      });
+    }
+    return;
+  }
+
+  const isLogoutRequest = path === "/api/auth/logout" && method === "POST";
 
   const authHeader =
     getHeader(event, "authorization") || getHeader(event, "Authorization");
@@ -64,6 +90,25 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  const sessionKeyHash = getAuthSessionKeyHash(token, decoded);
+
+  let sessionAlreadyRevoked: boolean;
+  try {
+    sessionAlreadyRevoked = await isAuthSessionRevoked(sessionKeyHash);
+  } catch {
+    throw createError({
+      statusCode: 503,
+      statusMessage: "Authentication temporarily unavailable",
+    });
+  }
+
+  if (sessionAlreadyRevoked && !isLogoutRequest) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Session expired",
+    });
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: decoded.userId },
   });
@@ -80,8 +125,10 @@ export default defineEventHandler(async (event) => {
   const revokedAt = await getUserSessionsRevokedAt(user.id);
   if (revokedAt) {
     const tokenIssuedAt = typeof decoded.iat === "number" ? decoded.iat : 0;
-    const revokedAtSeconds = Math.floor(revokedAt.getTime() / 1000);
-    if (tokenIssuedAt < revokedAtSeconds) {
+    if (
+      wasTokenIssuedBeforeRevocation(tokenIssuedAt, revokedAt) &&
+      !isLogoutRequest
+    ) {
       throw createError({
         statusCode: 401,
         statusMessage: "Session expired",
@@ -89,7 +136,11 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  if (isAdminRoute(path, method) && !user.isAdmin) {
+  event.context.authSessionKeyHash = sessionKeyHash;
+  event.context.authSessionExpiresAt = new Date(decoded.exp * 1000);
+  event.context.authSessionAlreadyRevoked = sessionAlreadyRevoked;
+
+  if (decision.policy === "admin" && !user.isAdmin) {
     throw createError({
       statusCode: 403,
       statusMessage: "Admin access required",

@@ -1,30 +1,22 @@
 import { prisma } from "../../../utils/prisma";
+import { isValidBotSecret } from "../../../utils/bot-secret";
 
+// Флаг используется ТОЛЬКО для отладочного логирования и никогда —
+// для проверки авторизации: проверка секрета бота всегда обязательна.
 const isDev = process.env.NODE_ENV !== "production";
 
 export default defineEventHandler(async (event) => {
   try {
     const config = useRuntimeConfig();
-    // В dev-режиме пропускаем проверку секретного ключа для упрощения
-    if (!isDev) {
-      // В production проверяем секретный ключ бота
-      const botSecret = event.node.req.headers["x-bot-secret"];
-      const expectedSecret =
-        config.botSecret || process.env.BOT_SECRET || process.env.NUXT_BOT_SECRET || "";
 
-      if (!expectedSecret) {
-        throw createError({
-          statusCode: 500,
-          statusMessage: "Bot moderation secret is not configured",
-        });
-      }
-
-      if (botSecret !== expectedSecret) {
-        throw createError({
-          statusCode: 403,
-          statusMessage: "Forbidden - Invalid bot secret",
-        });
-      }
+    // Служебный endpoint бота: корректный секрет обязателен в ЛЮБОМ
+    // окружении. Раньше проверка зависела от NODE_ENV, что на этапе сборки
+    // позволяло скомпилировать её полностью.
+    if (!isValidBotSecret(getHeader(event, "x-bot-secret"), config.botSecret)) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Forbidden - Invalid bot secret",
+      });
     }
 
     const componentId = getRouterParam(event, "id");

@@ -104,9 +104,13 @@ export default defineNuxtConfig({
         ? ""
         : "dev-only-auth-token-secret"),
     corsOrigins: process.env.NUXT_CORS_ORIGINS || process.env.CORS_ORIGINS || "",
+    telegramLoginMode: process.env.TELEGRAM_LOGIN_MODE || "",
     public: {
       siteUrl,
       channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || "webmonkey",
+      // Юридические документы опубликованы; gate можно закрыть флагом.
+      legalDocumentsPublic:
+        process.env.NUXT_PUBLIC_LEGAL_DOCUMENTS_PUBLIC !== "false",
     },
   },
   vite: {
