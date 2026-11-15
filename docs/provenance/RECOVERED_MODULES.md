@@ -108,6 +108,34 @@ running image.
 | Legal documents | `/legal` and `/legal/privacy` render the recovered documents (18 sections) |
 | Recovery | `/account/recovery` renders, challenge/complete endpoints present |
 
+### Compiled-output equivalence with the running production
+
+The recovered branch was built from the **backup bundle** on the same host
+(`ops/reproduce-from-backup.sh`) and the resulting `.output/server/chunks`
+were compared file by file with the chunks of the image that is running in
+production right now:
+
+```
+identical chunks: 181   differing: 2
+ differs: build/styles.mjs
+ differs: nitro/nitro.mjs
+```
+
+* `nitro/nitro.mjs` differs **by design** — it is the server bundle that
+  contains the fail-closed authorization. The production bundle still
+  contains `if (!needsAuth) return;`; the rebuilt bundle does not, and
+  contains `classifyApiRoute` and the 404 deny instead.
+* `build/styles.mjs` differs because the scoped CSS of the restored pages
+  was recovered from the production client bundle while the visual redesign
+  of 2026-10-14 → 2026-11-09 was never published to GitHub.
+
+Every other chunk — including `routes/api/materials.get.mjs`,
+`_/optional-user.mjs`, `routes/api/auth/telegram-login/verify.post.mjs`,
+`routes/api/bot/quick-login.post.mjs` and `routes/api/auth/logout.post.mjs` —
+is **byte-identical** to production. The reconstructed TypeScript therefore
+compiles to exactly the same JavaScript as the lost originals for the
+restored modules.
+
 ## Known limitations
 
 1. The restored files are **not** the original TypeScript. Anyone continuing
