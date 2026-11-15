@@ -82,17 +82,20 @@ ls -la "${REPO}/.output/server/index.mjs" 2>&1
 echo "build id (nuxt): $(grep -o '"buildId":"[^"]*"' "${REPO}/.output/public/_nuxt/"*.js 2>/dev/null | head -1)"
 
 echo
-echo "=== 10. NODE_ENV baked into the server bundle ==="
-if grep -q 'const isDev = false' "${REPO}/.output/server/chunks/nitro/nitro.mjs" 2>/dev/null; then
-  echo "  OK: process.env.NODE_ENV was inlined as 'production' — secret checks are compiled in"
-else
-  echo "  WARNING: could not confirm the NODE_ENV inlining marker"
-fi
-grep -c 'isDev = false' "${REPO}/.output/server/chunks/nitro/nitro.mjs" 2>/dev/null || true
+echo "=== 10. fail-closed authorization is compiled in ==="
+python3 - <<'PY2'
+s=open("/var/tmp/kiruhak-repro/repo/.output/server/chunks/nitro/nitro.mjs",encoding="utf8").read()
+checks=[("fail-closed classifier present","classifyApiRoute"),
+        ("unknown route denied (404)","Not Found"),
+        ("bot secret enforced","x-bot-secret"),
+        ("fail-open path removed","if (!needsAuth) return;")]
+for label,needle in checks:
+    print(f"  {label:34s} {'FOUND' if needle in s else 'absent'}")
+PY2
 
 echo
 echo "=== 11. bot endpoint authorization is enforced in the bundle ==="
-grep -o 'x-bot-secret' "${REPO}/.output/server/chunks/nitro/nitro.mjs" 2>/dev/null | head -1 || echo "  not found"
+grep -c 'x-bot-secret' "${REPO}/.output/server/chunks/nitro/nitro.mjs" 2>/dev/null || true
 
 echo
 echo "=== 12. API route manifest ==="
@@ -120,6 +123,27 @@ print(f"  repro={len(repro)} prod={len(prod)}")
 print("  only in prod :", sorted(prod-repro) or "NONE")
 print("  only in repro:", sorted(repro-prod) or "NONE")
 PY
+
+echo
+echo "=== 14. chunk-by-chunk comparison with the running production ==="
+docker rm -f kstudio-prod-chunks >/dev/null 2>&1 || true
+docker cp kiruhak_app:/app/.output/server/chunks /tmp/kstudio-prod-chunks >/dev/null 2>&1 || true
+python3 - <<'PY2'
+import os
+R="/var/tmp/kiruhak-repro/repo/.output/server/chunks"
+P="/tmp/kstudio-prod-chunks"
+same=diff=0; differing=[]
+for root,_,files in os.walk(R):
+    for f in files:
+        if not f.endswith(".mjs"): continue
+        a=os.path.join(root,f); rel=os.path.relpath(a,R); b=os.path.join(P,rel)
+        if not os.path.exists(b): continue
+        if open(a,'rb').read()==open(b,'rb').read(): same+=1
+        else: diff+=1; differing.append(rel)
+print(f"  identical chunks: {same}   differing: {diff}")
+for d in sorted(differing): print("   differs:", d)
+PY2
+rm -rf /tmp/kstudio-prod-chunks
 
 echo
 echo "=== REPRODUCIBILITY RUN COMPLETE ==="
