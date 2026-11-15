@@ -1,11 +1,51 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 export interface AuthTokenPayload {
   userId: string;
   telegramId: string;
   isAdmin: boolean;
   exp: number;
+  /** Время выдачи токена в миллисекундах. */
   iat?: number;
+  /** Идентификатор сессии (jti) — база для точечного отзыва сессии. */
+  jti?: string;
+}
+
+/**
+ * Время выдачи и истечения токена.
+ *
+ * `iat` возвращается в миллисекундах, `exp` — в секундах (как требует JWT).
+ */
+export function getAuthTokenTimes(
+  ttlSeconds: number,
+  nowMs: number = Date.now()
+): { iat: number; exp: number } {
+  if (
+    !Number.isSafeInteger(ttlSeconds) ||
+    ttlSeconds <= 0 ||
+    !Number.isFinite(nowMs)
+  ) {
+    throw new Error("Invalid auth token lifetime");
+  }
+
+  return {
+    iat: nowMs,
+    exp: Math.floor(nowMs / 1000) + ttlSeconds,
+  };
+}
+
+/**
+ * Проверяет, был ли токен выдан до момента отзыва сессий пользователя.
+ *
+ * Принимает `iat` и в миллисекундах, и в секундах: значения меньше 1e11
+ * трактуются как секунды.
+ */
+export function wasTokenIssuedBeforeRevocation(
+  issuedAt: number,
+  revokedAt: Date
+): boolean {
+  const issuedAtMs = issuedAt < 1e11 ? issuedAt * 1000 : issuedAt;
+  return issuedAtMs < revokedAt.getTime();
 }
 
 function toBase64Url(value: Buffer | string): string {
@@ -30,7 +70,13 @@ export function createAuthToken(
   secret: string
 ): string {
   if (!secret) throw new Error("Auth token secret is not configured");
-  const encodedPayload = toBase64Url(JSON.stringify(payload));
+
+  const jti = payload.jti ?? randomBytes(32).toString("base64url");
+  if (!/^[A-Za-z0-9_-]{43}$/.test(jti)) {
+    throw new Error("Auth token session identifier is invalid");
+  }
+
+  const encodedPayload = toBase64Url(JSON.stringify({ ...payload, jti }));
   const signature = createHmac("sha256", secret).update(encodedPayload).digest();
   const encodedSignature = toBase64Url(signature);
   return `${encodedPayload}.${encodedSignature}`;
@@ -64,14 +110,13 @@ function verifySignedToken(
   if (expectedSignature.length !== actualSignature.length) {
     return null;
   }
+
   if (!timingSafeEqual(expectedSignature, actualSignature)) {
     return null;
   }
 
   try {
-    const decoded = JSON.parse(
-      decodedPayload
-    );
+    const decoded = JSON.parse(decodedPayload);
 
     if (
       !decoded.userId ||
@@ -80,7 +125,10 @@ function verifySignedToken(
       !Number.isFinite(decoded.exp) ||
       typeof decoded.isAdmin !== "boolean" ||
       (decoded.iat !== undefined &&
-        (typeof decoded.iat !== "number" || !Number.isFinite(decoded.iat)))
+        (typeof decoded.iat !== "number" || !Number.isFinite(decoded.iat))) ||
+      (decoded.jti !== undefined &&
+        (typeof decoded.jti !== "string" ||
+          !/^[A-Za-z0-9_-]{43}$/.test(decoded.jti)))
     ) {
       return null;
     }
@@ -89,6 +137,17 @@ function verifySignedToken(
   } catch {
     return null;
   }
+}
+
+/**
+ * Ключ сессии для точечного отзыва: предпочтительно `jti`, иначе — сам токен.
+ */
+export function getAuthSessionKeyHash(
+  token: string,
+  payload: { jti?: string }
+): string {
+  const sessionKey = payload.jti ? `jti:${payload.jti}` : `legacy-token:${token}`;
+  return createHash("sha256").update(sessionKey).digest("hex");
 }
 
 export function verifyAuthToken(

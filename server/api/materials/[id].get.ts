@@ -1,64 +1,45 @@
 import { prisma } from "../../utils/prisma";
-import { sanitizeHtml } from "../../../util/sanitize-html";
+import { isValidMaterialId } from "../../utils/auth-route-policy";
+import {
+  fetchPublicMaterial,
+  toMaterialPublicHttpError,
+} from "../../utils/material-public";
+import { resolveOptionalUserId } from "../../utils/optional-user";
 
 export default defineEventHandler(async (event) => {
-  try {
-    const materialId = getRouterParam(event, "id");
+  setHeader(event, "cache-control", "no-store");
 
-    // Получаем пользователя из контекста (если есть)
-    const user = event.context.user;
-    const userId = user?.id;
-
-    const material = await prisma.material.findUnique({
-      where: {
-        id: materialId,
-        isActive: true,
-      },
-      include: {
-        ratings: true,
-        downloads: true,
-      },
+  const materialId = getRouterParam(event, "id");
+  if (!isValidMaterialId(materialId)) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: "Material not found",
     });
+  }
 
-    if (!material) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: "Material not found",
-      });
-    }
+  const userId =
+    event.context.user?.id ??
+    (await resolveOptionalUserId(
+      prisma,
+      getHeader(event, "authorization"),
+      useRuntimeConfig().authTokenSecret
+    ));
 
-    // Вычисляем статистику
-    const avgRating =
-      material.ratings.length > 0
-        ? material.ratings.reduce((sum, rating) => sum + rating.rating, 0) /
-          material.ratings.length
-        : 0;
-
-    const downloadCount = material.downloads.length;
-
-    // Находим оценку текущего пользователя
-    const userRating = userId
-      ? material.ratings.find((rating) => rating.userId === userId)?.rating || 0
-      : 0;
-
-    const materialWithStats = {
-      ...material,
-      content: sanitizeHtml(material.content),
-      avgRating: Math.round(avgRating * 10) / 10,
-      downloadCount,
-      userRating,
-      ratingCount: material.ratings.length,
-    };
+  try {
+    const material = await fetchPublicMaterial(prisma, materialId, { userId });
 
     return {
       success: true,
-      material: materialWithStats,
+      material,
     };
   } catch (error) {
-    console.error("Ошибка получения материала:", error);
-    return {
-      success: false,
-      error: "Ошибка получения материала",
-    };
+    const { statusCode, statusMessage } = toMaterialPublicHttpError(
+      error,
+      "Ошибка получения материала"
+    );
+    if (statusCode >= 500) {
+      console.error("Ошибка получения материала:", error);
+    }
+    throw createError({ statusCode, statusMessage });
   }
 });

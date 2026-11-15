@@ -1,5 +1,5 @@
 import { prisma } from "../../utils/prisma";
-import { createAuthToken } from "../../utils/auth-token";
+import { createAuthToken, getAuthTokenTimes } from "../../utils/auth-token";
 import {
   hashPassword,
   isHashedPassword,
@@ -49,14 +49,13 @@ export default defineEventHandler(async (event) => {
     }
 
     // Создаем подписанный токен
-    const issuedAt = Math.floor(Date.now() / 1000);
+    const tokenTimes = getAuthTokenTimes(7 * 24 * 60 * 60); // 7 дней
     const token = createAuthToken(
       {
         userId: user.id,
         telegramId: user.telegramId,
         isAdmin: user.isAdmin,
-        iat: issuedAt,
-        exp: issuedAt + 7 * 24 * 60 * 60, // 7 дней
+        ...tokenTimes,
       },
       getRuntimeAuthTokenSecret(config.authTokenSecret)
     );

@@ -51,7 +51,7 @@
             </div>
           </div>
 
-          <form class="lead-form" aria-label="Заявка на разработку" @submit.prevent="submitLeadForm">
+          <form class="lead-form" aria-label="Заявка на разработку" @input="invalidateLeadRetryKey" @submit.prevent="submitLeadForm">
             <label for="lead-name">Имя
               <input id="lead-name" v-model="leadForm.name" type="text" autocomplete="name" required placeholder="Ваше имя" />
             </label>
@@ -196,6 +196,46 @@ const leadForm = ref({ name: "", contact: "", email: "", business: "", task: "",
 const isSubmitting = ref(false);
 const formState = ref("idle");
 
+// Ключ идемпотентности сохраняется между попытками: повторная отправка той же
+// заявки не создаёт дубликат в очереди доставки.
+const leadIdempotencyStorageKey = "kstudio.lead.idempotency-key";
+let currentIdempotencyKey = "";
+
+const clearLeadIdempotencyKey = () => {
+  currentIdempotencyKey = "";
+  try {
+    window.sessionStorage.removeItem(leadIdempotencyStorageKey);
+  } catch {
+    // sessionStorage недоступен (приватный режим) — работаем без него.
+  }
+};
+
+const invalidateLeadRetryKey = () => {
+  if (formState.value === "error") clearLeadIdempotencyKey();
+};
+
+const getLeadIdempotencyKey = () => {
+  if (currentIdempotencyKey) return currentIdempotencyKey;
+
+  try {
+    currentIdempotencyKey = window.sessionStorage.getItem(leadIdempotencyStorageKey) || "";
+  } catch {
+    // sessionStorage недоступен — генерируем ключ только в памяти.
+  }
+
+  if (!currentIdempotencyKey) {
+    currentIdempotencyKey = window.crypto.randomUUID();
+  }
+
+  try {
+    window.sessionStorage.setItem(leadIdempotencyStorageKey, currentIdempotencyKey);
+  } catch {
+    // Не смогли сохранить ключ — он останется только в памяти вкладки.
+  }
+
+  return currentIdempotencyKey;
+};
+
 const scrollToForm = () => {
   document.getElementById("application-form")?.scrollIntoView({
     behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
@@ -203,25 +243,19 @@ const scrollToForm = () => {
   });
 };
 
-const buildLeadMessage = () => [
-  "📩 Новая заявка с портфолио Кирилла",
-  `Имя: ${leadForm.value.name}`,
-  `Telegram/телефон: ${leadForm.value.contact || "Не указан"}`,
-  `Email: ${leadForm.value.email}`,
-  `Ниша/компания: ${leadForm.value.business || "Не указано"}`,
-  `Задача: ${leadForm.value.task}`,
-  `Бюджет: ${leadForm.value.budget || "Не указан"}`,
-].join("\n");
-
 const submitLeadForm = async () => {
   formState.value = "idle";
   isSubmitting.value = true;
+  const idempotencyKey = getLeadIdempotencyKey();
+
   try {
     await $fetch("/api/telegram", {
       method: "POST",
-      body: { phone: leadForm.value.contact || leadForm.value.email, message: buildLeadMessage(), discount: 0 },
+      headers: { "Idempotency-Key": idempotencyKey },
+      body: { ...leadForm.value },
     });
     leadForm.value = { name: "", contact: "", email: "", business: "", task: "", budget: "" };
+    clearLeadIdempotencyKey();
     formState.value = "success";
   } catch (error) {
     formState.value = "error";
