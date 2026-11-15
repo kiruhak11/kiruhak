@@ -396,3 +396,25 @@ test("key public copy is personal and does not surface unsupported result sectio
   assert.match(hamburger, /\.mobile-menu-backdrop\s*\{[^}]*font-family:\s*var\(--portfolio-font-sans\)/s);
   assert.doesNotMatch([homepage, projectModal, hamburger].join("\n"), /CASE STUDY|\bSTACK\b|\bPRODUCTION\b|\bProduction\b/);
 });
+
+test("restored public surface keeps the lead contract and the legal documents reachable", () => {
+  const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
+  const homepage = read("../pages/index.vue");
+  const legalIndex = read("../pages/legal/index.vue");
+  const legalDocument = read("../pages/legal/[slug].vue");
+  const legalConfig = read("../constants/legal-config.ts");
+
+  // Форма заявки на главной использует контракт очереди доставки:
+  // единый ключ идемпотентности и плоское тело, без чернового сообщения.
+  assert.match(homepage, /\$fetch\("\/api\/telegram"/);
+  assert.match(homepage, /"Idempotency-Key":\s*idempotencyKey/);
+  assert.match(homepage, /body:\s*\{\s*\.\.\.leadForm\.value\s*\}/);
+  assert.doesNotMatch(homepage, /buildLeadMessage|discount:\s*0/);
+
+  // Юридические документы опубликованы и доступны по постоянным адресам.
+  assert.match(legalConfig, /id:\s*"privacy"/);
+  assert.match(legalConfig, /Политика обработки персональных данных/);
+  assert.match(legalIndex, /\/legal\/\$\{doc\.id\}/);
+  assert.match(legalDocument, /legalDocumentById/);
+  assert.match(legalDocument, /statusCode:\s*404/);
+});
