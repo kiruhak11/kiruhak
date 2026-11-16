@@ -139,22 +139,36 @@ No chunk of an API route and no server util differs — including
 The reconstructed TypeScript therefore compiles to exactly the same
 JavaScript as the lost originals for the restored modules.
 
-### Front-end: what is *not* identical
+### Front-end: what was *not* identical, and how it was closed
 
 The CSS of the reconstructed pages was recovered from the production client
-bundle. After re-scoping it, 37 of 37 comparable scope ids have an identical
-rule set against production. The genuine differences are additive rules that
-exist in production and are absent here, because the front-end work of
-2026-10-14 → 2026-11-09 was never published to GitHub:
+bundle. After re-scoping it, the rule sets matched production, but four
+front-end areas of the 2026-10-14 → 2026-11-09 work had never been published
+to GitHub and were missing from the branch — as **DOM, not only as CSS**:
 
-| Where | Missing in this branch |
-| --- | --- |
-| `layouts/default.vue` | `.footer-legal a` and its `:focus-visible` rules |
-| `pages/index.vue` | the `.form-privacy-note` block under the lead form and its link styles |
-| `pages/analytics.vue` | the `.form-privacy-note` rules |
-| account/profile area | the `.profile-actions .recovery-link` rules |
+| Where | Was missing in this branch | Now |
+| --- | --- | --- |
+| `layouts/default.vue` | `.footer-legal a` navigation | `<nav class="footer-legal">` → `/legal`, `/legal/privacy` |
+| `pages/index.vue` | `.form-privacy-note` under the lead form | restored with its link |
+| `pages/analytics.vue` | `.brief-privacy-note` | restored with its link |
+| account/profile area | `.profile-actions .recovery-link` | restored |
 
-API parity therefore does **not** imply full visual parity.
+The same diff revealed four further gaps that were found by rendering rather
+than by reading sources: `/login` and the two legal pages were rendered
+**without** the site chrome (they were not wrapped in `<NuxtLayout>`), the
+footer column heading read "Ссылки" instead of "Связаться", the public
+Telegram contact was `@kiruhak11` instead of `@kiruhak11bot`, and the logout
+buttons carried no `disabled`/`aria-busy` state.
+
+Parity is now **verified by rendering**, not by comparing sources: the
+original production image `kiruhak-app:materials-privacy-20261109` and the
+branch build are started side by side against an isolated throwaway
+PostgreSQL, and the SSR HTML of 12 pages is compared with scope ids,
+keyframe names, asset hashes and build id normalised
+(`ops/verify-visual-parity.sh`, `ops/compare-ssr-html.py`). Result: the
+visible text and the ordered CSS rule sequence match on **12/12 pages**, and
+the payload differs only in the build timestamp. The scoped CSS rule sets
+match production on **47/47** comparable scope ids.
 
 ## Known limitations
 
@@ -167,6 +181,7 @@ API parity therefore does **not** imply full visual parity.
    suite reports 69 as well (58 + 10 admin + 1 restored public-surface test).
    The identity of the individual lost test case could not be established.
 3. The front-end of the lost checkout (visual-polish 2026-10-14 →
-   legal-motion-2.0 → Nov) was never published to GitHub. The restored pages
-   cover the functional surface; the visual redesign of that period is not
-   present in this branch.
+   legal-motion-2.0 → Nov) was never published to GitHub. Its elements were
+   recovered from the compiled production artifact and verified by rendering
+   (see above), but the recovered **source** is a re-implementation, not the
+   original text.
