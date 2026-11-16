@@ -1,34 +1,32 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   // Проверяем аутентификацию только на клиенте
-  if (process.client) {
-    const { isAuthenticated, isAdmin, initAuth, refreshUser } = useAuth();
+  if (import.meta.client) {
+    const { isAuthenticated, isAdmin, initAuth } = useAuth();
 
-    // Инициализируем аутентификацию при каждом переходе
-    await initAuth();
+    // Восстанавливаем сессию: сохранённый токен проверяется сервером,
+    // localStorage сам по себе не является доказательством авторизации.
+    const session = await initAuth();
 
-    // Обновляем данные пользователя с сервера при каждом переходе
-    if (isAuthenticated.value) {
-      try {
-        await refreshUser();
-      } catch (error) {
-        console.error("Auth middleware error:", error);
-      }
-    }
+    // Перенаправляем только когда сервер подтвердил, что сессии нет.
+    // При недоступном API (unverified) перенаправлять нельзя: это создаёт
+    // ложное состояние и циклы навигации. Доступ к данным всё равно
+    // защищён серверной проверкой токена.
+    const hasNoSession = session.status === "anonymous";
 
     // Защищаем страницу аналитики
     if (to.path.startsWith("/analytics")) {
-      if (!isAuthenticated.value) {
+      if (hasNoSession) {
         return navigateTo("/login");
       }
     }
 
     // Защищаем админ-панель
     if (to.path.startsWith("/admin")) {
-      if (!isAuthenticated.value) {
+      if (hasNoSession) {
         return navigateTo("/login");
       }
 
-      if (!isAdmin.value) {
+      if (!isAuthenticated.value || !isAdmin.value) {
         return navigateTo("/analytics");
       }
     }

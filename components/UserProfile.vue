@@ -154,9 +154,6 @@ const {
   formattedBalance,
   initAuth,
   refreshUser,
-  checkTokenStatus,
-  forceRefreshToken,
-  validateToken,
 } = useAuth();
 
 // Инициализируем аутентификацию
@@ -171,9 +168,7 @@ onMounted(async () => {
 
   // Обновляем данные пользователя с сервера при загрузке страницы
   if (isAuthenticated.value) {
-    console.log("🔐 UserProfile: Обновление данных пользователя");
-    await refreshUser();
-    console.log("🔐 UserProfile: Данные пользователя обновлены с сервера:", {
+    console.log("🔐 UserProfile: Данные пользователя подтверждены сервером:", {
       balance: user.value?.balance,
       formattedBalance: formattedBalance.value,
     });

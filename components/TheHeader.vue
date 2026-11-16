@@ -83,16 +83,12 @@ const {
   user,
   isAuthenticated,
   initAuth,
-  refreshUser,
 } = useAuth();
 
 onMounted(async () => {
   handleScroll();
   window.addEventListener("scroll", handleScroll, { passive: true });
   await initAuth();
-  if (isAuthenticated.value) {
-    await refreshUser();
-  }
 });
 
 const showProfile = ref(false);

@@ -23,7 +23,8 @@
     "test:session-revocation": "tsx --test tests/session-revocation.integration.test.ts",
     "test:telegram-login": "tsx --test tests/telegram-login.test.ts tests/telegram-login-oidc.test.ts",
     "test:telegram": "tsx --test tests/telegram-http.test.ts tests/telegram-config.test.ts",
-    "test:lead": "tsx --test tests/lead-delivery.test.ts"
+    "test:lead": "tsx --test tests/lead-delivery.test.ts",
+    "test:auth-session": "tsx --test tests/auth-session.test.ts"
   },
   "dependencies": {
     "@morev/vue-transitions": "^3.0.2",

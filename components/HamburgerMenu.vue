@@ -286,7 +286,6 @@ const handleViewportChange = async (event: MediaQueryListEvent) => {
     return;
   }
   await initAuth();
-  if (isAuthenticated.value) await refreshUser();
 };
 
 onMounted(async () => {
@@ -294,7 +293,6 @@ onMounted(async () => {
   mobileMediaQuery.addEventListener("change", handleViewportChange);
   if (mobileMediaQuery.matches) {
     await initAuth();
-    if (isAuthenticated.value) await refreshUser();
   }
 });
 
