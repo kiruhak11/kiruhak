@@ -2,18 +2,18 @@
 
 **Release candidate:** `security-headers-rate-limit-20261117`
 **Branch:** `security/headers-rate-limit` (base — `master` @ `095b9ba`)
-**Исходный коммит:** `aaca8e8b9f7f75515b3e5a2e00c044601d60f946`
+**Исходный коммит:** `90f0f7b1f23ab145625cb14c59a81529c2a46732`
 **Тип деплоя:** app-only (контейнер приложения), без БД, без бота, без Nginx и DNS
 **Статус на момент подготовки:** образ собран и проверен, **деплой не выполнялся**
 
 | Артефакт | Значение |
 | --- | --- |
 | Образ | `kiruhak-app:security-headers-rate-limit-20261117` |
-| Image ID | `sha256:4722cffbb00d307a4b4b1c142b8bd789e2ac0e8899c8f7f63d41cc4fc9f2318f` |
+| Image ID | `sha256:de93ee464d1f7d7cfbf5648315987b21bcc44a01093b08bba7428e06efc89527` |
 | Платформа | `linux/amd64` |
-| Source snapshot SHA-256 | `abb656b0686ba9cfe1d5bffe9b387268ae2c2687ca3e2bcbb17c90faabe07bba` |
-| Архив образа | `/var/lib/kiruhak/security-headers-rate-limit-20261117-linux-amd64.tar.gz` (108 588 903 B) |
-| SHA-256 архива | `e4b709adb3a9df7f219341c5c0ec4141b2cda6abaa7d1bf0a9872833b210ca96` |
+| Source snapshot SHA-256 | `b51b41f944d487449035d1a20789b00b5d2fd139a8846524a1e803211429e8b4` |
+| Архив образа | `/var/lib/kiruhak/security-headers-rate-limit-20261117-linux-amd64.tar.gz` (108 607 123 B) |
+| SHA-256 архива | `c2633edd7f91d891b8a869325d63ac6667bffa3e1feddec3c8b4e985dc0aab6f` |
 
 ---
 
