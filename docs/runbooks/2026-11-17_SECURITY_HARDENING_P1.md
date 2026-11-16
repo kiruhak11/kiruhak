@@ -2,8 +2,18 @@
 
 **Release candidate:** `security-headers-rate-limit-20261117`
 **Branch:** `security/headers-rate-limit` (base — `master` @ `095b9ba`)
+**Исходный коммит:** `aaca8e8b9f7f75515b3e5a2e00c044601d60f946`
 **Тип деплоя:** app-only (контейнер приложения), без БД, без бота, без Nginx и DNS
 **Статус на момент подготовки:** образ собран и проверен, **деплой не выполнялся**
+
+| Артефакт | Значение |
+| --- | --- |
+| Образ | `kiruhak-app:security-headers-rate-limit-20261117` |
+| Image ID | `sha256:4722cffbb00d307a4b4b1c142b8bd789e2ac0e8899c8f7f63d41cc4fc9f2318f` |
+| Платформа | `linux/amd64` |
+| Source snapshot SHA-256 | `abb656b0686ba9cfe1d5bffe9b387268ae2c2687ca3e2bcbb17c90faabe07bba` |
+| Архив образа | `/var/lib/kiruhak/security-headers-rate-limit-20261117-linux-amd64.tar.gz` (108 588 903 B) |
+| SHA-256 архива | `e4b709adb3a9df7f219341c5c0ec4141b2cda6abaa7d1bf0a9872833b210ca96` |
 
 ---
 
@@ -34,7 +44,11 @@ Nginx production **не изменяется**: для `kiruhak11.ru` он не 
 * Если тело ответа проанализировать не удалось (потоковая выдача), политика
   переходит на безопасный запасной вариант с `unsafe-inline` для скриптов.
 
-`unsafe-eval` не используется нигде. Разрешённые источники: `self`,
+`unsafe-eval` не используется нигде. Директива `upgrade-insecure-requests`
+добавляется только для защищённых запросов (определяется по
+`X-Forwarded-Proto`): на не-HTTPS origin она обновляет и same-origin ресурсы
+(например, `/_payload.json`) и ломает загрузку payload.
+Разрешённые источники: `self`,
 `oauth.telegram.org` (Telegram Login SDK), `telegram.org`, inline-стили Nuxt,
 self-hosted шрифты, `data:`/`blob:` для изображений и превью.
 
