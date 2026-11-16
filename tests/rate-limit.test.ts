@@ -259,7 +259,7 @@ test("client address normalization and trusted ranges behave predictably", () =>
   const trusted = parseTrustedProxies([
     ...DEFAULT_TRUSTED_PROXIES,
     "81.177.135.137/32",
-  ]);
+  ] as string[]);
   assert.equal(isTrustedAddress("127.0.0.1", trusted), true);
   assert.equal(isTrustedAddress("81.177.135.137", trusted), true);
   assert.equal(isTrustedAddress("203.0.113.5", trusted), false);
