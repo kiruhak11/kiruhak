@@ -109,7 +109,8 @@ export function collectRenderedScriptHashes(context: {
  * проанализировать: тогда используется `unsafe-inline` для скриптов.
  */
 export function buildDocumentContentSecurityPolicy(
-  inlineScriptHashes: string[] | null
+  inlineScriptHashes: string[] | null,
+  secureRequest = false
 ): string {
   const scriptSrc =
     inlineScriptHashes === null
@@ -133,7 +134,10 @@ export function buildDocumentContentSecurityPolicy(
     "manifest-src 'self'",
   ];
 
-  if (process.env.NODE_ENV === "production") {
+  // upgrade-insecure-requests применяется только к защищённым запросам:
+  // на не-HTTPS origin директива обновляет и same-origin ресурсы (например,
+  // /_payload.json), ломая их загрузку.
+  if (secureRequest) {
     directives.push("upgrade-insecure-requests");
   }
 
@@ -188,6 +192,27 @@ const loadPrerenderedScriptHashes = (): void => {
   }
 };
 
+/**
+ * Запрос пришёл по защищённому каналу.
+ *
+ * За обратным прокси схема известна из X-Forwarded-Proto, который выставляет
+ * production-Nginx.
+ */
+const isSecureRequest = (event: NitroEvent): boolean => {
+  const forwarded = getRequestHeader(event, "x-forwarded-proto");
+  if (forwarded) {
+    return String(forwarded).split(",")[0]?.trim() === "https";
+  }
+  try {
+    return (
+      getRequestURL(event, { xForwardedHost: true, xForwardedProto: true })
+        .protocol === "https:"
+    );
+  } catch {
+    return false;
+  }
+};
+
 const isDocumentResponse = (event: NitroEvent): boolean => {
   const raw = getResponseHeader(event, "content-type");
   const contentType = Array.isArray(raw) ? raw[0] : raw;
@@ -238,7 +263,8 @@ export default defineNitroPlugin((nitroApp) => {
         event,
         "Content-Security-Policy",
         buildDocumentContentSecurityPolicy(
-          renderedHashes ?? bodyHashes
+          renderedHashes ?? bodyHashes,
+          isSecureRequest(event)
         )
       );
       return;

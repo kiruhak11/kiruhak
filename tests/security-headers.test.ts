@@ -16,6 +16,7 @@ type FakeEvent = {
   node: { res: { __bag: HeaderBag; getHeader: (name: string) => string | undefined } };
   context: Record<string, unknown>;
   path: string;
+  headers?: Record<string, string>;
 };
 
 const createEvent = (
@@ -86,7 +87,13 @@ const loadPluginOnce = async () => {
     name: string
   ): string | undefined => event.node.res.getHeader(name);
 
-  globals.getRequestURL = (event: FakeEvent) => ({ pathname: event.path });
+  globals.getRequestURL = (event: FakeEvent) => ({
+    pathname: event.path,
+    protocol: "http:",
+  });
+
+  globals.getRequestHeader = (event: FakeEvent, name: string) =>
+    event.headers?.[name];
 
   globals.setResponseHeader = (
     event: FakeEvent,
@@ -251,6 +258,25 @@ test("CSP hashes are collected from the document parts rendered by Nitro", async
     .digest("base64")}'`;
   assert.ok(csp.includes(expectedHash), "хеш инлайнового скрипта должен попасть в CSP");
   assert.doesNotMatch(csp, /script-src[^;]*'unsafe-inline'/);
+});
+
+test("upgrade-insecure-requests is only applied to secure requests", async () => {
+  const plugin = await loadPlugin();
+
+  const insecure = createEvent("text/html", "/__csp-probe");
+  await plugin.runBeforeResponse(insecure.event, { body: { body: "<html></html>" } });
+  assert.doesNotMatch(
+    insecure.bag.get("content-security-policy") ?? "",
+    /upgrade-insecure-requests/
+  );
+
+  const secure = createEvent("text/html", "/__csp-probe");
+  secure.event.headers = { "x-forwarded-proto": "https" };
+  await plugin.runBeforeResponse(secure.event, { body: { body: "<html></html>" } });
+  assert.match(
+    secure.bag.get("content-security-policy") ?? "",
+    /upgrade-insecure-requests/
+  );
 });
 
 test("prerendered pages get their own script hashes instead of unsafe-inline", async () => {

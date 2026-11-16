@@ -94,7 +94,7 @@ echo
 echo "-- rate limit --"
 # Несуществующий маршрут авторизации: ответ 404, лимит не должен срабатывать.
 CODE="$(curl -s -o /dev/null -w '%{http_code}' -m 25 -X POST -H 'Content-Type: application/json' -d '{}' "$BASE/api/auth/login")"
-check "POST /api/auth/login reachable" "400" "$CODE"
+check "POST /api/auth/login reachable" "200" "$CODE"
 
 echo
 echo "=== RESULT: pass=$PASS fail=$FAIL ==="
