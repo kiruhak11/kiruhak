@@ -90,6 +90,12 @@
             </div>
           </section>
 
+          <p class="brief-privacy-note">
+            Отправка брифа передаёт введённые ответы оператору через Telegram для
+            ответа на ваш запрос. Не включайте данные третьих лиц без основания.
+            <NuxtLink to="/legal/privacy">Политика обработки персональных данных</NuxtLink>.
+          </p>
+
           <div class="actions">
             <button type="submit" class="submit-btn" :disabled="sending">
               {{ sending ? "Отправка..." : "Отправить бриф в Telegram" }}
@@ -687,6 +693,18 @@ onMounted(async () => {
   flex-direction: column;
   gap: 1.25rem;
 }
+.brief-privacy-note {
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.brief-privacy-note a {
+  color: var(--color-primary);
+  text-underline-offset: 3px;
+}
+
 
 .question-section {
   border: 1px solid var(--border-color);
@@ -765,6 +783,9 @@ onMounted(async () => {
   }
 }
 
+/* Воспроизводит стили production: переменная --color-primary в текущей
+   дизайн-системе не определена, поэтому цвет ссылки остаётся заданным
+   глобальным правилом для ссылок — как и в production. */
 .actions {
   display: flex;
   flex-direction: column;

@@ -57,7 +57,7 @@ test("project case modal is portaled to the document body and keeps its interact
 
 test("public contact data is centralized and points to one profile", () => {
   assert.equal(publicContact.email.href, "mailto:web@kiruhak11.ru");
-  assert.equal(publicContact.telegram.href, "https://t.me/kiruhak11");
+  assert.equal(publicContact.telegram.href, "https://t.me/kiruhak11bot");
   assert.equal(publicContact.github.href, "https://github.com/kiruhak11");
   assert.equal(publicContact.vk.href, "https://vk.com/kiruhak11");
 });

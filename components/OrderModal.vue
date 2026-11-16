@@ -126,6 +126,11 @@
               ></textarea>
             </div>
 
+            <p class="form-privacy-note">
+              Отправляя заявку, вы просите связаться с вами по указанному контакту.
+              <NuxtLink to="/legal/privacy">Политика обработки персональных данных</NuxtLink>.
+            </p>
+
             <div class="form-actions">
               <button
                 type="submit"
@@ -485,10 +490,25 @@ ${form.value.description}
   }
 }
 
+/* Параметры воспроизведены по production: --color-primary в текущей
+   дизайн-системе не определена, поэтому цвет ссылки задаётся глобальным
+   правилом для ссылок — как и в production. */
 .form-actions {
   margin-top: 32px;
   text-align: center;
 }
+.form-privacy-note {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.form-privacy-note a {
+  color: var(--color-primary);
+  text-underline-offset: 3px;
+}
+
 
 .submit-button {
   display: inline-flex;

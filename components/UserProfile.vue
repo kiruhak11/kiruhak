@@ -63,6 +63,9 @@
         </svg>
         Редактировать профиль
       </button>
+      <NuxtLink to="/account/recovery" class="recovery-link">
+        Подтвердить Telegram и сменить пароль
+      </NuxtLink>
       <NuxtLink v-if="user?.isAdmin" to="/admin/projects" class="admin-btn">
         <svg
           width="16"
@@ -81,7 +84,13 @@
         </svg>
         Админ панель
       </NuxtLink>
-      <button @click="handleLogout" class="logout-btn">
+      <button
+        type="button"
+        class="logout-btn"
+        :disabled="logoutLoading"
+        :aria-busy="logoutLoading"
+        @click="handleLogout"
+      >
         <svg
           width="16"
           height="16"
@@ -141,6 +150,7 @@ const {
   token,
   isAuthenticated,
   logout,
+  logoutLoading,
   formattedBalance,
   initAuth,
   refreshUser,
@@ -276,6 +286,23 @@ const handleLogout = () => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+
+  .recovery-link {
+    display: block;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    text-align: center;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--accent-color);
+      color: var(--accent-color);
+    }
+  }
 
   button {
     display: flex;

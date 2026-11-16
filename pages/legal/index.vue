@@ -14,48 +14,50 @@ useHead({
 </script>
 
 <template>
-  <main class="legal-hub">
-    <div class="legal-container">
-      <p class="legal-kicker">K-STUDIO / ДОКУМЕНТЫ</p>
-      <h1>Юридическая информация</h1>
-      <p class="legal-intro">
-        Актуальная политика обработки персональных данных K-Studio и способы
-        обратиться к оператору.
-      </p>
+  <NuxtLayout>
+    <main class="legal-hub">
+      <div class="legal-container">
+        <p class="legal-kicker">K-STUDIO / ДОКУМЕНТЫ</p>
+        <h1>Юридическая информация</h1>
+        <p class="legal-intro">
+          Актуальная политика обработки персональных данных K-Studio и способы
+          обратиться к оператору.
+        </p>
 
-      <div class="legal-layout">
-        <nav class="legal-index" aria-label="Содержание юридического центра">
-          <span class="legal-index-label">Разделы</span>
-          <a v-for="doc in legalDocuments" :key="doc.id" :href="`#${doc.id}`">
-            {{ doc.shortTitle }}
-          </a>
-        </nav>
+        <div class="legal-layout">
+          <nav class="legal-index" aria-label="Содержание юридического центра">
+            <span class="legal-index-label">Разделы</span>
+            <a v-for="doc in legalDocuments" :key="doc.id" :href="`#${doc.id}`">
+              {{ doc.shortTitle }}
+            </a>
+          </nav>
 
-        <section class="legal-cards" aria-label="Документы K-Studio">
-          <article
-            v-for="doc in legalDocuments"
-            :id="doc.id"
-            :key="doc.id"
-            class="legal-card"
-          >
-            <div class="card-meta">
-              <span>{{ doc.version }}</span>
-              <span>{{ doc.effectiveDate }}</span>
-            </div>
-            <h2>
-              <NuxtLink :to="`/legal/${doc.id}`">
-                {{ doc.title }} <span aria-hidden="true">↗</span>
+          <section class="legal-cards" aria-label="Документы K-Studio">
+            <article
+              v-for="doc in legalDocuments"
+              :id="doc.id"
+              :key="doc.id"
+              class="legal-card"
+            >
+              <div class="card-meta">
+                <span>{{ doc.version }}</span>
+                <span>{{ doc.effectiveDate }}</span>
+              </div>
+              <h2>
+                <NuxtLink :to="`/legal/${doc.id}`">
+                  {{ doc.title }} <span aria-hidden="true">↗</span>
+                </NuxtLink>
+              </h2>
+              <p>{{ doc.summary }}</p>
+              <NuxtLink class="card-link" :to="`/legal/${doc.id}`">
+                Открыть документ <span aria-hidden="true">→</span>
               </NuxtLink>
-            </h2>
-            <p>{{ doc.summary }}</p>
-            <NuxtLink class="card-link" :to="`/legal/${doc.id}`">
-              Открыть документ <span aria-hidden="true">→</span>
-            </NuxtLink>
-          </article>
-        </section>
+            </article>
+          </section>
+        </div>
       </div>
-    </div>
-  </main>
+    </main>
+  </NuxtLayout>
 </template>
 
 <style scoped lang="scss">

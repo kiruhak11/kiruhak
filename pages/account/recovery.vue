@@ -219,8 +219,8 @@ async function submitPassword() {
   --color-text-hover: #f5faf4;
   --color-accent: #b9d9a7;
   --color-accent-hover: #c9e6b9;
-  --box-shadow-color: rgba(21, 41, 27, 0.24);
-  --box-shadow-color-hover: rgba(21, 41, 27, 0.34);
+  --box-shadow-color: rgba(0, 0, 0, 0.24);
+  --box-shadow-color-hover: rgba(0, 0, 0, 0.34);
   --background-info-color: #19231c;
   --gradient-primary: linear-gradient(135deg, #71916f, #9fbd8f);
   --gradient-secondary: linear-gradient(135deg, #637964, #859c7e);
