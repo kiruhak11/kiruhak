@@ -217,6 +217,7 @@
                 class="component-preview-iframe"
                 frameborder="0"
                 sandbox="allow-scripts"
+                csp="default-src 'unsafe-inline' data: blob:;"
               ></iframe>
             </div>
           </div>

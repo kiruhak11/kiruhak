@@ -1,4 +1,5 @@
 import { prisma } from "../../utils/prisma";
+import { resolveClientIp, trustedProxiesFromEnv } from "../../utils/client-ip";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -25,9 +26,16 @@ export default defineEventHandler(async (event) => {
     }
 
     const requestIp =
-      getRequestIP(event, { xForwardedFor: true }) ||
-      event.node.req.socket.remoteAddress ||
-      "unknown";
+      resolveClientIp(
+        {
+          headers: event.headers as unknown as Record<
+            string,
+            string | string[] | undefined
+          >,
+          socket: event.node?.req?.socket,
+        },
+        { trustedProxies: trustedProxiesFromEnv() }
+      );
 
     // Создаем запись о посещении
     const visit = await prisma.visit.create({

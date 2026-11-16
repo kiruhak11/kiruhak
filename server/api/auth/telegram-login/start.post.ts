@@ -1,4 +1,5 @@
 import { prisma } from "../../../utils/prisma";
+import { resolveClientIp, trustedProxiesFromEnv } from "../../../utils/client-ip";
 import { getRuntimeAuthTokenSecret } from "../../../utils/security-config";
 import { getTelegramLoginClientId } from "../../../utils/telegram-config";
 import {
@@ -13,10 +14,17 @@ import {
 
 type TelegramLoginEvent = Parameters<typeof getHeader>[0];
 
-function resolveClientIp(event: TelegramLoginEvent): string {
-  const forwardedFor = getHeader(event, "x-forwarded-for");
-  const forwardedSocketAddress = forwardedFor?.split(",").at(-1)?.trim();
-  return forwardedSocketAddress || getRequestIP(event) || "unknown";
+function resolveTelegramClientIp(event: TelegramLoginEvent): string {
+  return resolveClientIp(
+    {
+      headers: event.headers as unknown as Record<
+        string,
+        string | string[] | undefined
+      >,
+      socket: event.node?.req?.socket,
+    },
+    { trustedProxies: trustedProxiesFromEnv() }
+  );
 }
 
 export default defineEventHandler(async (event) => {
@@ -58,7 +66,7 @@ export default defineEventHandler(async (event) => {
 
   const material = createTelegramLoginTransactionMaterial();
   const clientKeyHash = getClientKeyHash({
-    ip: resolveClientIp(event),
+    ip: resolveTelegramClientIp(event),
     secret: authSecret,
   });
   const now = new Date();

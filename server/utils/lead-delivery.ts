@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { resolveClientIp, trustedProxiesFromEnv } from "./client-ip";
 
 /**
  * Тип события берём из сигнатуры авто-импортируемого h3-хелпера:
@@ -84,14 +85,21 @@ export function leadFingerprint(lead: LeadInput): string {
   return createHash("sha256").update(JSON.stringify(lead)).digest("hex");
 }
 
-/** Адрес клиента: последний адрес из X-Forwarded-For, иначе IP соединения. */
+/**
+ * Адрес клиента.
+ *
+ * Forwarded-заголовки учитываются только от доверенного прокси, иначе клиент
+ * мог бы подменить адрес и обойти ограничение частоты заявок.
+ */
 export function getClientAddress(event: LeadRequestEvent): string {
-  const forwarded = getHeader(event, "x-forwarded-for");
-  const address = forwarded
-    ?.split(",")
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .at(-1);
-
-  return address || getRequestIP(event, { xForwardedFor: false }) || "unknown";
+  return resolveClientIp(
+    {
+      headers: event.headers as unknown as Record<
+        string,
+        string | string[] | undefined
+      >,
+      socket: event.node?.req?.socket,
+    },
+    { trustedProxies: trustedProxiesFromEnv() }
+  );
 }
