@@ -14,6 +14,7 @@ type HeaderBag = Map<string, string>;
 
 type FakeEvent = {
   node: { res: { __bag: HeaderBag; getHeader: (name: string) => string | undefined } };
+  context: Record<string, unknown>;
 };
 
 const createEvent = (contentType?: string): { event: FakeEvent; bag: HeaderBag } => {
@@ -25,6 +26,7 @@ const createEvent = (contentType?: string): { event: FakeEvent; bag: HeaderBag }
         getHeader: (name: string) => bag.get(name),
       },
     },
+    context: {},
   };
   if (contentType) bag.set("content-type", contentType);
   return { event, bag };
@@ -33,6 +35,10 @@ const createEvent = (contentType?: string): { event: FakeEvent; bag: HeaderBag }
 let pluginPromise: Promise<{
   runBeforeResponse: (event: unknown, body?: unknown) => Promise<unknown[]>;
   runError: (event: unknown) => Promise<unknown[]>;
+  runRenderHtml: (
+    context: Record<string, unknown>,
+    event: unknown
+  ) => Promise<unknown[]>;
 }> | null = null;
 
 /**
@@ -93,6 +99,10 @@ const loadPluginOnce = async () => {
         (hooks.get("error") ?? []).map((hook) =>
           hook(new Error("test"), { event })
         )
+      ),
+    runRenderHtml: (context: Record<string, unknown>, event: unknown) =>
+      Promise.all(
+        (hooks.get("render:html") ?? []).map((hook) => hook(context, { event }))
       ),
   };
 };
@@ -204,6 +214,30 @@ test("document CSP stays compatible with hydration, fonts, forms and the Telegra
   assert.doesNotMatch(csp, /script-src[^;]*'unsafe-inline'/);
   assert.match(csp, /frame-ancestors 'none'/);
   assert.match(csp, /object-src 'none'/);
+});
+
+test("CSP hashes are collected from the document parts rendered by Nitro", async () => {
+  const plugin = await loadPlugin();
+  const { event, bag } = createEvent("text/html");
+
+  const inlineScript = "window.__NUXT__={};window.__NUXT__.config={public:{}};";
+  await plugin.runRenderHtml(
+    {
+      head: [`<script src="/_nuxt/entry.js"></script><script>${inlineScript}</script>`],
+      body: ['<div id="__nuxt"></div>'],
+      bodyPrepend: [],
+      bodyAppend: [],
+    },
+    event
+  );
+  await plugin.runBeforeResponse(event, { body: { body: "<html></html>" } });
+
+  const csp = bag.get("content-security-policy") ?? "";
+  const expectedHash = `'sha256-${createHash("sha256")
+    .update(inlineScript, "utf8")
+    .digest("base64")}'`;
+  assert.ok(csp.includes(expectedHash), "хеш инлайнового скрипта должен попасть в CSP");
+  assert.doesNotMatch(csp, /script-src[^;]*'unsafe-inline'/);
 });
 
 test("CSP falls back to a safe variant when the body cannot be inspected", async () => {

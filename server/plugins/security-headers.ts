@@ -44,21 +44,60 @@ const INLINE_SCRIPT_PATTERN = /<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script
  * нельзя и нужен запасной вариант политики.
  */
 export function extractInlineScriptHashes(body: unknown): string[] | null {
-  if (typeof body !== "string") return null;
+  const text = htmlTextOf(body);
+  if (text === null) return null;
 
   const hashes = new Set<string>();
   INLINE_SCRIPT_PATTERN.lastIndex = 0;
 
-  let match: RegExpExecArray | null = INLINE_SCRIPT_PATTERN.exec(body);
+  let match: RegExpExecArray | null = INLINE_SCRIPT_PATTERN.exec(text);
   while (match) {
     const digest = createHash("sha256")
       .update(match[1], "utf8")
       .digest("base64");
     hashes.add(`'sha256-${digest}'`);
-    match = INLINE_SCRIPT_PATTERN.exec(body);
+    match = INLINE_SCRIPT_PATTERN.exec(text);
   }
 
   return [...hashes];
+}
+
+/**
+ * Достаёт HTML из тела ответа.
+ *
+ * Nitro отдаёт результат SSR-рендера объектом `{ body, statusCode, headers }`,
+ * поэтому текст лежит во вложенном поле.
+ */
+export function htmlTextOf(body: unknown): string | null {
+  if (typeof body === "string") return body;
+  if (body && typeof body === "object") {
+    const inner = (body as { body?: unknown }).body;
+    if (typeof inner === "string") return inner;
+  }
+  return null;
+}
+
+/**
+ * Собирает хеши инлайновых скриптов из частей документа, которые Nitro
+ * складывает в финальный HTML (хук `render:html`).
+ */
+export function collectRenderedScriptHashes(context: {
+  head?: unknown;
+  body?: unknown;
+  bodyPrepend?: unknown;
+  bodyAppend?: unknown;
+}): string[] {
+  const parts = [
+    ...(Array.isArray(context.head) ? context.head : []),
+    ...(Array.isArray(context.bodyPrepend) ? context.bodyPrepend : []),
+    ...(Array.isArray(context.body) ? context.body : []),
+    ...(Array.isArray(context.bodyAppend) ? context.bodyAppend : []),
+  ]
+    .filter((part): part is string => typeof part === "string")
+    .join("\n");
+
+  const hashes = extractInlineScriptHashes(parts);
+  return hashes ?? [];
 }
 
 /**
@@ -119,6 +158,14 @@ export default defineNitroPlugin((nitroApp) => {
     );
   };
 
+  // Хеши инлайновых скриптов собираются на этапе сборки документа: Nitro
+  // складывает документ из отдельных частей, поэтому готовый HTML на момент
+  // ответа недоступен как строка.
+  nitroApp.hooks.hook("render:html", (context, { event }) => {
+    const hashes = collectRenderedScriptHashes(context);
+    (event.context as { securityInlineScriptHashes?: string[] }).securityInlineScriptHashes = hashes;
+  });
+
   nitroApp.hooks.hook("beforeResponse", (event, response) => {
     applyCommonHeaders(event);
 
@@ -128,11 +175,16 @@ export default defineNitroPlugin((nitroApp) => {
         "Referrer-Policy",
         DOCUMENT_REFERRER_POLICY
       );
+      const renderedHashes = (
+        event.context as { securityInlineScriptHashes?: string[] }
+      ).securityInlineScriptHashes;
+      const bodyHashes = extractInlineScriptHashes(response?.body);
+
       setResponseHeader(
         event,
         "Content-Security-Policy",
         buildDocumentContentSecurityPolicy(
-          extractInlineScriptHashes(response?.body)
+          renderedHashes ?? bodyHashes
         )
       );
       return;
