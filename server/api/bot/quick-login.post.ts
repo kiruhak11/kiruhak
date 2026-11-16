@@ -1,21 +1,20 @@
 import { prisma } from "../../utils/prisma";
-import { createAuthToken } from "../../utils/auth-token";
+import { createAuthToken, getAuthTokenTimes } from "../../utils/auth-token";
 import { getRuntimeAuthTokenSecret } from "../../utils/security-config";
+import { isValidBotSecret } from "../../utils/bot-secret";
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
-  const isDev = process.env.NODE_ENV !== "production";
 
-  if (!isDev) {
-    const secret = getHeader(event, "x-bot-secret");
-    const expectedSecret =
-      config.botSecret || process.env.BOT_SECRET || process.env.NUXT_BOT_SECRET || "";
-    if (!expectedSecret || secret !== expectedSecret) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: "Forbidden",
-      });
-    }
+  // Служебный API бота: корректный секрет обязателен в ЛЮБОМ окружении.
+  // Проверка не зависит от NODE_ENV: иначе образ, собранный вне
+  // production-режима, компилировал бы её полностью, и токен входа можно
+  // было бы получить по произвольному Telegram ID.
+  if (!isValidBotSecret(getHeader(event, "x-bot-secret"), config.botSecret)) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: "Forbidden",
+    });
   }
 
   const body = await readBody(event);
@@ -44,14 +43,13 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const issuedAt = Math.floor(Date.now() / 1000);
+  const tokenTimes = getAuthTokenTimes(15 * 60);
   const quickToken = createAuthToken(
     {
       userId: user.id,
       telegramId: user.telegramId,
       isAdmin: user.isAdmin,
-      iat: issuedAt,
-      exp: issuedAt + 15 * 60,
+      ...tokenTimes,
     },
     getRuntimeAuthTokenSecret(config.authTokenSecret)
   );

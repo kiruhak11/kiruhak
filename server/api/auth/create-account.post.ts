@@ -1,21 +1,21 @@
 import { prisma } from "../../utils/prisma";
 import { randomBytes } from "crypto";
 import { hashPassword } from "../../utils/password";
-import { createAuthToken } from "../../utils/auth-token";
+import { createAuthToken, getAuthTokenTimes } from "../../utils/auth-token";
 import { getRuntimeAuthTokenSecret } from "../../utils/security-config";
+import { isValidBotSecret } from "../../utils/bot-secret";
 
 function buildQuickLogin(
   config: ReturnType<typeof useRuntimeConfig>,
   targetUser: { id: string; telegramId: string; isAdmin: boolean }
 ) {
-  const issuedAt = Math.floor(Date.now() / 1000);
+  const tokenTimes = getAuthTokenTimes(15 * 60);
   const quickToken = createAuthToken(
     {
       userId: targetUser.id,
       telegramId: targetUser.telegramId,
       isAdmin: targetUser.isAdmin,
-      iat: issuedAt,
-      exp: issuedAt + 15 * 60, // 15 минут
+      ...tokenTimes,
     },
     getRuntimeAuthTokenSecret(config.authTokenSecret)
   );
@@ -34,19 +34,15 @@ function buildQuickLogin(
 export default defineEventHandler(async (event) => {
   try {
     const config = useRuntimeConfig();
-    const isDev = process.env.NODE_ENV !== "production";
 
-    // Ограничиваем вызов endpoint внешним секретом в production.
-    if (!isDev) {
-      const secret = getHeader(event, "x-bot-secret");
-      const expectedSecret =
-        config.botSecret || process.env.BOT_SECRET || process.env.NUXT_BOT_SECRET || "";
-      if (!expectedSecret || secret !== expectedSecret) {
-        throw createError({
-          statusCode: 403,
-          statusMessage: "Forbidden",
-        });
-      }
+    // Служебный endpoint бота: корректный секрет обязателен в ЛЮБОМ
+    // окружении. Раньше проверка зависела от NODE_ENV, что на этапе сборки
+    // позволяло скомпилировать её полностью.
+    if (!isValidBotSecret(getHeader(event, "x-bot-secret"), config.botSecret)) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Forbidden",
+      });
     }
 
     const body = await readBody(event);

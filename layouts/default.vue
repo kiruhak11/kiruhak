@@ -19,7 +19,7 @@
           </nav>
 
           <div class="footer-contacts">
-            <span class="footer-heading">Ссылки</span>
+            <span class="footer-heading">Связаться</span>
             <a
               :href="publicContact.telegram.href"
               target="_blank"
@@ -32,6 +32,12 @@
               GitHub <span>{{ publicContact.github.label }}</span>
             </a>
           </div>
+
+          <nav class="footer-legal" aria-label="Юридическая информация">
+            <span class="footer-heading">Документы</span>
+            <NuxtLink to="/legal">Юридическая информация</NuxtLink>
+            <NuxtLink to="/legal/privacy">Персональные данные</NuxtLink>
+          </nav>
         </div>
 
         <div class="footer-bottom">
@@ -120,33 +126,40 @@ body {
 
 .footer-top {
   display: grid;
-  grid-template-columns: minmax(220px, 1.2fr) minmax(130px, 0.65fr) minmax(240px, 1fr);
-  gap: clamp(1.25rem, 3vw, 2.5rem);
+  grid-template-columns:
+    minmax(190px, 1.1fr)
+    minmax(112px, 0.65fr)
+    minmax(220px, 1.1fr)
+    minmax(155px, 0.8fr);
+  gap: clamp(1rem, 2.4vw, 2rem);
   align-items: start;
 }
 
 .footer-navigation,
-.footer-contacts {
+.footer-contacts,
+.footer-legal {
   display: grid;
   justify-items: start;
   gap: 0.6rem;
 }
 
 .footer-navigation a,
-.footer-contacts a {
+.footer-contacts a,
+.footer-legal a {
   color: var(--portfolio-text-secondary);
   text-decoration: none;
   text-underline-offset: 3px;
 }
 
 .footer-navigation a:hover,
-.footer-contacts a:hover { color: var(--portfolio-text); text-decoration: underline; }
+.footer-contacts a:hover,
+.footer-legal a:hover { color: var(--portfolio-text); text-decoration: underline; }
 
 .footer-heading {
   margin-bottom: 0.2rem;
   color: var(--portfolio-text-muted);
   font-family: var(--portfolio-font-mono);
-  font-size: 0.68rem;
+  font-size: var(--portfolio-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -154,38 +167,45 @@ body {
 .footer-brand h2 {
   color: var(--portfolio-text);
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--portfolio-h3);
   letter-spacing: -0.025em;
 }
 
 .footer-brand p {
   margin: 0.5rem 0 0;
   color: var(--portfolio-text-muted);
-  font-size: 0.82rem;
+  font-size: var(--portfolio-small);
   line-height: 1.55;
 }
 
 .footer-contacts {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.6rem 1.2rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.35rem;
 }
 
 .footer-contacts a {
   display: grid;
+  align-items: baseline;
   min-width: 0;
-  gap: 0.15rem;
-  font-size: 0.82rem;
+  width: 100%;
+  gap: 0.5rem;
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+  font-size: var(--portfolio-small);
   font-weight: 600;
 }
 
 .footer-contacts a span {
   overflow-wrap: anywhere;
-  color: var(--portfolio-text-muted);
-  font-size: 0.72rem;
+  min-width: 0;
   font-weight: 400;
 }
 
+.footer-bottom,
+.footer-contacts a span {
+  color: var(--portfolio-text-muted);
+  font-size: var(--portfolio-label);
+}
 .footer-bottom {
   margin-top: 1.5rem;
   padding-top: 1rem;
@@ -195,9 +215,8 @@ body {
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  color: var(--portfolio-text-muted);
-  font-size: 0.75rem;
 }
+
 
 .platform-link {
   color: var(--portfolio-text-muted);
@@ -208,9 +227,10 @@ body {
 .platform-link:hover { color: var(--portfolio-text); text-decoration: underline; }
 .app--portfolio .footer-navigation a { display: inline-flex; min-height: var(--portfolio-control-compact); align-items: center; }
 .app--portfolio .footer-contacts a { min-height: var(--portfolio-control-compact); align-content: center; }
+.app--portfolio .footer-legal a,
 .app--portfolio .platform-link { display: inline-flex; min-height: var(--portfolio-control-compact); align-items: center; }
-.footer-navigation a:focus-visible,.footer-contacts a:focus-visible,.platform-link:focus-visible,.button-go-top:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
-.footer-navigation a,.footer-contacts a,.platform-link { transition: color var(--portfolio-motion-fast) ease; }
+.footer-navigation a:focus-visible,.footer-contacts a:focus-visible,.footer-legal a:focus-visible,.platform-link:focus-visible,.button-go-top:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
+.footer-navigation a,.footer-contacts a,.footer-legal a,.platform-link { transition: color var(--portfolio-motion-fast) ease; }
 
 @media (max-width: 900px) {
   .footer-top { grid-template-columns: 1fr 1fr; }
@@ -258,6 +278,10 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .button-go-top { transition: none; }
   .button-go-top:hover { transform: none; }
+  .footer-navigation a,
+  .footer-contacts a,
+  .footer-legal a,
+  .platform-link { transition: none; }
 }
 
 @media (max-width: 900px) {
@@ -270,7 +294,6 @@ body {
 @media (max-width: 520px) {
   .footer-top { grid-template-columns: 1fr; gap: 1.25rem; }
   .footer-brand { grid-column: auto; }
-  .footer-contacts { grid-template-columns: 1fr 1fr; }
   .footer-bottom { align-items: flex-start; flex-direction: column; gap: 0.55rem; }
 }
 </style>

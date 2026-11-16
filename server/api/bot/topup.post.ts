@@ -1,19 +1,15 @@
 import { prisma } from "../../utils/prisma";
+import { isValidBotSecret } from "../../utils/bot-secret";
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
-  const isDev = process.env.NODE_ENV !== "production";
 
-  if (!isDev) {
-    const secret = getHeader(event, "x-bot-secret");
-    const expectedSecret =
-      config.botSecret || process.env.BOT_SECRET || process.env.NUXT_BOT_SECRET || "";
-    if (!expectedSecret || secret !== expectedSecret) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: "Forbidden",
-      });
-    }
+  // Служебный API бота: корректный секрет обязателен в ЛЮБОМ окружении.
+  if (!isValidBotSecret(getHeader(event, "x-bot-secret"), config.botSecret)) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: "Forbidden",
+    });
   }
 
   const body = await readBody(event);

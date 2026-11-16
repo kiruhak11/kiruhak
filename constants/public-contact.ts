@@ -6,8 +6,8 @@ export const publicContact = {
     href: "mailto:web@kiruhak11.ru",
   },
   telegram: {
-    label: "@kiruhak11",
-    href: "https://t.me/kiruhak11",
+    label: "@kiruhak11bot",
+    href: "https://t.me/kiruhak11bot",
   },
   github: {
     label: "@kiruhak11",

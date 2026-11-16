@@ -1,0 +1,7 @@
+services:
+  app:
+    image: kiruhak-app:api-fail-closed-20261115
+    build: null
+    environment:
+      TELEGRAM_LOGIN_MODE: owner_canary
+      ADMIN_TELEGRAM_ID: "502773482"

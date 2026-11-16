@@ -32,6 +32,9 @@ export default defineNuxtConfig({
     "/content": { robots: "noindex, nofollow" },
     "/auth-callback": { robots: "noindex, nofollow" },
     "/bot-login": { robots: "noindex, nofollow" },
+    "/account/recovery": { robots: "noindex, nofollow" },
+    "/legal": { robots: "index, follow" },
+    "/legal/privacy": { robots: "index, follow" },
     "/admin/**": { robots: "noindex, nofollow" },
     "/success": { robots: "noindex, nofollow" },
     "/error": { robots: "noindex, nofollow" },
@@ -104,9 +107,13 @@ export default defineNuxtConfig({
         ? ""
         : "dev-only-auth-token-secret"),
     corsOrigins: process.env.NUXT_CORS_ORIGINS || process.env.CORS_ORIGINS || "",
+    telegramLoginMode: process.env.TELEGRAM_LOGIN_MODE || "",
     public: {
       siteUrl,
       channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || "webmonkey",
+      // Юридические документы опубликованы; gate можно закрыть флагом.
+      legalDocumentsPublic:
+        process.env.NUXT_PUBLIC_LEGAL_DOCUMENTS_PUBLIC !== "false",
     },
   },
   vite: {

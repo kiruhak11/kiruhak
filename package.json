@@ -19,7 +19,12 @@
     "db:seed": "tsx prisma/seed.ts",
     "test:security": "tsx --test tests/security.test.ts",
     "test:public": "tsx --test tests/public-journey.test.ts",
-    "deploy": "scp -r .output/* j53779400@c64869e17b97.hosting.myjino.ru:~/domains/kiruhak11.ru/ && ssh j53779400@c64869e17b97.hosting.myjino.ru \"mkdir -p ~/domains/kiruhak11.ru/tmp && touch ~/domains/kiruhak11.ru/tmp/restart.txt\""
+    "deploy": "scp -r .output/* j53779400@c64869e17b97.hosting.myjino.ru:~/domains/kiruhak11.ru/ && ssh j53779400@c64869e17b97.hosting.myjino.ru \"mkdir -p ~/domains/kiruhak11.ru/tmp && touch ~/domains/kiruhak11.ru/tmp/restart.txt\"",
+    "test:session-revocation": "tsx --test tests/session-revocation.integration.test.ts",
+    "test:telegram-login": "tsx --test tests/telegram-login.test.ts tests/telegram-login-oidc.test.ts",
+    "test:telegram": "tsx --test tests/telegram-http.test.ts tests/telegram-config.test.ts",
+    "test:lead": "tsx --test tests/lead-delivery.test.ts",
+    "test:auth-session": "tsx --test tests/auth-session.test.ts"
   },
   "dependencies": {
     "@morev/vue-transitions": "^3.0.2",
@@ -39,6 +44,7 @@
     "rubillex_frog-modal": "^1.4.4",
     "sanitize-html": "2.18.0",
     "sass-loader": "^16.0.2",
+    "undici": "7.30.0",
     "vue-router": "^4.3.2",
     "vue-toastification": "^2.0.0-rc.5"
   },

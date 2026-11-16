@@ -51,7 +51,7 @@
             </div>
           </div>
 
-          <form class="lead-form" aria-label="Заявка на разработку" @submit.prevent="submitLeadForm">
+          <form class="lead-form" aria-label="Заявка на разработку" @input="invalidateLeadRetryKey" @submit.prevent="submitLeadForm">
             <label for="lead-name">Имя
               <input id="lead-name" v-model="leadForm.name" type="text" autocomplete="name" required placeholder="Ваше имя" />
             </label>
@@ -70,11 +70,15 @@
             <label for="lead-budget">Ориентировочный бюджет
               <input id="lead-budget" v-model="leadForm.budget" type="text" placeholder="Например: от 150 000 ₽" />
             </label>
+            <p class="form-privacy-note">
+              Отправляя заявку, вы просите меня связаться с вами и обсудить проект.
+              <NuxtLink to="/legal/privacy">Как обрабатываются данные</NuxtLink>.
+            </p>
             <button class="cta-button primary" type="submit" :disabled="isSubmitting" :aria-busy="isSubmitting">
               {{ isSubmitting ? "Отправка..." : mainCtaText }}
               <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" /></svg>
             </button>
-            <p v-if="formState === 'success'" class="form-message success" role="status" aria-live="polite">Заявка отправлена. Я свяжусь с вами в ближайшее время.</p>
+            <p v-if="formState === 'success'" class="form-message success" role="status" aria-live="polite">Заявка сохранена. Уведомление отправляется; я свяжусь с вами в ближайшее время.</p>
             <p v-if="formState === 'error'" class="form-message error" role="alert">Не удалось отправить заявку. Напишите мне в Telegram или на почту.</p>
           </form>
         </div>
@@ -196,6 +200,46 @@ const leadForm = ref({ name: "", contact: "", email: "", business: "", task: "",
 const isSubmitting = ref(false);
 const formState = ref("idle");
 
+// Ключ идемпотентности сохраняется между попытками: повторная отправка той же
+// заявки не создаёт дубликат в очереди доставки.
+const leadIdempotencyStorageKey = "kstudio.lead.idempotency-key";
+let currentIdempotencyKey = "";
+
+const clearLeadIdempotencyKey = () => {
+  currentIdempotencyKey = "";
+  try {
+    window.sessionStorage.removeItem(leadIdempotencyStorageKey);
+  } catch {
+    // sessionStorage недоступен (приватный режим) — работаем без него.
+  }
+};
+
+const invalidateLeadRetryKey = () => {
+  if (formState.value === "error") clearLeadIdempotencyKey();
+};
+
+const getLeadIdempotencyKey = () => {
+  if (currentIdempotencyKey) return currentIdempotencyKey;
+
+  try {
+    currentIdempotencyKey = window.sessionStorage.getItem(leadIdempotencyStorageKey) || "";
+  } catch {
+    // sessionStorage недоступен — генерируем ключ только в памяти.
+  }
+
+  if (!currentIdempotencyKey) {
+    currentIdempotencyKey = window.crypto.randomUUID();
+  }
+
+  try {
+    window.sessionStorage.setItem(leadIdempotencyStorageKey, currentIdempotencyKey);
+  } catch {
+    // Не смогли сохранить ключ — он останется только в памяти вкладки.
+  }
+
+  return currentIdempotencyKey;
+};
+
 const scrollToForm = () => {
   document.getElementById("application-form")?.scrollIntoView({
     behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
@@ -203,25 +247,19 @@ const scrollToForm = () => {
   });
 };
 
-const buildLeadMessage = () => [
-  "📩 Новая заявка с портфолио Кирилла",
-  `Имя: ${leadForm.value.name}`,
-  `Telegram/телефон: ${leadForm.value.contact || "Не указан"}`,
-  `Email: ${leadForm.value.email}`,
-  `Ниша/компания: ${leadForm.value.business || "Не указано"}`,
-  `Задача: ${leadForm.value.task}`,
-  `Бюджет: ${leadForm.value.budget || "Не указан"}`,
-].join("\n");
-
 const submitLeadForm = async () => {
   formState.value = "idle";
   isSubmitting.value = true;
+  const idempotencyKey = getLeadIdempotencyKey();
+
   try {
     await $fetch("/api/telegram", {
       method: "POST",
-      body: { phone: leadForm.value.contact || leadForm.value.email, message: buildLeadMessage(), discount: 0 },
+      headers: { "Idempotency-Key": idempotencyKey },
+      body: { ...leadForm.value },
     });
     leadForm.value = { name: "", contact: "", email: "", business: "", task: "", budget: "" };
+    clearLeadIdempotencyKey();
     formState.value = "success";
   } catch (error) {
     formState.value = "error";
@@ -290,6 +328,18 @@ onMounted(() => { fetchProjects(); });
 .form-message { margin: 0; font-size: var(--portfolio-small); line-height: 1.5; }
 .form-message.success { color: var(--portfolio-success); }
 .form-message.error { color: var(--portfolio-error); }
+.form-privacy-note {
+  color: var(--portfolio-text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.form-privacy-note a {
+  color: var(--portfolio-accent);
+  text-underline-offset: 3px;
+}
+
 @media (max-width: 760px) { .about-layout,.form-layout { grid-template-columns: 1fr; gap: 1.4rem; } .form-intro { position: static; } }
 @media (max-width: 520px) { .hero-section { padding: 3rem 0 2.75rem; } .hero-eyebrow { gap: 7px; margin-bottom: 18px; font-size: 0.62rem; letter-spacing: 0.07em; } .hero-title { font-size: clamp(2.25rem, 9.5vw, 3.1rem); line-height: 1.04; letter-spacing: -0.06em; } .hero-subtitle { margin-top: 18px; font-size: 1rem; line-height: 1.55; } .hero-actions { flex-direction: column; align-items: stretch; margin-top: 24px; } .hero-actions .cta-button { width: 100%; } .hero-github-link { margin-top: 15px; } .lead-form .cta-button { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { .hero-copy { animation: none; } .cta-button,.hero-github-link { transition: none; } .cta-button:hover { transform: none; } }

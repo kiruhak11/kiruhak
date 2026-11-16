@@ -1,23 +1,22 @@
 import { prisma } from "./prisma";
 
-let tableEnsured = false;
-
-async function ensureSessionControlTable() {
-  if (tableEnsured) return;
-
-  await prisma.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS auth_session_controls (
-      user_id TEXT PRIMARY KEY,
-      revoked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  tableEnsured = true;
+/**
+ * Минимальный контракт исполнителя SQL-операций Prisma.
+ * Позволяет выполнять те же запросы через транзакцию (`tx`) или напрямую.
+ */
+export interface PrismaSqlExecutor {
+  $executeRawUnsafe(query: string, ...values: unknown[]): Promise<unknown>;
+  $queryRawUnsafe<T = unknown>(query: string, ...values: unknown[]): Promise<T>;
 }
 
-export async function revokeAllUserSessions(userId: string) {
-  await ensureSessionControlTable();
-  await prisma.$executeRawUnsafe(
+/**
+ * Отзывает все сессии пользователя (выход со всех устройств).
+ */
+export async function revokeAllUserSessions(
+  userId: string,
+  executor: PrismaSqlExecutor = prisma
+): Promise<void> {
+  await executor.$executeRawUnsafe(
     `
       INSERT INTO auth_session_controls (user_id, revoked_at)
       VALUES ($1, NOW())
@@ -28,11 +27,14 @@ export async function revokeAllUserSessions(userId: string) {
   );
 }
 
+/**
+ * Возвращает момент отзыва всех сессий пользователя либо null.
+ */
 export async function getUserSessionsRevokedAt(
-  userId: string
+  userId: string,
+  executor: PrismaSqlExecutor = prisma
 ): Promise<Date | null> {
-  await ensureSessionControlTable();
-  const rows = await prisma.$queryRawUnsafe<{ revoked_at: Date }[]>(
+  const rows = await executor.$queryRawUnsafe<{ revoked_at: Date }[]>(
     `
       SELECT revoked_at
       FROM auth_session_controls
@@ -44,4 +46,55 @@ export async function getUserSessionsRevokedAt(
 
   if (!rows.length) return null;
   return rows[0].revoked_at;
+}
+
+/**
+ * Отзывает конкретную сессию по хешу ключа сессии.
+ */
+export async function revokeAuthSession(
+  sessionKeyHash: string,
+  expiresAt: Date,
+  executor: PrismaSqlExecutor = prisma
+): Promise<void> {
+  if (
+    !/^[a-f0-9]{64}$/.test(sessionKeyHash) ||
+    !Number.isFinite(expiresAt.getTime())
+  ) {
+    throw new Error("Invalid auth session revocation data");
+  }
+
+  await executor.$executeRawUnsafe(
+    `DELETE FROM auth_revoked_sessions WHERE expires_at <= NOW()`
+  );
+
+  await executor.$executeRawUnsafe(
+    `
+      INSERT INTO auth_revoked_sessions (session_key_hash, expires_at)
+      VALUES ($1, $2)
+      ON CONFLICT (session_key_hash)
+      DO UPDATE SET expires_at = GREATEST(auth_revoked_sessions.expires_at, EXCLUDED.expires_at)
+    `,
+    sessionKeyHash,
+    expiresAt
+  );
+}
+
+/**
+ * Проверяет, отозвана ли конкретная сессия.
+ */
+export async function isAuthSessionRevoked(
+  sessionKeyHash: string,
+  executor: PrismaSqlExecutor = prisma
+): Promise<boolean> {
+  const rows = await executor.$queryRawUnsafe<{ revoked: boolean }[]>(
+    `
+      SELECT EXISTS (
+        SELECT 1 FROM auth_revoked_sessions
+        WHERE session_key_hash = $1 AND expires_at > NOW()
+      ) AS revoked
+    `,
+    sessionKeyHash
+  );
+
+  return rows[0]?.revoked === true;
 }

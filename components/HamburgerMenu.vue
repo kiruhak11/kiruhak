@@ -111,7 +111,15 @@
                 <button type="button" @click="openTopUpModal">Пополнить баланс</button>
                 <button type="button" @click="openEditProfile">Изменить профиль</button>
                 <NuxtLink v-if="isAdmin" to="/admin/projects" @click="handleNavigationClick">Админ-панель</NuxtLink>
-                <button type="button" class="logout-action" @click="handleLogout">Выйти</button>
+                <button
+                  type="button"
+                  class="logout-action"
+                  :disabled="logoutLoading"
+                  :aria-busy="logoutLoading"
+                  @click="handleLogout"
+                >
+                  {{ logoutLoading ? "Завершаем…" : "Выйти" }}
+                </button>
               </div>
             </div>
 
@@ -161,6 +169,7 @@ const {
   initAuth,
   formattedBalance,
   logout,
+  logoutLoading,
   refreshUser,
 } = useAuth();
 
@@ -277,7 +286,6 @@ const handleViewportChange = async (event: MediaQueryListEvent) => {
     return;
   }
   await initAuth();
-  if (isAuthenticated.value) await refreshUser();
 };
 
 onMounted(async () => {
@@ -285,7 +293,6 @@ onMounted(async () => {
   mobileMediaQuery.addEventListener("change", handleViewportChange);
   if (mobileMediaQuery.matches) {
     await initAuth();
-    if (isAuthenticated.value) await refreshUser();
   }
 });
 
