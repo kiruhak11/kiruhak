@@ -261,9 +261,15 @@ test("client address normalization and trusted ranges behave predictably", () =>
     "81.177.135.137/32",
   ]);
   assert.equal(isTrustedAddress("127.0.0.1", trusted), true);
-  assert.equal(isTrustedAddress("10.1.2.3", trusted), true);
   assert.equal(isTrustedAddress("81.177.135.137", trusted), true);
   assert.equal(isTrustedAddress("203.0.113.5", trusted), false);
+
+  // Приватные сети по умолчанию не доверены: соседний контейнер не должен
+  // уметь подменить адрес клиента.
+  const defaults = parseTrustedProxies(DEFAULT_TRUSTED_PROXIES);
+  assert.equal(isTrustedAddress("10.1.2.3", defaults), false);
+  assert.equal(isTrustedAddress("172.17.0.1", defaults), false);
+  assert.equal(isTrustedAddress("127.0.0.1", defaults), true);
 
   assert.equal(
     resolveClientIp({ headers: {}, socket: { remoteAddress: undefined } }),
