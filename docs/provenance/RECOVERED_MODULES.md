@@ -116,25 +116,45 @@ were compared file by file with the chunks of the image that is running in
 production right now:
 
 ```
-identical chunks: 181   differing: 2
- differs: build/styles.mjs
- differs: nitro/nitro.mjs
+identical chunks: 173   differing: 4
+ differs: nitro/nitro.mjs             <- the intentional P0 change
+ differs: build/styles.mjs            <- CSS of the reconstructed pages
+ differs: build/client.precomputed.mjs
+ differs: build/server.mjs
 ```
 
 * `nitro/nitro.mjs` differs **by design** — it is the server bundle that
   contains the fail-closed authorization. The production bundle still
   contains `if (!needsAuth) return;`; the rebuilt bundle does not, and
   contains `classifyApiRoute` and the 404 deny instead.
-* `build/styles.mjs` differs because the scoped CSS of the restored pages
-  was recovered from the production client bundle while the visual redesign
-  of 2026-10-14 → 2026-11-09 was never published to GitHub.
+* the three `build/*` bundles differ because the scoped CSS of the
+  reconstructed pages had to be re-scoped (the recovered CSS carried
+  production's own scope attributes, which Vue would have turned into
+  doubled selectors that never match).
 
-Every other chunk — including `routes/api/materials.get.mjs`,
-`_/optional-user.mjs`, `routes/api/auth/telegram-login/verify.post.mjs`,
-`routes/api/bot/quick-login.post.mjs` and `routes/api/auth/logout.post.mjs` —
-is **byte-identical** to production. The reconstructed TypeScript therefore
-compiles to exactly the same JavaScript as the lost originals for the
-restored modules.
+No chunk of an API route and no server util differs — including
+`routes/api/materials.get.mjs`, `_/optional-user.mjs`,
+`routes/api/auth/telegram-login/verify.post.mjs`,
+`routes/api/bot/quick-login.post.mjs` and `routes/api/auth/logout.post.mjs`.
+The reconstructed TypeScript therefore compiles to exactly the same
+JavaScript as the lost originals for the restored modules.
+
+### Front-end: what is *not* identical
+
+The CSS of the reconstructed pages was recovered from the production client
+bundle. After re-scoping it, 37 of 37 comparable scope ids have an identical
+rule set against production. The genuine differences are additive rules that
+exist in production and are absent here, because the front-end work of
+2026-10-14 → 2026-11-09 was never published to GitHub:
+
+| Where | Missing in this branch |
+| --- | --- |
+| `layouts/default.vue` | `.footer-legal a` and its `:focus-visible` rules |
+| `pages/index.vue` | the `.form-privacy-note` block under the lead form and its link styles |
+| `pages/analytics.vue` | the `.form-privacy-note` rules |
+| account/profile area | the `.profile-actions .recovery-link` rules |
+
+API parity therefore does **not** imply full visual parity.
 
 ## Known limitations
 
