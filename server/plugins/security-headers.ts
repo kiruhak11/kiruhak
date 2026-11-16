@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 
 /**
  * Security-заголовки для всех ответов приложения.
@@ -140,6 +142,52 @@ export function buildDocumentContentSecurityPolicy(
 
 type NitroEvent = Parameters<typeof setResponseHeader>[0];
 
+/**
+ * Хеши инлайновых скриптов пререндеренных страниц.
+ *
+ * Пререндеренные HTML отдаются как статические файлы: хук `render:html` для
+ * них не выполняется, поэтому хеши считаются один раз при старте по тем же
+ * файлам, которые затем отдаются пользователю.
+ */
+export const prerenderedScriptHashes = new Map<string, string[]>();
+
+export const routeOfPrerenderedFile = (relative: string): string => {
+  const withoutExtension = relative.replace(/\.html$/, "");
+  if (withoutExtension === "index") return "/";
+  const trimmed = withoutExtension.endsWith("/index")
+    ? withoutExtension.slice(0, -"/index".length)
+    : withoutExtension;
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+};
+
+const loadPrerenderedScriptHashes = (): void => {
+  const publicDir = join(process.cwd(), ".output", "public");
+  if (!existsSync(publicDir)) return;
+
+  const walk = (dir: string, prefix: string): void => {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      const relative = prefix ? `${prefix}/${entry}` : entry;
+      if (statSync(full).isDirectory()) {
+        walk(full, relative);
+        continue;
+      }
+      if (!entry.endsWith(".html")) continue;
+      const hashes = extractInlineScriptHashes(readFileSync(full, "utf8"));
+      if (hashes && hashes.length > 0) {
+        prerenderedScriptHashes.set(routeOfPrerenderedFile(relative), hashes);
+      }
+    }
+  };
+
+  try {
+    walk(publicDir, "");
+  } catch {
+    // Каталог пререндера может отсутствовать — тогда политика для
+    // пререндеренных страниц не вычисляется.
+  }
+};
+
 const isDocumentResponse = (event: NitroEvent): boolean => {
   const raw = getResponseHeader(event, "content-type");
   const contentType = Array.isArray(raw) ? raw[0] : raw;
@@ -161,6 +209,8 @@ export default defineNitroPlugin((nitroApp) => {
   // Хеши инлайновых скриптов собираются на этапе сборки документа: Nitro
   // складывает документ из отдельных частей, поэтому готовый HTML на момент
   // ответа недоступен как строка.
+  loadPrerenderedScriptHashes();
+
   nitroApp.hooks.hook("render:html", (context, { event }) => {
     const hashes = collectRenderedScriptHashes(context);
     (event.context as { securityInlineScriptHashes?: string[] }).securityInlineScriptHashes = hashes;
@@ -178,7 +228,11 @@ export default defineNitroPlugin((nitroApp) => {
       const renderedHashes = (
         event.context as { securityInlineScriptHashes?: string[] }
       ).securityInlineScriptHashes;
-      const bodyHashes = extractInlineScriptHashes(response?.body);
+      const path = getRequestURL(event).pathname;
+      const bodyHashes =
+        renderedHashes ??
+        prerenderedScriptHashes.get(path) ??
+        extractInlineScriptHashes(response?.body);
 
       setResponseHeader(
         event,

@@ -15,9 +15,13 @@ type HeaderBag = Map<string, string>;
 type FakeEvent = {
   node: { res: { __bag: HeaderBag; getHeader: (name: string) => string | undefined } };
   context: Record<string, unknown>;
+  path: string;
 };
 
-const createEvent = (contentType?: string): { event: FakeEvent; bag: HeaderBag } => {
+const createEvent = (
+  contentType?: string,
+  path = "/"
+): { event: FakeEvent; bag: HeaderBag } => {
   const bag: HeaderBag = new Map();
   const event: FakeEvent = {
     node: {
@@ -27,10 +31,13 @@ const createEvent = (contentType?: string): { event: FakeEvent; bag: HeaderBag }
       },
     },
     context: {},
+    path,
   };
   if (contentType) bag.set("content-type", contentType);
   return { event, bag };
 };
+
+type SecurityHeadersModule = typeof import("../server/plugins/security-headers");
 
 let pluginPromise: Promise<{
   runBeforeResponse: (event: unknown, body?: unknown) => Promise<unknown[]>;
@@ -39,6 +46,7 @@ let pluginPromise: Promise<{
     context: Record<string, unknown>,
     event: unknown
   ) => Promise<unknown[]>;
+  module: SecurityHeadersModule;
 }> | null = null;
 
 /**
@@ -78,6 +86,8 @@ const loadPluginOnce = async () => {
     name: string
   ): string | undefined => event.node.res.getHeader(name);
 
+  globals.getRequestURL = (event: FakeEvent) => ({ pathname: event.path });
+
   globals.setResponseHeader = (
     event: FakeEvent,
     name: string,
@@ -87,9 +97,12 @@ const loadPluginOnce = async () => {
     event.node.res.__bag.set(name.toLowerCase(), value);
   };
 
-  await import("../server/plugins/security-headers");
+  const module: SecurityHeadersModule = await import(
+    "../server/plugins/security-headers"
+  );
 
   return {
+    module,
     runBeforeResponse: (event: unknown, body?: unknown) =>
       Promise.all(
         (hooks.get("beforeResponse") ?? []).map((hook) => hook(event, { body }))
@@ -179,7 +192,7 @@ test("error responses keep the headers set by the plugin", async () => {
 
 test("document CSP stays compatible with hydration, fonts, forms and the Telegram Login SDK", async () => {
   const plugin = await loadPlugin();
-  const { event, bag } = createEvent("text/html");
+  const { event, bag } = createEvent("text/html", "/__csp-hash-probe");
 
   const inlineScript = "window.__NUXT__={};window.__NUXT__.config={public:{}};";
   const body = `<html><head><script>${inlineScript}</script></head><body></body></html>`;
@@ -238,6 +251,39 @@ test("CSP hashes are collected from the document parts rendered by Nitro", async
     .digest("base64")}'`;
   assert.ok(csp.includes(expectedHash), "хеш инлайнового скрипта должен попасть в CSP");
   assert.doesNotMatch(csp, /script-src[^;]*'unsafe-inline'/);
+});
+
+test("prerendered pages get their own script hashes instead of unsafe-inline", async () => {
+  const plugin = await loadPlugin();
+  const { event, bag } = createEvent("text/html");
+
+  const inlineScript = "window.__NUXT__={};window.__NUXT__.config={public:{}};";
+  plugin.module.prerenderedScriptHashes.set("/", [
+    `'sha256-${createHash("sha256").update(inlineScript, "utf8").digest("base64")}'`,
+  ]);
+
+  try {
+    await plugin.runBeforeResponse(event, { body: { body: "<html></html>" } });
+
+    const csp = bag.get("content-security-policy") ?? "";
+    assert.match(csp, /script-src 'self' 'sha256-/);
+    assert.doesNotMatch(csp, /script-src[^;]*'unsafe-inline'/);
+  } finally {
+    plugin.module.prerenderedScriptHashes.clear();
+  }
+});
+
+test("prerendered file paths are mapped to their routes", async () => {
+  const plugin = await loadPlugin();
+  assert.equal(plugin.module.routeOfPrerenderedFile("index.html"), "/");
+  assert.equal(
+    plugin.module.routeOfPrerenderedFile("contact/index.html"),
+    "/contact"
+  );
+  assert.equal(
+    plugin.module.routeOfPrerenderedFile("legal/privacy.html"),
+    "/legal/privacy"
+  );
 });
 
 test("CSP falls back to a safe variant when the body cannot be inspected", async () => {
