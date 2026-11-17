@@ -266,6 +266,29 @@ test("logout revokes the server session and clears local storage", async () => {
   }
 });
 
+test("a cached validation result can be applied twice without throwing", async () => {
+  const storage = new MemoryStorage({ auth_token: "cached-token" });
+  const auth = useAuth();
+  let requests = 0;
+
+  const fetchUser = async () => {
+    requests += 1;
+    return { success: false, error: "Unauthorized" } as AuthResponse;
+  };
+
+  const first = await auth.initAuth({ storage, fetchUser });
+  assert.equal(first.status, "anonymous");
+  assert.equal(requests, 1);
+
+  // Второй вызов попадает в кэш; применение кэшированного результата сбрасывает
+  // кэш, поэтому результат должен быть прочитан до применения.
+  const second = await auth.initAuth({ storage, fetchUser });
+  assert.equal(second.status, "anonymous");
+  assert.equal(requests, 1, "кэшированный результат не требует нового запроса");
+  assert.equal(auth.isAuthenticated.value, false);
+  assert.equal(storage.getItem("auth_token"), null);
+});
+
 test("parallel initAuth calls issue a single server request", async () => {
   const storage = new MemoryStorage({ auth_token: "single-flight-token" });
   const auth = useAuth();

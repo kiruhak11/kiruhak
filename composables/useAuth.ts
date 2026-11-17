@@ -265,8 +265,12 @@ export const useAuth = () => {
       lastValidation.token === savedToken &&
       Date.now() - lastValidation.at < VALIDATION_CACHE_MS
     ) {
-      applyValidationResult(lastValidation.result, storage, lastValidation.token);
-      return lastValidation.result;
+      // Результат читаем до применения: применение может сбросить кэш
+      // (например, при статусе anonymous), и тогда обращение к кэшу после
+      // применения дало бы ошибку «cannot read properties of null».
+      const cached = lastValidation.result;
+      applyValidationResult(cached, storage, lastValidation.token);
+      return cached;
     }
 
     if (!savedToken) {
