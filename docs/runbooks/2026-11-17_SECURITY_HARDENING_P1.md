@@ -2,18 +2,19 @@
 
 **Release candidate:** `security-headers-rate-limit-20261117`
 **Branch:** `security/headers-rate-limit` (base — `master` @ `095b9ba`)
-**Исходный коммит:** `90f0f7b1f23ab145625cb14c59a81529c2a46732`
+**Исходный коммит образа:** `b67b8e11d25d4885c7c091ac98cc3beb0ac55a3c`
+**Ветка:** `security/headers-rate-limit` · **Draft PR:** https://github.com/kiruhak11/kiruhak/pull/2
 **Тип деплоя:** app-only (контейнер приложения), без БД, без бота, без Nginx и DNS
 **Статус на момент подготовки:** образ собран и проверен, **деплой не выполнялся**
 
 | Артефакт | Значение |
 | --- | --- |
 | Образ | `kiruhak-app:security-headers-rate-limit-20261117` |
-| Image ID | `sha256:de93ee464d1f7d7cfbf5648315987b21bcc44a01093b08bba7428e06efc89527` |
+| Image ID | `sha256:3819f38f9ce9b72bc2c59a7fd2e168f211df5aa91743e76529be0bc8ed248534` |
 | Платформа | `linux/amd64` |
-| Source snapshot SHA-256 | `b51b41f944d487449035d1a20789b00b5d2fd139a8846524a1e803211429e8b4` |
-| Архив образа | `/var/lib/kiruhak/security-headers-rate-limit-20261117-linux-amd64.tar.gz` (108 607 123 B) |
-| SHA-256 архива | `c2633edd7f91d891b8a869325d63ac6667bffa3e1feddec3c8b4e985dc0aab6f` |
+| Source snapshot SHA-256 | `aa8996ac34a6ba5422a5615e9e9acf6074d61cfc8cf0f61e849f5e0dc356726f` |
+| Архив образа | `/var/lib/kiruhak/security-headers-rate-limit-20261117-linux-amd64.tar.gz` (108 604 142 B) |
+| SHA-256 архива | `96c3524fc4f7e177713d707c21940950eb213f5a5e40ede6cecfeb57e0efe7c2` |
 
 ---
 
@@ -221,7 +222,23 @@ docker compose -f /var/www/html/kiruhak/docker-compose.yml \
 Rollback не требует отката БД: релиз не добавляет миграций и не меняет схему
 (проверено: `prisma/migrations` без изменений, применённых миграций — 14).
 
-## 9. Что релиз НЕ делает
+## 9. Найденный при подготовке дефект initAuth
+
+При браузерной проверке кандидата обнаружена ошибка гидратации страницы:
+`Cannot read properties of null (reading 'result')`. Причина — в коде
+`initAuth`, смерженном в `master` ранее (`12c9716`): при применении
+кэшированного результата проверки `applyValidationResult` вызывает
+`clearLocalSession()`, который сбрасывает кэш, после чего код читал
+`lastValidation.result` уже из `null`. Unit-тесты это не покрывали — ошибка
+проявилась только в браузере.
+
+Исправлено в этой ветке (`b67b8e1`): результат читается до применения;
+добавлена регрессия «кэшированный результат применяется дважды».
+
+Затронутого production это не касается: в работающем образе
+`api-fail-closed-20261115` кода `initAuth` с серверной проверкой ещё нет.
+
+## 10. Что релиз НЕ делает
 
 * не меняет PostgreSQL и не добавляет миграций;
 * не меняет Nginx, DNS и Telegram proxy;
