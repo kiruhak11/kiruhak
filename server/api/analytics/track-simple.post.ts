@@ -1,4 +1,5 @@
 import { prisma } from "../../utils/prisma";
+import { resolveClientIp } from "../../utils/client-ip";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -25,9 +26,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const requestIp =
-      getRequestIP(event, { xForwardedFor: true }) ||
-      event.node.req.socket.remoteAddress ||
-      "unknown";
+      resolveClientIp(event).address;
 
     // Создаем запись о посещении
     const visit = await prisma.visit.create({

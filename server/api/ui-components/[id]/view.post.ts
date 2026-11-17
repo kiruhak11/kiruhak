@@ -1,17 +1,24 @@
 import { prisma } from "../../../utils/prisma";
+import { resolveClientIp } from "../../../utils/client-ip";
 
 export default defineEventHandler(async (event) => {
   try {
     const componentId = getRouterParam(event, "id");
     const user = event.context.user;
 
-    // Получаем IP и User Agent
+    // Получаем IP и User Agent.
+    // IP определяется через доверенные прокси: подмена X-Forwarded-For не
+    // должна позволять обходить лимит и счётчик просмотров.
     const headers = event.node.req.headers;
-    const ip = (headers["x-forwarded-for"] as string)?.split(",")[0] || 
-               (headers["x-real-ip"] as string) || 
-               event.node.req.socket.remoteAddress || 
-               "unknown";
+    const ip = resolveClientIp(event).address;
     const userAgent = headers["user-agent"] || "unknown";
+
+    if (!componentId) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Component not found",
+      });
+    }
 
     // Проверяем, существует ли компонент
     const component = await prisma.uiComponent.findUnique({

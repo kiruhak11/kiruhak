@@ -1,4 +1,5 @@
 import { prisma } from "../../utils/prisma";
+import { resolveClientIp } from "../../utils/client-ip";
 
 export default defineEventHandler(async (event) => {
   let body;
@@ -13,10 +14,7 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    const requestIp =
-      getRequestIP(event, { xForwardedFor: true }) ||
-      event.node.req.socket.remoteAddress ||
-      "unknown";
+    const requestIp = resolveClientIp(event).address;
 
     // Проверяем существование сайта
     let site = await prisma.site.findUnique({

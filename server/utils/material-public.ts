@@ -31,7 +31,7 @@ export type MaterialPublicOptions = {
   userId?: string | null;
 };
 
-const MATERIAL_PUBLIC_SELECT = {
+export const MATERIAL_PUBLIC_SELECT = {
   id: true,
   title: true,
   description: true,

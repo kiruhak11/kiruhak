@@ -194,6 +194,7 @@
                         class="component-demo-frame"
                         :srcdoc="getComponentPreview(component)"
                         sandbox="allow-scripts"
+                        csp="default-src 'unsafe-inline' data: blob:;"
                         frameborder="0"
                         loading="lazy"
                       ></iframe>

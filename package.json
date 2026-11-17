@@ -24,7 +24,12 @@
     "test:telegram-login": "tsx --test tests/telegram-login.test.ts tests/telegram-login-oidc.test.ts",
     "test:telegram": "tsx --test tests/telegram-http.test.ts tests/telegram-config.test.ts",
     "test:lead": "tsx --test tests/lead-delivery.test.ts",
-    "test:auth-session": "tsx --test tests/auth-session.test.ts"
+    "test:auth-session": "tsx --test tests/auth-session.test.ts",
+    "test:security-headers": "tsx --test tests/security-headers.test.ts",
+    "test:rate-limit": "tsx --test tests/rate-limit.test.ts",
+    "test:security-regressions": "tsx --test tests/security-regressions.test.ts",
+    "test:client-ip-integration": "tsx --test tests/client-ip.integration.test.ts",
+    "test:release-orchestration": "tsx --test tests/release-orchestration.test.ts"
   },
   "dependencies": {
     "@morev/vue-transitions": "^3.0.2",
