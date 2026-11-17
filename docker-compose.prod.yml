@@ -34,13 +34,19 @@ services:
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
       TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME}
       NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL}
-      BOT_SECRET: ${BOT_SECRET}
-      AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET}
-      NUXT_AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET}
-      CORS_ORIGINS: ${CORS_ORIGINS}
-      NUXT_CORS_ORIGINS: ${CORS_ORIGINS}
+      BOT_SECRET: ${BOT_SECRET:?BOT_SECRET must be set}
+      AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:?AUTH_TOKEN_SECRET must be set}
+      NUXT_AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:?AUTH_TOKEN_SECRET must be set}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://kiruhak11.ru}
+      NUXT_CORS_ORIGINS: ${CORS_ORIGINS:-https://kiruhak11.ru}
+      # Доверенные прокси для определения адреса клиента: конкретные адреса
+      # локального прокси и внешнего TLS-Edge. Без них все посетители делят
+      # один счётчик ограничения частоты.
+      TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:?TRUSTED_PROXY_IPS must be set}
     ports:
-      - "3015:3015"
+      # Приложение доступно только с этого хоста: наружу его отдаёт прокси.
+      # Публикация "3015:3015" открыла бы прямой доступ в обход Nginx.
+      - "127.0.0.1:3015:3015"
     depends_on:
       postgres:
         condition: service_healthy
@@ -70,9 +76,11 @@ services:
     container_name: kiruhak_bot
     restart: unless-stopped
     environment:
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:?TELEGRAM_BOT_TOKEN must be set}
+      TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME:-webmonke}
       API_URL: http://app:3015/api/auth/create-account
+      BOT_API_BASE_URL: http://app:3015
+      BOT_SECRET: ${BOT_SECRET:?BOT_SECRET must be set}
     depends_on:
       app:
         condition: service_healthy
