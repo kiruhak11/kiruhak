@@ -382,6 +382,23 @@ fi
 
 echo
 echo "=== 8. deploy (app only, --no-deps) ==="
+
+# Состояние релиза фиксируется до переключения: если что-то пойдёт не так,
+# проверенная точка отката уже сохранена.
+RELEASE_STATE_DIR="${RELEASE_STATE_DIR:-/var/lib/kiruhak/release-state}"
+RELEASE_STATE_FILE="${RELEASE_STATE_DIR}/${TAG}.state"
+RELEASE_LOG_FILE="${RELEASE_STATE_DIR}/${TAG}.log"
+mkdir -p "${RELEASE_STATE_DIR}" 2>/dev/null || true
+{
+  echo "state=PREPARED"
+  echo "release=${TAG}"
+  echo "timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "expected_image_id=${LOADED_ID}"
+  echo "rollback_image_id=${ROLLBACK_ID}"
+  echo "rollback=not-needed"
+  echo "checkpoint=${CHECKPOINT_FILE}"
+} > "${RELEASE_STATE_FILE}"
+
 docker compose -p "${PROJECT}" \
   -f docker-compose.prod.yml \
   -f "${SECRETS_OVERRIDE}" \
@@ -389,15 +406,29 @@ docker compose -p "${PROJECT}" \
   up -d --no-deps --force-recreate app
 
 echo
-echo "=== 9. wait for health ==="
-for i in $(seq 1 60); do
-  status=$(docker inspect "${APP_CONTAINER}" --format '{{.State.Health.Status}}' 2>/dev/null || echo "starting")
-  echo "  t+${i}s health=${status}"
-  [ "${status}" = "healthy" ] && break
-  sleep 1
-done
-docker inspect "${APP_CONTAINER}" --format '  {{.Config.Image}} | {{.Image}} | {{.State.Status}} | {{.State.Health.Status}}'
-docker inspect "${APP_CONTAINER}" --format '{{json .HostConfig.PortBindings}}' | sed 's/^/  ports: /'
+echo "=== 9. верификация релиза (health + smoke + откат при провале) ==="
+
+ORCHESTRATION="${ORCHESTRATION_SCRIPT:-$(dirname "$0")/release-orchestration.sh}"
+[ -f "${ORCHESTRATION}" ] || fail "не найден скрипт оркестрации ${ORCHESTRATION}"
+
+bash "${ORCHESTRATION}" \
+  --release "${TAG}" \
+  --container "${APP_CONTAINER}" \
+  --expected-image-id "${LOADED_ID}" \
+  --rollback-image-id "${ROLLBACK_ID}" \
+  --rollback-override "${ROLLBACK_OVERRIDE}" \
+  --compose-dir "${COMPOSE_DIR}" \
+  --project "${PROJECT}" \
+  --compose-file "${COMPOSE_DIR}/docker-compose.prod.yml" \
+  --compose-file "${SECRETS_OVERRIDE}" \
+  --state-file "${RELEASE_STATE_FILE}" \
+  --log-file "${RELEASE_LOG_FILE}" \
+  --health-timeout "${HEALTH_TIMEOUT:-60}" \
+  --smoke-production "$(dirname "$0")/verify-production.sh" \
+  --smoke-security "$(dirname "$0")/verify-security-headers.sh" \
+  --smoke-rollback "$(dirname "$0")/verify-production.sh" \
+  --smoke-base-url "${SMOKE_BASE_URL:-https://kiruhak11.ru}"
+ORCHESTRATION_CODE=$?
 
 # Контейнеры, которые не должны меняться, остались нетронутыми.
 [ "$(docker inspect kiruhak_postgres --format '{{.Config.Image}}|{{.Id}}' 2>/dev/null)" = "${POSTGRES_BEFORE}" ] \
@@ -406,11 +437,11 @@ docker inspect "${APP_CONTAINER}" --format '{{json .HostConfig.PortBindings}}' |
   || fail "контейнер бота изменился — этого не должно было произойти"
 info "postgres, bot  : не изменены (image и id совпадают)"
 
-echo
-echo "=== 10. post-deploy smoke ==="
-bash "$(dirname "$0")/verify-production.sh" https://kiruhak11.ru || echo "  !! verify-production.sh вернул ненулевой код"
-bash "$(dirname "$0")/verify-security-headers.sh" https://kiruhak11.ru || echo "  !! verify-security-headers.sh вернул ненулевой код"
+if [ "${ORCHESTRATION_CODE}" -ne 0 ]; then
+  fail "верификация релиза не пройдена (код ${ORCHESTRATION_CODE}); состояние: $(grep '^state=' "${RELEASE_STATE_FILE}" 2>/dev/null | cut -d= -f2), журнал: ${RELEASE_LOG_FILE}"
+fi
 
 echo
 echo "=== DEPLOY DONE ==="
 echo "checkpoint: ${CHECKPOINT_FILE}"
+echo "state    : ${RELEASE_STATE_FILE}"
