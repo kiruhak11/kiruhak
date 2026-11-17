@@ -5,7 +5,8 @@
 **Исходный коммит образа:** `b67b8e11d25d4885c7c091ac98cc3beb0ac55a3c`
 **Ветка:** `security/headers-rate-limit` · **Draft PR:** https://github.com/kiruhak11/kiruhak/pull/2
 **Тип деплоя:** app-only (контейнер приложения), без БД, без бота, без Nginx и DNS
-**Статус на момент подготовки:** образ собран и проверен, **деплой не выполнялся**
+**Статус:** финальный релиз-гейт пройден (dry-run + негативные тесты), **деплой не выполнялся**
+**Процедура деплоя:** только из immutable-артефакта (`docker load` + сверка image ID), пересборка исключена
 
 | Артефакт | Значение |
 | --- | --- |
@@ -15,6 +16,18 @@
 | Source snapshot SHA-256 | `aa8996ac34a6ba5422a5615e9e9acf6074d61cfc8cf0f61e849f5e0dc356726f` |
 | Архив образа | `/var/lib/kiruhak/security-headers-rate-limit-20261117-linux-amd64.tar.gz` (108 604 142 B) |
 | SHA-256 архива | `96c3524fc4f7e177713d707c21940950eb213f5a5e40ede6cecfeb57e0efe7c2` |
+
+### Соответствие образа ветке
+
+Образ собран из коммита `b67b8e1` (метка `org.opencontainers.image.revision`),
+snapshot посчитан по исходникам на момент сборки. Последующие коммиты ветки
+затрагивают только `ops/` и `docs/` — рантайм-код приложения не менялся,
+поэтому артефакт остаётся актуальным для текущего HEAD ветки.
+
+При деплое сверяются **не** вычисленные заново хеши дерева, а метки уже
+собранного образа (`image ID`, платформа, `source.snapshot.sha256`) и SHA-256
+архива. Это гарантирует, что выкатывается именно проверенный артефакт, и
+исключает подмену содержимого тега.
 
 ---
 
@@ -122,6 +135,51 @@ docker logs kiruhak_app 2>&1 | grep trusted-proxy
 запросе. Без корректного значения все посетители получают один адрес и форма
 заявок перестаёт работать после нескольких отправок.
 
+### 2.4 Граница доверия X-Forwarded-For (доказано наблюдением)
+
+Синтетический A/B-тест «доверенный/недоверенный прокси» проверяет только
+резолвер, но не доказывает, как устроен реальный внешний вход. Поэтому граница
+доверия подтверждена **наблюдением реального запроса** на loopback
+(AF_PACKET-сниффер, порт 3015, без правки Nginx):
+
+```
+nginx → приложение:
+  X-Forwarded-For: <подделка клиента>, <реальный клиент>, 81.177.135.137
+  X-Real-IP: <реальный клиент>
+```
+
+Что из этого следует:
+
+* Edge **дописывает реальный IP справа** — клиентская подмена остаётся левее
+  и не влияет на выбор адреса;
+* резолвер берёт самый правый **недоверенный** элемент цепочки, то есть
+  элемент непосредственно слева от Edge;
+* подделка слева отбрасывается.
+
+Захват удалён с VPS, реальный IP клиента в отчёты и runbook не попадает.
+Проверка выполнена одним запросом к production, лимиты реальных посетителей
+не затронуты.
+
+### 2.5 Доступность порта приложения
+
+| Проверка | Результат |
+| --- | --- |
+| `docker inspect kiruhak_app` → PortBindings | `127.0.0.1:3015` |
+| Внешняя сеть → `81.177.135.137:3015` | connection refused |
+| Внешняя сеть → `kiruhak11.ru:3015` | connection refused |
+| Loopback → `127.0.0.1:3015` | HTTP 200 |
+| Соседний контейнер → `172.18.0.2:3015` | доступен (внутренняя сеть Docker) |
+
+Прямой публичный доступ к приложению в обход Nginx исключён: порт публикуется
+только на loopback. Обращение из соседнего контейнера — это внутренняя сеть
+Docker, а не внешняя; пир в этом случае недоверенный, поэтому цепочка
+`X-Forwarded-For` игнорируется и адрес не подделывается.
+
+Репозиторный `docker-compose.prod.yml` публиковал порт как `"3015:3015"`,
+что открывало бы приложение наружу в обход Nginx. Файл приведён к серверному
+эталону: `"127.0.0.1:3015:3015"`, обязательные секреты с `:?`,
+`TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:?...}`, `BOT_API_BASE_URL` для бота.
+
 ## 3. Pre-flight
 
 ```bash
@@ -174,15 +232,95 @@ bash ops/verify-production.sh http://127.0.0.1:3018
 
 ## 6. Деплой (app-only) — только после отдельного решения владельца
 
+`ops/deploy-app.sh` больше не собирает образ. Процедура работает только с
+ранее проверенным immutable-артефактом и останавливается при любом расхождении.
+
 ```bash
-SRC=/var/tmp/kiruhak-repro/repo \
-VCS_REF=$(git -C /var/tmp/kiruhak-repro/repo rev-parse HEAD) \
-bash ops/deploy-app.sh security-headers-rate-limit-20261117
+bash ops/deploy-app.sh \
+  --tag      security-headers-rate-limit-20261117 \
+  --artifact /var/lib/kiruhak/security-headers-rate-limit-20261117-linux-amd64.tar.gz \
+  --sha256   96c3524fc4f7e177713d707c21940950eb213f5a5e40ede6cecfeb57e0efe7c2 \
+  --image-id sha256:3819f38f9ce9b72bc2c59a7fd2e168f211df5aa91743e76529be0bc8ed248534 \
+  --snapshot aa8996ac34a6ba5422a5615e9e9acf6074d61cfc8cf0f61e849f5e0dc356726f \
+  --trusted-proxies 172.18.0.1/32,81.177.135.137/32 \
+  --expect-rollback-image kiruhak-app:api-fail-closed-20261115 \
+  --expect-rollback-image-id sha256:245d1e23bcbda156ab70d9807a902887ad60b257977f72c333317e8012bf745b \
+  --dry-run
 ```
 
-Скрипт собирает образ, проверяет платформу и метки, пишет release override и
-rollback checkpoint, пересоздаёт **только** сервис приложения с `--no-deps`.
-PostgreSQL, бот, Nginx и DNS не затрагиваются.
+Что проверяет процедура (по порядку, любой провал останавливает выполнение):
+
+1. наличие обязательных файлов и аргументов; тег не указывает на другой образ;
+2. SHA-256 архива артефакта;
+3. `TRUSTED_PROXY_IPS`: непусто, формат CIDR, нет широких подсетей, шлюз
+   сети приложения и адрес пира nginx входят в список;
+4. `docker load` без пересборки + сверка image ID, платформы `linux/amd64`
+   и source snapshot;
+5. runtime-разметка образа (файлы приложения, Prisma-клиент, не root);
+6. подготовка release override и rollback-override, проверка наличия образа
+   отката локально и проверка собираемости конфигурации отката;
+7. итоговая конфигурация compose: образ, отсутствие секции `build`, порт
+   только на `127.0.0.1`, `TRUSTED_PROXY_IPS` в окружении `app`,
+   `TELEGRAM_LOGIN_MODE=owner_canary`, секреты на месте, конфигурации
+   postgres и бота не изменились, в окружении `app` добавлена ровно одна
+   переменная — `TRUSTED_PROXY_IPS`;
+8. только после всех проверок пишется rollback checkpoint.
+
+Секция `build` в override удаляется через `build: !reset null` — обычный
+`build: null` в Compose v5.5.1 **не** удаляет секцию, а только перекрывает
+значение, и compose сохранил бы возможность пересборки из контекста.
+
+Значения Telegram-конфигурации (`TELEGRAM_LOGIN_MODE`, `ADMIN_TELEGRAM_ID`)
+наследуются из работающего контейнера, а не задаются константой: новый
+релиз не может молча сменить режим логина.
+
+### 6.1 Результат релиз-гейта (dry-run без деплоя)
+
+`ops/verify-deploy-gate.sh` — воспроизводимая проверка процедуры: 32/32 PASS.
+
+| Сценарий | Ожидаемый результат | Факт |
+| --- | --- | --- |
+| dry-run с корректными параметрами | все проверки пройдены, контейнер не пересоздан | PASS |
+| неверный SHA-256 артефакта | отказ | PASS |
+| отсутствует `TRUSTED_PROXY_IPS` | отказ | PASS |
+| неверные PortBindings (`3015:3015`) | отказ | PASS |
+| образ отката отсутствует локально | отказ | PASS |
+| тег указывает на другой образ | отказ | PASS |
+| чекпоинт прерванного прогона | не создаётся | PASS |
+| production-контейнер app | id не изменился | PASS |
+
+Гейт выполняется в изолированной песочнице (`/tmp/kstudio-deploy-gate-*`):
+compose-файлы, каталоги override и checkpoint — копии, рабочие каталоги
+production не затрагиваются. Секреты не копируются — используется ссылка на
+рабочий `.env`.
+
+### 6.2 Точная последовательность production rollout
+
+```bash
+# 1. dry-run: все проверки, контейнер не пересоздаётся
+bash ops/deploy-app.sh --tag security-headers-rate-limit-20261117 \
+  --artifact /var/lib/kiruhak/security-headers-rate-limit-20261117-linux-amd64.tar.gz \
+  --sha256 96c3524fc4f7e177713d707c21940950eb213f5a5e40ede6cecfeb57e0efe7c2 \
+  --image-id sha256:3819f38f9ce9b72bc2c59a7fd2e168f211df5aa91743e76529be0bc8ed248534 \
+  --snapshot aa8996ac34a6ba5422a5615e9e9acf6074d61cfc8cf0f61e849f5e0dc356726f \
+  --trusted-proxies 172.18.0.1/32,81.177.135.137/32 \
+  --expect-rollback-image kiruhak-app:api-fail-closed-20261115 \
+  --expect-rollback-image-id sha256:245d1e23bcbda156ab70d9807a902887ad60b257977f72c333317e8012bf745b \
+  --dry-run
+
+# 2. деплой: та же команда без --dry-run
+#    (пересоздаётся только сервис app)
+
+# 3. post-deploy smoke
+bash ops/verify-production.sh https://kiruhak11.ru          # 30 проверок
+bash ops/verify-security-headers.sh https://kiruhak11.ru   # 21 проверка
+curl -sI https://kiruhak11.ru/ | grep -iE 'content-security-policy|strict-transport'
+
+# 4. контроль инвариантов
+docker inspect kiruhak_app --format '{{.Config.Image}} {{.Image}} {{.State.Health.Status}}'
+docker inspect kiruhak_postgres --format '{{.Config.Image}} {{.Id}}'   # без изменений
+docker inspect kiruhak_bot --format '{{.Config.Image}} {{.Id}}'        # без изменений
+```
 
 ## 7. Проверка после деплоя
 
@@ -203,20 +341,38 @@ curl -sI https://kiruhak11.ru/ | grep -iE 'content-security-policy|strict-transp
 
 ## 8. Rollback
 
-Точка отката — образ, работавший до релиза:
+Точка отката — образ, фактически работавший до релиза (не жёстко прописанный
+старый релиз):
 
 ```
 kiruhak-app:api-fail-closed-20261115
 sha256:245d1e23bcbda156ab70d9807a902887ad60b257977f72c333317e8012bf745b
 ```
 
+Процедура деплоя сама фиксирует точку отката до переключения: читает образ
+работающего контейнера, проверяет, что этот образ есть локально, генерирует
+rollback-override и **проверяет собираемость конфигурации отката**. Откат
+невозможен, если образ отката отсутствует — в этом случае деплой блокируется.
+
+Готовый checkpoint (`/var/lib/kiruhak/rollback-checkpoints/`) содержит:
+
+```
+previous_image=kiruhak-app:api-fail-closed-20261115
+previous_image_id=sha256:245d1e23bcbda156ab70d9807a902887ad60b257977f72c333317e8012bf745b
+compose_files=/var/www/html/kiruhak/docker-compose.prod.yml,/var/lib/kiruhak/release-overrides/app-secrets.override.yml,<release-override>
+rollback_override=/var/lib/kiruhak/release-overrides/api-fail-closed-20261115-rollback.yml
+rollback_command=cd /var/www/html/kiruhak && docker compose -p kiruhak -f docker-compose.prod.yml -f /var/lib/kiruhak/release-overrides/app-secrets.override.yml -f /var/lib/kiruhak/release-overrides/api-fail-closed-20261115-rollback.yml up -d --no-deps --force-recreate app
+db_invariants=5|10|14|21|3|1|1
+```
+
+Откат одной командой (БД не трогается):
+
 ```bash
-# 1. вернуть предыдущий образ в override и пересоздать только приложение
-cat /var/lib/kiruhak/release-overrides/<previous-release>.yml
-# (см. ops/deploy-app.sh — раздел rollback)
-docker compose -f /var/www/html/kiruhak/docker-compose.yml \
-  -f /var/lib/kiruhak/release-overrides/<previous-release>.yml \
-  up -d --no-deps app
+cd /var/www/html/kiruhak && docker compose -p kiruhak \
+  -f docker-compose.prod.yml \
+  -f /var/lib/kiruhak/release-overrides/app-secrets.override.yml \
+  -f /var/lib/kiruhak/release-overrides/api-fail-closed-20261115-rollback.yml \
+  up -d --no-deps --force-recreate app
 ```
 
 Rollback не требует отката БД: релиз не добавляет миграций и не меняет схему
