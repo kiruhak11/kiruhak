@@ -96,7 +96,10 @@ check "API CSP is strict" "script-src 'none'; frame-ancestors 'none';" "$API_CSP
 echo
 echo "-- authentication contract (structure, not only the status code) --"
 LOGIN_BODY="$(curl -s -m 25 -X POST -H 'Content-Type: application/json' -d '{}' "$BASE/api/auth/login")"
-LOGIN_FLAG="$(printf '%s' "$LOGIN_BODY" | grep -o '"success":false' | head -1)"
+LOGIN_FLAG="absent"
+case "$LOGIN_BODY" in
+  *'"success":false'*) LOGIN_FLAG="success:false" ;;
+esac
 check "login with empty credentials is not a success" "success:false" "$LOGIN_FLAG"
 
 echo
