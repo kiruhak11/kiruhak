@@ -183,7 +183,7 @@ Docker, а не внешняя; пир в этом случае недовере
 ## 3. Pre-flight
 
 ```bash
-cd /var/tmp/kiruhak-repro/repo
+cd /var/tmp/kstudio-p1-verify/repo
 docker inspect kiruhak_app --format '{{.Config.Image}} {{.Image}}'   # текущий образ
 docker ps --format '{{.Names}} {{.Status}}' | grep -E 'kiruhak|pocker'
 ```
@@ -191,10 +191,16 @@ docker ps --format '{{.Names}} {{.Status}}' | grep -E 'kiruhak|pocker'
 Ожидаемо до деплоя: `kiruhak-app:api-fail-closed-20261115`,
 `sha256:245d1e23bcbda156ab70d9807a902887ad60b257977f72c333317e8012bf745b`.
 
-## 4. Сборка образа
+## 4. Сборка образа — разовый шаг, в релизной процедуре её нет
+
+> **Пересобирать образ при выкатке нельзя.** Сборка ниже относится только к
+> подготовке артефакта: пересобранный образ даст другой image ID, и он уже не
+> будет тем, который проверен, отсобран в tar-артефакт и зафиксирован в
+> таблице раздела «Артефакт». Релизная процедура (§6) только загружает
+> готовый артефакт и сверяет его идентичность.
 
 ```bash
-cd /var/tmp/kiruhak-repro/repo
+cd /var/tmp/kstudio-p1-verify/repo
 SNAPSHOT_SHA=$(find . -type f -not -path './node_modules/*' -not -path './.nuxt/*' \
   -not -path './.output/*' -not -path './.git/*' -not -name '._*' -print0 \
   | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)
@@ -211,6 +217,14 @@ docker image inspect kiruhak-app:security-headers-rate-limit-20261117 \
 
 Платформа обязана быть `linux/amd64`, метка snapshot — совпадать с
 `SOURCE_SNAPSHOT_SHA256`.
+
+Готовый образ сохраняется в tar-артефакт, из которого выполняется деплой:
+
+```bash
+docker save kiruhak-app:security-headers-rate-limit-20261117 \
+  | gzip > /var/lib/kiruhak/security-headers-rate-limit-20261117-linux-amd64.tar.gz
+sha256sum /var/lib/kiruhak/security-headers-rate-limit-20261117-linux-amd64.tar.gz
+```
 
 ## 5. Smoke нового образа в изолированном окружении
 
