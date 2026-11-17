@@ -6,7 +6,8 @@
           <p class="eyebrow">КОНТАКТЫ / КИРИЛЛ КОВАЛЕНКО</p>
           <h1>Давайте обсудим задачу</h1>
           <p class="intro-copy">
-            Можно написать по поводу работы в команде, сотрудничества или разработки продукта — отвечаю лично.
+            Опишите проект в форме ниже — заявка попадёт мне в уведомления, и я отвечу лично.
+            Если вопрос срочный, напишите в Telegram напрямую.
           </p>
         </header>
 
@@ -64,29 +65,68 @@
             <p class="eyebrow">О ЧЁМ МОЖНО НАПИСАТЬ</p>
             <h2 id="contact-context-title">Короткого первого сообщения достаточно</h2>
             <ul class="topic-list">
-              <li>Вакансия или работа в команде</li>
-              <li>Сайт, сервис или приложение</li>
-              <li>Техническое сотрудничество</li>
+              <li v-for="topic in contactTopics" :key="topic.id">
+                <button
+                  type="button"
+                  class="topic-button"
+                  :aria-pressed="selectedTopicId === topic.id"
+                  @click="chooseTopic(topic)"
+                >
+                  <span>{{ topic.label }}</span>
+                  <span class="topic-action" aria-hidden="true">→</span>
+                </button>
+              </li>
             </ul>
             <p class="message-hint">
-              Для проекта опишите задачу, желаемый результат и ориентир по срокам — этого хватит, чтобы начать разговор.
+              Выберите тему — она подставится в описание задачи. Для проекта добавьте
+              желаемый результат и ориентир по срокам.
             </p>
-            <NuxtLink class="form-link" to="/#application-form">
-              Или подробно описать проект <span aria-hidden="true">→</span>
-            </NuxtLink>
+            <a class="form-link" href="#contact-form">
+              Заполнить форму <span aria-hidden="true">→</span>
+            </a>
           </aside>
         </div>
+
+        <section
+          id="contact-form"
+          class="contact-form-section"
+          aria-labelledby="contact-form-title"
+        >
+          <div class="contact-form-grid">
+            <div class="contact-form-intro">
+              <p class="eyebrow">ЗАЯВКА</p>
+              <h2 id="contact-form-title">Расскажите, что нужно сделать</h2>
+              <p class="contact-form-copy">
+                Форма отправляет ту же заявку, что и на главной странице: она сохраняется
+                в очередь уведомлений, и я отвечаю по указанным контактам.
+              </p>
+              <p class="contact-form-legal">
+                Заявка попадает в очередь уведомлений — отвечаю лично.
+                <NuxtLink to="/legal/privacy">Политика обработки персональных данных</NuxtLink>.
+              </p>
+            </div>
+
+            <PortfolioLeadContactForm
+              id-prefix="contact-lead"
+              :topic="topicRequest.text"
+              :topic-id="topicRequest.id"
+              @topic-applied="onTopicApplied"
+              @topic-detached="onTopicDetached"
+            />
+          </div>
+        </section>
       </div>
     </main>
   </NuxtLayout>
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
 import { publicContact } from "~/constants/public-contact";
 
 useSeoMeta({
   title: "Контакты — Кирилл Коваленко",
-  description: "Написать Кириллу Коваленко по поводу работы в команде, сотрудничества или разработки продукта: Telegram и email.",
+  description: "Написать Кириллу Коваленко по поводу работы в команде, сотрудничества или разработки продукта: форма заявки, Telegram и email.",
   ogTitle: "Контакты — Кирилл Коваленко",
   ogDescription: "Написать по поводу работы в команде, сотрудничества или разработки продукта.",
   ogType: "website",
@@ -97,6 +137,60 @@ useSeoMeta({
   robots: "index, follow",
 });
 useHead({ link: [{ rel: "canonical", href: new URL("/contact", useRuntimeConfig().public.siteUrl).href }] });
+
+type ContactTopic = {
+  id: string;
+  label: string;
+  /** Текст, который подставляется в описание задачи. */
+  task: string;
+};
+
+/**
+ * Типы обращений. Отдельного поля в API нет и не добавляется: тема
+ * подставляется в свободное поле «Что нужно сделать».
+ */
+const contactTopics: ContactTopic[] = [
+  {
+    id: "team",
+    label: "Вакансия или работа в команде",
+    task: "Вакансия или работа в команде",
+  },
+  {
+    id: "product",
+    label: "Сайт, сервис или приложение",
+    task: "Сайт, сервис или приложение",
+  },
+  {
+    id: "collab",
+    label: "Техническое сотрудничество",
+    task: "Техническое сотрудничество",
+  },
+];
+
+// Запрошенная тема и фактически применённая: выбранной считается только та
+// тема, которая действительно подставилась в описание задачи.
+const selectedTopicId = ref<string | null>(null);
+const topicRequest = ref<{ id: string; text: string }>({ id: "", text: "" });
+
+const scrollToForm = () => {
+  document.getElementById("contact-form")?.scrollIntoView({
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "start",
+  });
+};
+
+const chooseTopic = (topic: ContactTopic) => {
+  topicRequest.value = { id: topic.id, text: topic.task };
+  scrollToForm();
+};
+
+const onTopicApplied = (id: string) => {
+  selectedTopicId.value = id || null;
+};
+
+const onTopicDetached = () => {
+  selectedTopicId.value = null;
+};
 </script>
 
 <style scoped lang="scss">
@@ -116,7 +210,7 @@ useHead({ link: [{ rel: "canonical", href: new URL("/contact", useRuntimeConfig(
 .contact-intro { max-width: 720px; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
 .eyebrow { margin: 0 0 0.85rem; color: var(--portfolio-accent); font-size: var(--portfolio-label); font-weight: 700; letter-spacing: 0.12em; }
 h1 { margin: 0; color: var(--portfolio-text); font-size: clamp(2.1rem, 4vw, 3.5rem); line-height: 1.04; letter-spacing: -0.06em; }
-.intro-copy { max-width: 56ch; margin: 1rem 0 0; color: var(--portfolio-text-secondary); font-size: var(--portfolio-body-large); line-height: 1.65; }
+.intro-copy { max-width: 60ch; margin: 1rem 0 0; color: var(--portfolio-text-secondary); font-size: var(--portfolio-body-large); line-height: 1.65; }
 .contact-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr); gap: clamp(2rem, 7vw, 6rem); align-items: start; }
 .contact-channels { display: grid; min-width: 0; gap: 0.85rem; }
 .primary-channel { position: relative; display: grid; min-height: 210px; align-content: start; justify-items: start; overflow: hidden; padding: clamp(1.25rem, 4vw, 2rem); border: 1px solid var(--portfolio-border-hover); border-radius: var(--portfolio-radius-lg); background: var(--portfolio-surface); color: var(--portfolio-text); text-decoration: none; box-shadow: var(--portfolio-shadow-soft); transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
@@ -138,13 +232,33 @@ h1 { margin: 0; color: var(--portfolio-text); font-size: clamp(2.1rem, 4vw, 3.5r
 .contact-context { padding-top: 0.3rem; }
 .contact-context h2 { max-width: 24ch; margin: 0; color: var(--portfolio-text); font-size: clamp(1.3rem, 2vw, 1.65rem); line-height: 1.2; letter-spacing: -0.035em; }
 .topic-list { display: grid; gap: 0.65rem; margin: 1.25rem 0 0; padding: 0; color: var(--portfolio-text-secondary); font-size: 0.88rem; line-height: 1.5; list-style: none; }
-.topic-list li { display: flex; gap: 0.6rem; }
-.topic-list li::before { color: var(--portfolio-accent); content: "↗"; }
+.topic-button { display: flex; width: 100%; min-height: 44px; align-items: center; gap: 0.6rem; padding: 0.35rem 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; transition: color 150ms ease; }
+.topic-button::before { color: var(--portfolio-accent); content: "↗"; }
+.topic-action { margin-left: auto; color: var(--portfolio-text-muted); transition: transform 150ms ease, color 150ms ease; }
+.topic-button:hover { color: var(--portfolio-text); }
+.topic-button:hover .topic-action { color: var(--portfolio-accent); transform: translateX(2px); }
+.topic-button[aria-pressed="true"] { color: var(--portfolio-text); font-weight: 600; }
+.topic-button[aria-pressed="true"] .topic-action { color: var(--portfolio-accent); }
+.topic-button:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; border-radius: var(--portfolio-radius-sm); }
 .message-hint { margin: 1.25rem 0 0; padding-top: 1rem; border-top: 1px solid var(--portfolio-border); color: var(--portfolio-text-muted); font-size: 0.82rem; line-height: 1.6; }
 .form-link { display: inline-flex; min-height: 44px; align-items: center; gap: 0.45rem; margin-top: 0.8rem; color: var(--portfolio-text); font-size: 0.82rem; font-weight: 650; text-underline-offset: 4px; }
 .form-link:hover { color: var(--portfolio-accent); }
 .primary-channel:focus-visible,.secondary-channel:focus-visible,.form-link:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
 .channel-action { min-height: var(--portfolio-control-compact); }
+
+.contact-form-section { margin-top: clamp(3rem, 7vw, 5rem); padding-top: clamp(2.5rem, 6vw, 4rem); border-top: 1px solid var(--portfolio-border); scroll-margin-top: 5rem; }
+.contact-form-grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: clamp(2rem, 6vw, 5rem); align-items: start; }
+.contact-form-intro { position: sticky; top: 6rem; }
+.contact-form-intro h2 { max-width: 20ch; margin: 0; color: var(--portfolio-text); font-size: clamp(1.5rem, 2.6vw, 2rem); line-height: 1.15; letter-spacing: -0.04em; }
+.contact-form-copy { max-width: 44ch; margin: 0.9rem 0 0; color: var(--portfolio-text-secondary); font-size: 0.95rem; line-height: 1.65; }
+.contact-form-legal { max-width: 44ch; margin: 1.1rem 0 0; color: var(--portfolio-text-muted); font-size: 0.8rem; line-height: 1.55; }
+.contact-form-legal a { color: var(--portfolio-accent); text-underline-offset: 3px; }
+
+@media (max-width: 900px) {
+  .contact-form-grid { grid-template-columns: 1fr; gap: 1.75rem; }
+  .contact-form-intro { position: static; }
+  .contact-form-intro h2 { max-width: 28ch; }
+}
 
 @media (max-width: 760px) {
   .contact-page { padding-top: clamp(1.75rem, 6vw, 2.5rem); }
@@ -162,7 +276,8 @@ h1 { margin: 0; color: var(--portfolio-text); font-size: clamp(2.1rem, 4vw, 3.5r
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .primary-channel,.secondary-channel { transition: none; }
+  .primary-channel,.secondary-channel,.topic-button,.topic-action { transition: none; }
   .primary-channel:hover { transform: none; }
+  .topic-button:hover .topic-action { transform: none; }
 }
 </style>

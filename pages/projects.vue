@@ -103,7 +103,7 @@
               <p class="eyebrow">ОБСУДИТЬ ЗАДАЧУ</p>
               <h2 id="projects-cta-title">Нужен похожий продукт или хотите обсудить мой опыт?</h2>
             </div>
-            <NuxtLink class="contact-link" to="/contact">
+            <NuxtLink class="contact-link" to="/contact#contact-form">
               Написать мне <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" /></svg>
             </NuxtLink>
           </section>

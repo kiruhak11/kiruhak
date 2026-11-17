@@ -70,8 +70,11 @@ test("contact experience uses canonical channels and keeps platform access secon
   assert.match(contactPage, /publicContact\.telegram\.href/);
   assert.match(contactPage, /publicContact\.email\.href/);
   assert.match(contactPage, /publicContact\.github\.href/);
-  assert.match(contactPage, /to="\/#application-form"/);
-  assert.doesNotMatch(contactPage, /<form|publicContact\.phone|publicContact\.vk/);
+  // Форма заявки переехала на /contact: используется общий компонент,
+  // собственный якорь страницы. Телефон и VK по-прежнему не публикуются.
+  assert.match(contactPage, /<PortfolioLeadContactForm/);
+  assert.match(contactPage, /id="contact-form"/);
+  assert.doesNotMatch(contactPage, /publicContact\.phone|publicContact\.vk/);
   assert.match(footer, /publicContact\.telegram\.href/);
   assert.match(footer, /publicContact\.email\.href/);
   assert.match(footer, /publicContact\.github\.href/);
@@ -400,16 +403,19 @@ test("key public copy is personal and does not surface unsupported result sectio
 test("restored public surface keeps the lead contract and the legal documents reachable", () => {
   const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
   const homepage = read("../pages/index.vue");
+  const leadSubmission = read("../composables/useLeadSubmission.ts");
   const legalIndex = read("../pages/legal/index.vue");
   const legalDocument = read("../pages/legal/[slug].vue");
   const legalConfig = read("../constants/legal-config.ts");
 
-  // Форма заявки на главной использует контракт очереди доставки:
-  // единый ключ идемпотентности и плоское тело, без чернового сообщения.
-  assert.match(homepage, /\$fetch\("\/api\/telegram"/);
-  assert.match(homepage, /"Idempotency-Key":\s*idempotencyKey/);
-  assert.match(homepage, /body:\s*\{\s*\.\.\.leadForm\.value\s*\}/);
-  assert.doesNotMatch(homepage, /buildLeadMessage|discount:\s*0/);
+  // Форма заявки использует контракт очереди доставки: единый ключ
+  // идемпотентности и плоское тело, без чернового сообщения. Логика вынесена
+  // в общий composable, поэтому проверяется он, а не страница.
+  assert.match(leadSubmission, /LEAD_ENDPOINT = "\/api\/telegram"/);
+  assert.match(leadSubmission, /"Idempotency-Key":\s*idempotencyKey/);
+  assert.match(leadSubmission, /body:\s*payload/);
+  assert.match(homepage, /<PortfolioLeadContactForm/);
+  assert.doesNotMatch(homepage + leadSubmission, /buildLeadMessage|discount:\s*0/);
 
   // Юридические документы опубликованы и доступны по постоянным адресам.
   assert.match(legalConfig, /id:\s*"privacy"/);

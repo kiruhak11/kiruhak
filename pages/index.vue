@@ -14,7 +14,7 @@
                 Посмотреть проекты
                 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" /></svg>
               </NuxtLink>
-              <NuxtLink class="cta-button secondary" to="/contact">Обсудить задачу</NuxtLink>
+              <NuxtLink class="cta-button secondary" to="/contact#contact-form">Обсудить задачу</NuxtLink>
             </div>
             <a class="hero-github-link" :href="publicContact.github.href" target="_blank" rel="noopener noreferrer">
               GitHub {{ publicContact.github.label }}
@@ -51,36 +51,7 @@
             </div>
           </div>
 
-          <form class="lead-form" aria-label="Заявка на разработку" @input="invalidateLeadRetryKey" @submit.prevent="submitLeadForm">
-            <label for="lead-name">Имя
-              <input id="lead-name" v-model="leadForm.name" type="text" autocomplete="name" required placeholder="Ваше имя" />
-            </label>
-            <label for="lead-contact">Telegram или телефон
-              <input id="lead-contact" v-model="leadForm.contact" type="text" autocomplete="tel" placeholder="+7... или @username" />
-            </label>
-            <label for="lead-email">Email для ответа
-              <input id="lead-email" v-model="leadForm.email" type="email" autocomplete="email" required placeholder="name@example.com" />
-            </label>
-            <label for="lead-business">Ниша / компания
-              <input id="lead-business" v-model="leadForm.business" type="text" autocomplete="organization" placeholder="Например: юридические услуги" />
-            </label>
-            <label for="lead-task">Что нужно сделать
-              <textarea id="lead-task" v-model="leadForm.task" rows="4" required placeholder="Опишите задачу, цели и ожидания"></textarea>
-            </label>
-            <label for="lead-budget">Ориентировочный бюджет
-              <input id="lead-budget" v-model="leadForm.budget" type="text" placeholder="Например: от 150 000 ₽" />
-            </label>
-            <p class="form-privacy-note">
-              Отправляя заявку, вы просите меня связаться с вами и обсудить проект.
-              <NuxtLink to="/legal/privacy">Как обрабатываются данные</NuxtLink>.
-            </p>
-            <button class="cta-button primary" type="submit" :disabled="isSubmitting" :aria-busy="isSubmitting">
-              {{ isSubmitting ? "Отправка..." : mainCtaText }}
-              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" /></svg>
-            </button>
-            <p v-if="formState === 'success'" class="form-message success" role="status" aria-live="polite">Заявка сохранена. Уведомление отправляется; я свяжусь с вами в ближайшее время.</p>
-            <p v-if="formState === 'error'" class="form-message error" role="alert">Не удалось отправить заявку. Напишите мне в Telegram или на почту.</p>
-          </form>
+          <PortfolioLeadContactForm id-prefix="lead" :submit-label="mainCtaText" />
         </div>
       </section>
     </main>
@@ -88,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted } from "vue";
 import { useProjects } from "~/composables/useProjects";
 import { publicContact } from "~/constants/public-contact";
 import { getFeaturedPortfolioProjects } from "~/utils/featured-projects";
@@ -196,77 +167,14 @@ const skillGroups = computed(() => {
     .filter((group) => group.tools.length > 0);
 });
 
-const leadForm = ref({ name: "", contact: "", email: "", business: "", task: "", budget: "" });
-const isSubmitting = ref(false);
-const formState = ref("idle");
-
-// Ключ идемпотентности сохраняется между попытками: повторная отправка той же
-// заявки не создаёт дубликат в очереди доставки.
-const leadIdempotencyStorageKey = "kstudio.lead.idempotency-key";
-let currentIdempotencyKey = "";
-
-const clearLeadIdempotencyKey = () => {
-  currentIdempotencyKey = "";
-  try {
-    window.sessionStorage.removeItem(leadIdempotencyStorageKey);
-  } catch {
-    // sessionStorage недоступен (приватный режим) — работаем без него.
-  }
-};
-
-const invalidateLeadRetryKey = () => {
-  if (formState.value === "error") clearLeadIdempotencyKey();
-};
-
-const getLeadIdempotencyKey = () => {
-  if (currentIdempotencyKey) return currentIdempotencyKey;
-
-  try {
-    currentIdempotencyKey = window.sessionStorage.getItem(leadIdempotencyStorageKey) || "";
-  } catch {
-    // sessionStorage недоступен — генерируем ключ только в памяти.
-  }
-
-  if (!currentIdempotencyKey) {
-    currentIdempotencyKey = window.crypto.randomUUID();
-  }
-
-  try {
-    window.sessionStorage.setItem(leadIdempotencyStorageKey, currentIdempotencyKey);
-  } catch {
-    // Не смогли сохранить ключ — он останется только в памяти вкладки.
-  }
-
-  return currentIdempotencyKey;
-};
-
+// Логика формы (состояние, идемпотентность, разбор ошибок) живёт в
+// composables/useLeadSubmission.ts и используется общей компонентой формы
+// на главной странице и на /contact.
 const scrollToForm = () => {
   document.getElementById("application-form")?.scrollIntoView({
     behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
     block: "start",
   });
-};
-
-const submitLeadForm = async () => {
-  formState.value = "idle";
-  isSubmitting.value = true;
-  const idempotencyKey = getLeadIdempotencyKey();
-
-  try {
-    await $fetch("/api/telegram", {
-      method: "POST",
-      headers: { "Idempotency-Key": idempotencyKey },
-      body: { ...leadForm.value },
-    });
-    leadForm.value = { name: "", contact: "", email: "", business: "", task: "", budget: "" };
-    clearLeadIdempotencyKey();
-    formState.value = "success";
-  } catch (error) {
-    formState.value = "error";
-    console.error("Failed to send lead form:", error);
-  } finally {
-    isSubmitting.value = false;
-  }
 };
 
 onMounted(() => { fetchProjects(); });
@@ -314,33 +222,11 @@ onMounted(() => { fetchProjects(); });
 .form-intro > p:not(.eyebrow) { max-width: 42ch; margin: 0.9rem 0 0; color: var(--portfolio-text-secondary); line-height: 1.65; }
 .messenger-links { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; margin-top: 1.25rem; }
 .messenger-links a { color: var(--portfolio-text); font-size: var(--portfolio-small); font-weight: 650; text-underline-offset: 4px; }
-.lead-form { display: grid; gap: 1rem; padding: clamp(1.1rem, 3vw, 1.75rem); border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-lg); background: var(--portfolio-bg-elevated); box-shadow: var(--portfolio-shadow-soft); }
-.lead-form label { display: grid; gap: 0.45rem; color: var(--portfolio-text); font-size: 0.88rem; font-weight: 600; }
-.lead-form input,.lead-form textarea { width: 100%; min-height: 46px; border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-sm); padding: 0.7rem 0.8rem; background: var(--portfolio-bg); color: var(--portfolio-text); font: inherit; font-size: 0.95rem; }
-.lead-form textarea { min-height: 112px; resize: vertical; }
-.lead-form input::placeholder,.lead-form textarea::placeholder { color: var(--portfolio-text-muted); opacity: 1; }
-.lead-form input:focus-visible,.lead-form textarea:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 2px; border-color: var(--portfolio-accent); }
 .hero-section { padding-bottom: var(--portfolio-section-space); }
 .about-section,.contact-section { padding-block: var(--portfolio-section-space); }
 .cta-button { min-height: var(--portfolio-control-standard); }
-.lead-form input,.lead-form textarea { min-height: var(--portfolio-control-compact); }
-.lead-form .cta-button { justify-self: start; }
-.form-message { margin: 0; font-size: var(--portfolio-small); line-height: 1.5; }
-.form-message.success { color: var(--portfolio-success); }
-.form-message.error { color: var(--portfolio-error); }
-.form-privacy-note {
-  color: var(--portfolio-text-secondary);
-  font-size: 0.82rem;
-  line-height: 1.55;
-  margin: 0;
-}
-
-.form-privacy-note a {
-  color: var(--portfolio-accent);
-  text-underline-offset: 3px;
-}
 
 @media (max-width: 760px) { .about-layout,.form-layout { grid-template-columns: 1fr; gap: 1.4rem; } .form-intro { position: static; } }
-@media (max-width: 520px) { .hero-section { padding: 3rem 0 2.75rem; } .hero-eyebrow { gap: 7px; margin-bottom: 18px; font-size: 0.62rem; letter-spacing: 0.07em; } .hero-title { font-size: clamp(2.25rem, 9.5vw, 3.1rem); line-height: 1.04; letter-spacing: -0.06em; } .hero-subtitle { margin-top: 18px; font-size: 1rem; line-height: 1.55; } .hero-actions { flex-direction: column; align-items: stretch; margin-top: 24px; } .hero-actions .cta-button { width: 100%; } .hero-github-link { margin-top: 15px; } .lead-form .cta-button { width: 100%; } }
+@media (max-width: 520px) { .hero-section { padding: 3rem 0 2.75rem; } .hero-eyebrow { gap: 7px; margin-bottom: 18px; font-size: 0.62rem; letter-spacing: 0.07em; } .hero-title { font-size: clamp(2.25rem, 9.5vw, 3.1rem); line-height: 1.04; letter-spacing: -0.06em; } .hero-subtitle { margin-top: 18px; font-size: 1rem; line-height: 1.55; } .hero-actions { flex-direction: column; align-items: stretch; margin-top: 24px; } .hero-actions .cta-button { width: 100%; } .hero-github-link { margin-top: 15px; } }
 @media (prefers-reduced-motion: reduce) { .hero-copy { animation: none; } .cta-button,.hero-github-link { transition: none; } .cta-button:hover { transform: none; } }
 </style>
