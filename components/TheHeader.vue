@@ -63,7 +63,7 @@
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5h8v8m-.5-7.5-8 8" /></svg>
       </a>
       <ThemeToggle class="desktop-theme" />
-      <NuxtLink class="header-contact-cta" to="/contact">Обсудить проект</NuxtLink>
+      <NuxtLink class="header-contact-cta" to="/contact#contact-form">Обсудить проект</NuxtLink>
     </div>
     <HamburgerMenu class="mobile-navigation" />
   </header>

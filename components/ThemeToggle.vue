@@ -106,6 +106,11 @@ onMounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .theme-toggle,.toggle-icon,.sun-icon,.moon-icon { transition: none; animation: none; }
+  // Селекторы повторяют структуру правил выше: иначе анимация вращения
+  // иконки перебивает этот блок по специфичности и не отключается.
+  .theme-toggle,
+  .toggle-icon,
+  .toggle-icon .sun-icon,
+  .toggle-icon .moon-icon { transition: none; animation: none; }
 }
 </style>
