@@ -111,6 +111,9 @@ export default defineNuxtConfig({
     public: {
       siteUrl,
       channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || "webmonkey",
+      // Идентификатор сайта для собственной аналитики посещений. Без него
+      // трекер не подключается: запросов нет, ложные события не создаются.
+      analyticsSiteId: process.env.NUXT_PUBLIC_ANALYTICS_SITE_ID || "",
       // Юридические документы опубликованы; gate можно закрыть флагом.
       legalDocumentsPublic:
         process.env.NUXT_PUBLIC_LEGAL_DOCUMENTS_PUBLIC !== "false",

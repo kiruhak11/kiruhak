@@ -60,6 +60,9 @@ export const API_ROUTE_TABLE: RouteRule[] = [
   { methods: POST, policy: "public", pattern: /^\/api\/ui-components\/[^/]+\/view$/ },
   { methods: POST, policy: "public", pattern: /^\/api\/analytics\/track$/ },
   { methods: POST, policy: "public", pattern: /^\/api\/analytics\/track-simple$/ },
+  // Идентификатор сайта для собственной аналитики: значение публичное,
+  // маршрут только отдаёт его и ничего не принимает.
+  { methods: GET, policy: "public", pattern: /^\/api\/analytics\/config$/ },
   { methods: POST, policy: "public", pattern: /^\/api\/telegram$/ },
 
   // --- Публичная авторизация и Telegram Login ---------------------------

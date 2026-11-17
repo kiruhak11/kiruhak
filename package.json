@@ -30,7 +30,9 @@
     "test:security-regressions": "tsx --test tests/security-regressions.test.ts",
     "test:client-ip-integration": "tsx --test tests/client-ip.integration.test.ts",
     "test:release-orchestration": "tsx --test tests/release-orchestration.test.ts",
-    "test:contact-form": "tsx --test tests/contact-form.test.ts"
+    "test:contact-form": "tsx --test tests/contact-form.test.ts",
+    "test:analytics-tracking": "tsx --test tests/analytics-tracking.test.ts",
+    "test:analytics-endpoint": "tsx --test tests/analytics-endpoint.integration.test.ts"
   },
   "dependencies": {
     "@morev/vue-transitions": "^3.0.2",
