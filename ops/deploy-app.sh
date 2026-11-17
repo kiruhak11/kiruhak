@@ -354,10 +354,17 @@ ENVDIFF="$(jq -n --slurpfile base "${BASE_JSON}" --slurpfile rel "${RELEASE_JSON
 DIFF_ADDED="$(jq -r '.added | join(",")' <<< "${ENVDIFF}")"
 DIFF_REMOVED="$(jq -r '.removed | join(",")' <<< "${ENVDIFF}")"
 DIFF_CHANGED="$(jq -r '.changed | join(",")' <<< "${ENVDIFF}")"
-[ "${DIFF_ADDED}" = "TRUSTED_PROXY_IPS" ] || fail "в окружении app появились неожиданные переменные: ${DIFF_ADDED}"
+# Разрешена только TRUSTED_PROXY_IPS: она могла прийти ещё из прошлого
+# релиза, поэтому проверяем состав, а не наличие.
+UNEXPECTED_ADDED="$(jq -r '[.added[] | select(. != "TRUSTED_PROXY_IPS")] | join(",")' <<< "${ENVDIFF}")"
+[ -z "${UNEXPECTED_ADDED}" ] || fail "в окружении app появились неожиданные переменные: ${UNEXPECTED_ADDED}"
 [ -z "${DIFF_REMOVED}" ] || fail "из окружения app исчезли переменные: ${DIFF_REMOVED}"
 [ -z "${DIFF_CHANGED}" ] || fail "в окружении app изменились значения переменных: ${DIFF_CHANGED}"
-info "app env delta  : только TRUSTED_PROXY_IPS (остальное без изменений)"
+if [ -n "${DIFF_ADDED}" ]; then
+  info "app env delta  : добавлена только TRUSTED_PROXY_IPS (остальное без изменений)"
+else
+  info "app env delta  : переменные не изменились (TRUSTED_PROXY_IPS унаследована от прошлого релиза)"
+fi
 
 # Контейнеры, которые не должны меняться, фиксируем до деплоя.
 POSTGRES_BEFORE="$(docker inspect kiruhak_postgres --format '{{.Config.Image}}|{{.Id}}' 2>/dev/null || echo "")"
