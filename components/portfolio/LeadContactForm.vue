@@ -24,7 +24,7 @@
       class="lead-form"
       :aria-label="ariaLabel"
       novalidate
-      @input="handleInput"
+      @input="onInput"
       @submit.prevent="submit"
     >
       <div class="lead-field">
@@ -141,11 +141,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import {
   LEAD_FIELD_LIMITS,
   useLeadSubmission,
 } from "~/composables/useLeadSubmission";
+import { isLeadTopicDetached, resolveLeadTopic } from "~/utils/lead-topic";
 
 const props = withDefaults(
   defineProps<{
@@ -158,14 +159,24 @@ const props = withDefaults(
      * ничего не написал. Отдельного поля в API не добавляет.
      */
     topic?: string;
+    /** Идентификатор темы — чтобы страница знала, какая тема применена. */
+    topicId?: string;
   }>(),
   {
     idPrefix: "lead",
     submitLabel: "Отправить заявку",
     ariaLabel: "Заявка на разработку",
     topic: "",
+    topicId: "",
   }
 );
+
+const emit = defineEmits<{
+  /** Тема применена к описанию задачи. */
+  "topic-applied": [id: string];
+  /** Посетитель изменил описание задачи — тема больше не действует. */
+  "topic-detached": [];
+}>();
 
 const {
   values,
@@ -180,17 +191,40 @@ const {
 
 const errorMessage = computed(() => error.value?.message ?? "");
 
-// Тема подставляется только в пустое поле: написанное посетителем не
-// затирается.
+// Текст, подставленный автоматически. Он отличается от написанного
+// посетителем: только такой текст заменяется при выборе другой темы.
+const autoTopic = ref("");
+
 watch(
   () => props.topic,
   (topic) => {
-    if (!topic) return;
-    if (values.task.trim()) return;
-    values.task = topic;
+    const decision = resolveLeadTopic(values.task, autoTopic.value, topic ?? "");
+
+    if (decision.action === "keep") {
+      // Описание задачи написал посетитель — его текст не затирается,
+      // и тема не считается применённой.
+      return;
+    }
+
+    values.task = decision.text;
+    autoTopic.value = decision.text;
+    emit("topic-applied", props.topicId);
   },
   { immediate: true }
 );
+
+/**
+ * Ручная правка описания задачи. Если посетитель убрал автоматически
+ * подставленную тему, тема больше не действует — иначе выбранная кнопка
+ * противоречила бы содержимому поля.
+ */
+const onInput = () => {
+  if (isLeadTopicDetached(values.task, autoTopic.value)) {
+    autoTopic.value = "";
+    emit("topic-detached");
+  }
+  handleInput();
+};
 </script>
 
 <style scoped lang="scss">

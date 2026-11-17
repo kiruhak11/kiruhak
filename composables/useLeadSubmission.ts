@@ -38,6 +38,8 @@ export type LeadErrorKind =
   | "rate-limit"
   | "temporary"
   | "network"
+  /** Ответ сервера не подтверждает сохранение заявки. */
+  | "unconfirmed"
   | "unknown";
 
 export type LeadSubmissionError = {
@@ -260,6 +262,26 @@ export const classifyLeadError = (error: unknown): LeadSubmissionError => {
   };
 };
 
+/**
+ * Подтверждение успешного ответа Lead API.
+ *
+ * Принимается только документированный ответ: `status: "saved"`,
+ * `delivery: "queued"` и `duplicate` типа boolean. Разрешившийся Promise
+ * сам по себе не является подтверждением — иначе незаписанная заявка была бы
+ * показана посетителю как отправленная.
+ */
+export const isConfirmedLeadResponse = (
+  value: unknown
+): value is { status: string; delivery: string; duplicate: boolean } => {
+  if (!value || typeof value !== "object") return false;
+  const bag = value as Record<string, unknown>;
+  return (
+    bag.status === "saved" &&
+    bag.delivery === "queued" &&
+    typeof bag.duplicate === "boolean"
+  );
+};
+
 const resolveStorage = (injected?: LeadStorage): LeadStorage | null => {
   if (injected) return injected;
   try {
@@ -421,9 +443,19 @@ export const useLeadSubmission = (
         body: payload,
       });
 
-      const duplicate = Boolean(
-        (response as { duplicate?: unknown } | null)?.duplicate
-      );
+      if (!isConfirmedLeadResponse(response)) {
+        // Ответ не подтверждает сохранение: поля и ключ сохраняются,
+        // чтобы отправку можно было безопасно повторить.
+        error.value = {
+          kind: "unconfirmed",
+          message:
+            "Сервер не подтвердил сохранение заявки. Данные не потеряны — повторите отправку.",
+        };
+        state.value = "error";
+        return null;
+      }
+
+      const duplicate = response.duplicate;
 
       // Сброс только после подтверждённого успеха.
       clearIdempotencyKey();
@@ -432,9 +464,21 @@ export const useLeadSubmission = (
       state.value = "success";
       return { duplicate };
     } catch (cause) {
+      const classified = classifyLeadError(cause);
       // Данные формы сохраняются: отправку можно повторить.
-      error.value = classifyLeadError(cause);
+      error.value = classified;
       state.value = "error";
+
+      // Конфликт ключа идемпотентности означает, что этот ключ уже использован
+      // для другой заявки: сбрасывается только ключ, поля остаются, и
+      // повторная отправка того же содержимого получает новый ключ.
+      if (classified.kind === "conflict") {
+        clearIdempotencyKey();
+      }
+
+      // При сетевой ошибке, 503 и прочих неоднозначных результатах ключ
+      // сохраняется: сервер мог успеть записать заявку, и повтор с тем же
+      // ключом не создаст дубль.
       return null;
     }
   };

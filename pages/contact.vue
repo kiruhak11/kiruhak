@@ -106,7 +106,13 @@
               </p>
             </div>
 
-            <PortfolioLeadContactForm id-prefix="contact-lead" :topic="selectedTopic" />
+            <PortfolioLeadContactForm
+              id-prefix="contact-lead"
+              :topic="topicRequest.text"
+              :topic-id="topicRequest.id"
+              @topic-applied="onTopicApplied"
+              @topic-detached="onTopicDetached"
+            />
           </div>
         </section>
       </div>
@@ -161,8 +167,10 @@ const contactTopics: ContactTopic[] = [
   },
 ];
 
+// Запрошенная тема и фактически применённая: выбранной считается только та
+// тема, которая действительно подставилась в описание задачи.
 const selectedTopicId = ref<string | null>(null);
-const selectedTopic = ref<string>("");
+const topicRequest = ref<{ id: string; text: string }>({ id: "", text: "" });
 
 const scrollToForm = () => {
   document.getElementById("contact-form")?.scrollIntoView({
@@ -172,9 +180,16 @@ const scrollToForm = () => {
 };
 
 const chooseTopic = (topic: ContactTopic) => {
-  selectedTopicId.value = topic.id;
-  selectedTopic.value = topic.task;
+  topicRequest.value = { id: topic.id, text: topic.task };
   scrollToForm();
+};
+
+const onTopicApplied = (id: string) => {
+  selectedTopicId.value = id || null;
+};
+
+const onTopicDetached = () => {
+  selectedTopicId.value = null;
 };
 </script>
 

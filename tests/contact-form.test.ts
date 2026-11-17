@@ -6,12 +6,14 @@ import {
   LEAD_ENDPOINT,
   buildLeadPayload,
   classifyLeadError,
+  isConfirmedLeadResponse,
   isValidLeadEmail,
   missingLeadFields,
   useLeadSubmission,
   type LeadFetcher,
   type LeadStorage,
 } from "../composables/useLeadSubmission";
+import { isLeadTopicDetached, resolveLeadTopic } from "../utils/lead-topic";
 
 /**
  * Регрессии формы заявки.
@@ -406,4 +408,158 @@ test("валидация на клиенте совпадает с сервер�
   assert.equal(isValidLeadEmail("web@kiruhak11.ru"), true);
   assert.equal(isValidLeadEmail("не-почта"), false);
   assert.equal(classifyLeadError(httpError(503)).kind, "temporary");
+});
+
+
+// --- Исправление 1: переключение тем -----------------------------------------
+
+test("тема заполняет пустое поле описания задачи", () => {
+  const decision = resolveLeadTopic("", "", "Сайт, сервис или приложение");
+  assert.deepEqual(decision, {
+    action: "apply",
+    text: "Сайт, сервис или приложение",
+  });
+});
+
+test("переключение темы заменяет ранее подставленный текст", () => {
+  const auto = "Вакансия или работа в команде";
+  const decision = resolveLeadTopic(auto, auto, "Техническое сотрудничество");
+  assert.deepEqual(decision, {
+    action: "apply",
+    text: "Техническое сотрудничество",
+  });
+});
+
+test("вручную написанный текст тема не затирает", () => {
+  const manual = "Нужен лендинг для юридических услуг";
+  const decision = resolveLeadTopic(manual, "Вакансия или работа в команде", "Сайт, сервис");
+  assert.deepEqual(decision, { action: "keep" });
+});
+
+test("текст посетителя поверх темы тоже не затирается", () => {
+  const manual = "Вакансия или работа в команде\n\nХочу в команду фронтендером";
+  const decision = resolveLeadTopic(manual, "Вакансия или работа в команде", "Сайт, сервис");
+  assert.deepEqual(decision, { action: "keep" });
+});
+
+test("удаление подставленной темы отсоединяет её от поля", () => {
+  const auto = "Сайт, сервис или приложение";
+  assert.equal(isLeadTopicDetached("Сайт, сервис или приложение", auto), false);
+  assert.equal(isLeadTopicDetached(`${auto}\n\nдетали`, auto), false);
+  assert.equal(isLeadTopicDetached("совсем другой текст", auto), true);
+  assert.equal(isLeadTopicDetached("любой текст", ""), false);
+});
+
+test("страница /contact применяет тему только через форму", () => {
+  assert.match(contactPage, /@topic-applied="onTopicApplied"/);
+  assert.match(contactPage, /@topic-detached="onTopicDetached"/);
+  assert.match(contactPage, /:topic-id="topicRequest\.id"/);
+});
+
+// --- Исправление 2: ключ идемпотентности после 409 ----------------------------
+
+test("после 409 следующая отправка того же тела получает новый ключ", async () => {
+  let attempt = 0;
+  const { calls, submission } = createHarness(() => {
+    attempt += 1;
+    if (attempt === 1) {
+      throw httpError(409, "Idempotency key was already used with different content");
+    }
+    return { status: "saved", delivery: "queued", duplicate: false };
+  });
+  fillValidLead(submission);
+
+  await submission.submit();
+  assert.equal(submission.state.value, "error");
+  assert.equal(submission.error.value?.kind, "conflict");
+  assert.equal(submission.values.task, "Нужен лендинг для услуг", "поля сохраняются");
+
+  await submission.submit();
+  assert.equal(calls.length, 2);
+  assert.notEqual(
+    calls[0].headers["Idempotency-Key"],
+    calls[1].headers["Idempotency-Key"],
+    "конфликтный ключ не должен использоваться повторно"
+  );
+  assert.equal(submission.state.value, "success");
+});
+
+test("при сетевой ошибке и 503 ключ той же заявки сохраняется", async () => {
+  for (const failure of [
+    () => {
+      throw new TypeError("fetch failed");
+    },
+    () => {
+      throw httpError(503, "Could not save the request. Please retry.");
+    },
+  ]) {
+    let attempt = 0;
+    const { calls, submission } = createHarness(() => {
+      attempt += 1;
+      if (attempt === 1) return failure();
+      return { status: "saved", delivery: "queued", duplicate: false };
+    });
+    fillValidLead(submission);
+
+    await submission.submit();
+    assert.equal(submission.state.value, "error");
+    await submission.submit();
+
+    assert.equal(calls.length, 2);
+    assert.equal(
+      calls[0].headers["Idempotency-Key"],
+      calls[1].headers["Idempotency-Key"],
+      "сервер мог сохранить заявку — повтор обязан использовать тот же ключ"
+    );
+  }
+});
+
+// --- Исправление 3: проверка подтверждения сервера ---------------------------
+
+test("подтверждением считается только документированный ответ Lead API", () => {
+  assert.equal(
+    isConfirmedLeadResponse({ status: "saved", delivery: "queued", duplicate: false }),
+    true
+  );
+  assert.equal(
+    isConfirmedLeadResponse({ status: "saved", delivery: "queued", duplicate: true }),
+    true
+  );
+  assert.equal(isConfirmedLeadResponse({ status: "saved" }), false);
+  assert.equal(isConfirmedLeadResponse({ delivery: "queued", duplicate: false }), false);
+  assert.equal(
+    isConfirmedLeadResponse({ status: "saved", delivery: "delivered", duplicate: false }),
+    false
+  );
+  assert.equal(
+    isConfirmedLeadResponse({ status: "saved", delivery: "queued", duplicate: "no" }),
+    false
+  );
+  assert.equal(isConfirmedLeadResponse(undefined), false);
+  assert.equal(isConfirmedLeadResponse(null), false);
+  assert.equal(isConfirmedLeadResponse("ok"), false);
+});
+
+test("некорректный успешный ответ не считается подтверждением", async () => {
+  const { calls, submission } = createHarness(() => ({
+    status: "queued",
+    delivery: "unknown",
+  }));
+  fillValidLead(submission);
+
+  await submission.submit();
+
+  assert.equal(submission.state.value, "error");
+  assert.equal(submission.error.value?.kind, "unconfirmed");
+  assert.equal(submission.values.name, "Кирилл", "поля не очищаются");
+  assert.equal(submission.values.task, "Нужен лендинг для услуг");
+
+  // Ключ сохраняется: повтор должен быть безопасным.
+  await submission.submit();
+  assert.equal(calls.length, 2);
+  assert.equal(
+    calls[0].headers["Idempotency-Key"],
+    calls[1].headers["Idempotency-Key"],
+    "при неподтверждённом результате ключ сохраняется для безопасного повтора"
+  );
 });
