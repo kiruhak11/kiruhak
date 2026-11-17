@@ -5,7 +5,8 @@ import {
   isTrustedAddress,
   normalizeIp,
   parseTrustedProxies,
-  resolveClientIp,
+  resolveClientAddress,
+  trustedProxyDiagnostics,
   UNKNOWN_CLIENT_ADDRESS,
 } from "../server/utils/client-ip";
 import {
@@ -30,7 +31,7 @@ type FakeEvent = {
     };
     req: { socket: { remoteAddress?: string } };
   };
-  headers: Record<string, string>;
+  headers: Headers;
   method: string;
   path: string;
 };
@@ -50,7 +51,8 @@ const createEvent = (options: {
       },
       req: { socket: { remoteAddress: options.remoteAddress ?? "203.0.113.10" } },
     },
-    headers: options.headers ?? {},
+    // Реальное событие h3: заголовки — экземпляр Headers.
+    headers: new Headers(options.headers ?? {}),
     method: options.method ?? "POST",
     path: options.path ?? "/api/auth/login",
   };
@@ -231,23 +233,86 @@ test("the limiter store stays bounded and drops expired entries", () => {
 });
 
 test("a spoofed X-Forwarded-For cannot change the client identity", () => {
+  const trusted = parseTrustedProxies([
+    ...DEFAULT_TRUSTED_PROXIES,
+    "81.177.135.137/32",
+  ]);
+
   // Соединение не от доверенного прокси: forwarded-заголовки игнорируются.
-  const untrusted = resolveClientIp({
-    headers: { "x-forwarded-for": "1.2.3.4, 5.6.7.8" },
-    socket: { remoteAddress: "198.51.100.23" },
+  const untrusted = resolveClientAddress({
+    peer: "198.51.100.23",
+    forwardedFor: "1.2.3.4, 5.6.7.8",
+    trusted,
   });
-  assert.equal(untrusted, "198.51.100.23");
+  assert.equal(untrusted.address, "198.51.100.23");
+  assert.equal(untrusted.source, "peer");
 
   // Доверенный прокси: берётся самый правый недоверенный адрес, всё, что
   // левее, мог подставить сам клиент.
-  const trusted = resolveClientIp(
-    {
-      headers: { "x-forwarded-for": "1.2.3.4, 203.0.113.55, 81.177.135.137" },
-      socket: { remoteAddress: "127.0.0.1" },
-    },
-    { trustedProxies: "81.177.135.137/32" }
+  const withProxy = resolveClientAddress({
+    peer: "127.0.0.1",
+    forwardedFor: "1.2.3.4, 203.0.113.55, 81.177.135.137",
+    trusted,
+  });
+  assert.equal(withProxy.address, "203.0.113.55");
+  assert.equal(withProxy.source, "forwarded-chain");
+});
+
+test("an unverified proxy chain is not trusted and falls back to the peer address", () => {
+  const trusted = parseTrustedProxies([
+    ...DEFAULT_TRUSTED_PROXIES,
+    "81.177.135.137/32",
+  ]);
+
+  // Последний хоп цепочки не доверенный — цепочку использовать нельзя.
+  const unverified = resolveClientAddress({
+    peer: "127.0.0.1",
+    forwardedFor: "203.0.113.99",
+    trusted,
+  });
+  assert.equal(unverified.address, "127.0.0.1");
+  assert.equal(unverified.source, "untrusted-chain");
+  assert.ok(unverified.warning);
+
+  // Полностью доверенная цепочка — адрес клиента определить нельзя.
+  const allTrusted = resolveClientAddress({
+    peer: "127.0.0.1",
+    forwardedFor: "81.177.135.137",
+    trusted,
+  });
+  assert.equal(allTrusted.address, "127.0.0.1");
+  assert.equal(allTrusted.source, "untrusted-chain");
+});
+
+test("an unavailable peer address yields the documented unknown identity", () => {
+  const resolution = resolveClientAddress({
+    peer: null,
+    forwardedFor: "203.0.113.5, 81.177.135.137",
+    trusted: parseTrustedProxies(DEFAULT_TRUSTED_PROXIES),
+  });
+  assert.equal(resolution.address, UNKNOWN_CLIENT_ADDRESS);
+  assert.equal(resolution.source, "unknown");
+});
+
+test("trusted proxy diagnostics detect a missing or overly broad configuration", () => {
+  const missing = trustedProxyDiagnostics({});
+  assert.equal(missing.configured, false);
+  assert.equal(missing.warnings.length, 1);
+  assert.match(missing.warnings[0], /TRUSTED_PROXY_IPS/);
+
+  const broad = trustedProxyDiagnostics({
+    TRUSTED_PROXY_IPS: "10.0.0.0/8, 81.177.135.137/32",
+  });
+  assert.equal(broad.configured, true);
+  assert.ok(
+    broad.warnings.some((warning) => warning.includes("10.0.0.0/8")),
+    "слишком широкая подсеть должна быть обнаружена"
   );
-  assert.equal(trusted, "203.0.113.55");
+
+  const precise = trustedProxyDiagnostics({
+    TRUSTED_PROXY_IPS: "81.177.135.137/32, 172.18.0.1/32",
+  });
+  assert.deepEqual(precise.warnings, []);
 });
 
 test("client address normalization and trusted ranges behave predictably", () => {
@@ -272,7 +337,11 @@ test("client address normalization and trusted ranges behave predictably", () =>
   assert.equal(isTrustedAddress("127.0.0.1", defaults), true);
 
   assert.equal(
-    resolveClientIp({ headers: {}, socket: { remoteAddress: undefined } }),
+    resolveClientAddress({
+      peer: undefined,
+      forwardedFor: undefined,
+      trusted: parseTrustedProxies(DEFAULT_TRUSTED_PROXIES),
+    }).address,
     UNKNOWN_CLIENT_ADDRESS
   );
 });

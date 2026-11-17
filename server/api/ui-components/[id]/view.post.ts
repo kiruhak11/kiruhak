@@ -1,5 +1,5 @@
 import { prisma } from "../../../utils/prisma";
-import { resolveClientIp, trustedProxiesFromEnv } from "../../../utils/client-ip";
+import { resolveClientIp } from "../../../utils/client-ip";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -10,16 +10,7 @@ export default defineEventHandler(async (event) => {
     // IP определяется через доверенные прокси: подмена X-Forwarded-For не
     // должна позволять обходить лимит и счётчик просмотров.
     const headers = event.node.req.headers;
-    const ip = resolveClientIp(
-      {
-        headers: headers as unknown as Record<
-          string,
-          string | string[] | undefined
-        >,
-        socket: event.node?.req?.socket,
-      },
-      { trustedProxies: trustedProxiesFromEnv() }
-    );
+    const ip = resolveClientIp(event).address;
     const userAgent = headers["user-agent"] || "unknown";
 
     if (!componentId) {

@@ -106,15 +106,19 @@ export function collectRenderedScriptHashes(context: {
  * Собирает CSP для HTML-документа.
  *
  * `null` вместо массива хешей означает, что тело ответа не удалось
- * проанализировать: тогда используется `unsafe-inline` для скриптов.
+ * проанализировать: тогда скрипты запрещаются целиком (`script-src 'none'`),
+ * политика не ослабляется.
  */
 export function buildDocumentContentSecurityPolicy(
   inlineScriptHashes: string[] | null,
   secureRequest = false
 ): string {
+  // Если хеши вычислить не удалось, политика не ослабляется: скрипты
+  // запрещаются целиком (fail-closed). Страница остаётся читаемой (SSR
+  // разметка уже в ответе), но ни один скрипт не выполняется.
   const scriptSrc =
     inlineScriptHashes === null
-      ? ["'self'", "'unsafe-inline'", TELEGRAM_LOGIN_ORIGIN]
+      ? ["'none'"]
       : ["'self'", ...inlineScriptHashes, TELEGRAM_LOGIN_ORIGIN];
 
   const directives = [

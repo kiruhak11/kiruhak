@@ -12,6 +12,8 @@ import {
   classifyRateLimitedRoute,
   rateLimitKey,
 } from "../server/utils/rate-limit";
+import { resolveClientIp } from "../server/utils/client-ip";
+import { getClientAddress } from "../server/utils/lead-delivery";
 import { MATERIAL_PUBLIC_SELECT } from "../server/utils/material-public";
 
 /**
@@ -134,6 +136,32 @@ test("fail-closed authorization and bot secret protection are untouched by the l
   assert.doesNotMatch(limiterMiddleware, /isValidBotSecret/);
   assert.doesNotMatch(limiterMiddleware, /classifyApiRoute/);
   assert.doesNotMatch(limiterMiddleware, /requireAdmin/);
+});
+
+test("the middleware and the lead database limit identify the client identically", () => {
+  // Событие в форме реального h3: headers — Headers, пир — socket.
+  const event = {
+    headers: new Headers({
+      "x-forwarded-for": "203.0.113.10, 81.177.135.137",
+    }),
+    node: { req: { socket: { remoteAddress: "172.18.0.1" } } },
+  } as unknown as Parameters<typeof resolveClientIp>[0];
+
+  // Оба потребителя читают одну и ту же конфигурацию из окружения.
+  const previous = process.env.TRUSTED_PROXY_IPS;
+  process.env.TRUSTED_PROXY_IPS = "172.18.0.1/32, 81.177.135.137/32";
+
+  const byMiddleware = resolveClientIp(event).address;
+  const byDatabaseLimit = getClientAddress(event);
+
+  process.env.TRUSTED_PROXY_IPS = previous;
+
+  assert.equal(byMiddleware, "203.0.113.10");
+  assert.equal(
+    byDatabaseLimit,
+    byMiddleware,
+    "middleware и DB-лимит заявок должны считать одного и того же клиента"
+  );
 });
 
 test("the limiter does not apply to worker internals or public reads", () => {

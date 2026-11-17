@@ -1,29 +1,31 @@
 /**
  * Определение адреса клиента с учётом доверенных прокси.
  *
- * Прямое доверие к `X-Forwarded-For` недопустимо: клиент может подставить
- * любой адрес и таким образом обойти ограничение частоты запросов. Поэтому
- * forwarded-заголовки читаются только тогда, когда соединение пришло от
- * доверенного прокси, а из цепочки выбирается **самый правый недоверенный**
- * адрес: всё, что левее него, мог добавить сам клиент.
+ * Модель доверия (проверена на реальной схеме kiruhak11.ru):
  *
- * Типовая схема продакшена:
+ *   посетитель → Edge (TLS, 81.177.135.137) → nginx (127.0.0.1) →
+ *   docker gateway (172.18.0.1) → приложение
  *
- *   клиент → Edge (TLS) → nginx (127.0.0.1) → приложение
+ * `nginx` дописывает адрес своего пира в конец `X-Forwarded-For`, поэтому
+ * последний элемент цепочки — это Edge, а элемент перед ним — представление
+ * Edge о клиенте. Всё, что левее, может быть подделано клиентом.
  *
- * `nginx` дописывает адрес своего пира в конец цепочки, поэтому адрес Edge
- * должен быть в списке доверенных, иначе все посетители попадут в один
- * счётчик. Список задаётся переменной окружения `TRUSTED_PROXY_IPS`.
+ * Цепочка принимается только если выполнены два условия:
+ *
+ *   1. непосредственный пир (адрес сокета) — доверенный прокси;
+ *   2. последний хоп цепочки (добавленный этим прокси) — тоже доверенный.
+ *
+ * Иначе цепочка не доверяется и используется адрес пира: клиент не может
+ * назвать себе произвольный адрес. Адрес пира подделать нельзя — он берётся
+ * из фактического соединения.
  */
 
-export interface ClientIpEvent {
-  headers?: Record<string, string | string[] | undefined>;
-  socket?: { remoteAddress?: string | undefined };
-}
+/** Тип события h3: берём из сигнатуры авто-импортированного хелпера. */
+type H3EventLike = Parameters<typeof getHeader>[0];
 
 export interface TrustedProxyOptions {
-  /** Дополнительные доверенные прокси (CIDR или IP), через запятую. */
-  trustedProxies?: string | string[] | undefined;
+  /** Доверенные прокси (CIDR или IP) через запятую. */
+  trustedProxies?: string | readonly string[] | undefined;
 }
 
 export interface ParsedProxy {
@@ -32,21 +34,50 @@ export interface ParsedProxy {
   family: 4 | 6;
 }
 
+/** Откуда взят адрес клиента. */
+export type ClientAddressSource =
+  /** адрес фактического соединения (пир) */
+  | "peer"
+  /** адрес из цепочки X-Forwarded-For (доверенная цепочка) */
+  | "forwarded-chain"
+  /** цепочка не прошла проверку доверия — использован пир */
+  | "untrusted-chain"
+  /** адрес определить не удалось */
+  | "unknown";
+
+export interface ClientAddressResolution {
+  address: string;
+  source: ClientAddressSource;
+  /** адрес непосредственного соединения */
+  peer?: string;
+  /** разобранная цепочка X-Forwarded-For */
+  chain: string[];
+  /** предупреждение о неверной конфигурации (если есть) */
+  warning?: string;
+}
+
+/** Значение, когда адрес клиента определить не удалось. */
+export const UNKNOWN_CLIENT_ADDRESS = "unknown";
+
 /**
- * Адреса, которые считаются доверенными по умолчанию — только loopback.
- *
- * Приватные сети намеренно НЕ доверены: любой соседний контейнер на хосте
- * (в том числе контейнеры другого проекта) иначе смог бы подменить адрес
- * клиента в `X-Forwarded-For` и обойти ограничение частоты запросов.
- * Edge-провайдер и приватные прокси добавляются через `TRUSTED_PROXY_IPS`.
+ * Доверенные прокси по умолчанию — только loopback: это сам хост, его адрес
+ * подделать нельзя. Приватные подсети и адрес Edge задаются явно через
+ * `TRUSTED_PROXY_IPS`.
  */
 export const DEFAULT_TRUSTED_PROXIES: readonly string[] = [
   "127.0.0.0/8",
   "::1/128",
 ];
 
-/** Значение, когда адрес клиента определить не удалось. */
-export const UNKNOWN_CLIENT_ADDRESS = "unknown";
+/** Подсети, которые нельзя использовать как доверенные прокси без доказанной необходимости. */
+export const OVERLY_BROAD_TRUSTED_RANGES: readonly string[] = [
+  "0.0.0.0/0",
+  "::/0",
+  "10.0.0.0/8",
+  "172.16.0.0/12",
+  "192.168.0.0/16",
+  "fc00::/7",
+];
 
 const IPV4_PATTERN = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 
@@ -60,13 +91,11 @@ export function normalizeIp(raw: string | null | undefined): string | null {
   let value = raw.trim().toLowerCase();
   if (!value) return null;
 
-  // IPv6 в квадратных скобках: [::1]:443
   if (value.startsWith("[")) {
     const end = value.indexOf("]");
     if (end === -1) return null;
     value = value.slice(1, end);
   } else if (value.includes(":")) {
-    // IPv4 с портом: 203.0.113.7:443
     const parts = value.split(":");
     if (parts.length === 2 && IPV4_PATTERN.test(parts[0])) {
       value = parts[0];
@@ -84,7 +113,7 @@ export function normalizeIp(raw: string | null | undefined): string | null {
   }
 
   if (value.includes(":")) {
-    return value; // IPv6 — проверяется разбором
+    return value;
   }
 
   return null;
@@ -133,9 +162,9 @@ const parseIpv6 = (ip: string): number[] | null => {
 
 /** Разбирает список доверенных прокси: `ip` или `ip/prefix`. */
 export function parseTrustedProxies(
-  value: string | string[] | undefined
+  value: string | readonly string[] | undefined
 ): ParsedProxy[] {
-  const raw = Array.isArray(value) ? value : (value ?? "").split(",");
+  const raw = typeof value === "string" ? value.split(",") : [...(value ?? [])];
   const result: ParsedProxy[] = [];
 
   for (const entry of raw) {
@@ -148,7 +177,8 @@ export function parseTrustedProxies(
 
     const isV4 = parseIpv4(address) !== null;
     const maxPrefix = isV4 ? 32 : 128;
-    const prefix = prefixPart !== undefined ? Number.parseInt(prefixPart, 10) : maxPrefix;
+    const prefix =
+      prefixPart !== undefined ? Number.parseInt(prefixPart, 10) : maxPrefix;
     if (!Number.isInteger(prefix) || prefix < 0 || prefix > maxPrefix) continue;
 
     result.push({ address, prefix, family: isV4 ? 4 : 6 });
@@ -199,69 +229,81 @@ export function isTrustedAddress(
   );
 }
 
-const readHeader = (
-  event: ClientIpEvent,
-  name: string
-): string | undefined => {
-  const headers = event.headers as
-    | Record<string, string | string[] | undefined>
-    | { get?: (key: string) => string | null }
-    | undefined;
-  if (!headers) return undefined;
+/** Разбирает цепочку `X-Forwarded-For` в список нормализованных адресов. */
+export function parseForwardedChain(
+  forwardedFor: string | null | undefined
+): string[] {
+  if (!forwardedFor) return [];
 
-  if (typeof (headers as { get?: unknown }).get === "function") {
-    const value = (headers as { get: (key: string) => string | null }).get(name);
-    return value ?? undefined;
-  }
-
-  const record = headers as Record<string, string | string[] | undefined>;
-  const value = record[name] ?? record[name.toLowerCase()];
-  if (Array.isArray(value)) return value[0];
-  return value;
-};
-
-/**
- * Возвращает адрес клиента.
- *
- * Если соединение пришло не от доверенного прокси, forwarded-заголовки
- * игнорируются полностью — иначе клиент подменял бы свой адрес.
- */
-export function resolveClientIp(
-  event: ClientIpEvent,
-  options: TrustedProxyOptions = {}
-): string {
-  const trusted = parseTrustedProxies([
-    ...DEFAULT_TRUSTED_PROXIES,
-    ...(Array.isArray(options.trustedProxies)
-      ? options.trustedProxies
-      : (options.trustedProxies ?? "").split(",")),
-  ]);
-
-  const peer = normalizeIp(event.socket?.remoteAddress ?? null);
-  if (!peer) return UNKNOWN_CLIENT_ADDRESS;
-
-  if (!isTrustedAddress(peer, trusted)) {
-    return peer;
-  }
-
-  const chain = (readHeader(event, "x-forwarded-for") ?? "")
+  return forwardedFor
     .split(",")
     .map((part) => normalizeIp(part))
     .filter((part): part is string => Boolean(part));
+}
 
-  if (chain.length === 0) {
-    return peer;
+export interface ClientAddressInput {
+  /** Адрес непосредственного соединения (socket.remoteAddress). */
+  peer?: string | null;
+  /** Значение заголовка X-Forwarded-For. */
+  forwardedFor?: string | null;
+  /** Разобранный список доверенных прокси. */
+  trusted: readonly ParsedProxy[];
+}
+
+/**
+ * Чистая функция определения адреса клиента.
+ *
+ * Возвращает не только адрес, но и источник, чтобы вызывающий код мог
+ * сообщить о неверной конфигурации доверенных прокси.
+ */
+export function resolveClientAddress(
+  input: ClientAddressInput
+): ClientAddressResolution {
+  const peer = normalizeIp(input.peer);
+  const chain = parseForwardedChain(input.forwardedFor);
+
+  if (!peer) {
+    return { address: UNKNOWN_CLIENT_ADDRESS, source: "unknown", chain };
   }
 
-  // Идём справа налево: адрес, добавленный последним доверенным прокси,
-  // является настоящим адресом клиента. Всё, что левее, мог прислать клиент.
+  // Соединение не от доверенного прокси: цепочка игнорируется полностью.
+  if (!isTrustedAddress(peer, input.trusted)) {
+    return { address: peer, source: "peer", peer, chain };
+  }
+
+  if (chain.length === 0) {
+    return { address: peer, source: "peer", peer, chain };
+  }
+
+  const lastHop = chain[chain.length - 1];
+
+  // Последний хоп добавлен прокси — он должен быть доверенным, иначе цепочку
+  // нельзя интерпретировать (клиент мог подмешать свои адреса).
+  if (!isTrustedAddress(lastHop, input.trusted)) {
+    return {
+      address: peer,
+      source: "untrusted-chain",
+      peer,
+      chain,
+      warning:
+        "цепочка X-Forwarded-For не подтверждена доверенным прокси: использован адрес соединения, все клиенты окажутся за одним адресом",
+    };
+  }
+
   for (let index = chain.length - 1; index >= 0; index -= 1) {
-    if (!isTrustedAddress(chain[index], trusted)) {
-      return chain[index];
+    if (!isTrustedAddress(chain[index], input.trusted)) {
+      return { address: chain[index], source: "forwarded-chain", peer, chain };
     }
   }
 
-  return chain[0];
+  return {
+    address: peer,
+    source: "untrusted-chain",
+    peer,
+    chain,
+    warning:
+      "вся цепочка X-Forwarded-For состоит из доверенных адресов: использован адрес соединения",
+  };
 }
 
 /** Читает доверенные прокси из окружения. */
@@ -272,4 +314,70 @@ export function trustedProxiesFromEnv(
     .split(",")
     .map((part) => part.trim())
     .filter(Boolean);
+}
+
+/**
+ * Определяет адрес клиента по событию h3.
+ *
+ * Единственная точка входа для всех потребителей: middleware ограничения
+ * частоты, доставка заявок, Telegram Login, счётчики просмотров и аналитика.
+ */
+export function resolveClientIp(
+  event: H3EventLike,
+  options: TrustedProxyOptions = {}
+): ClientAddressResolution {
+  // По умолчанию берётся конфигурация окружения: все потребители обязаны
+  // считать одного и того же клиента одинаково.
+  const configured =
+    options.trustedProxies ?? trustedProxiesFromEnv();
+  const trusted = parseTrustedProxies([
+    ...DEFAULT_TRUSTED_PROXIES,
+    ...(typeof configured === "string" ? configured.split(",") : configured),
+  ]);
+
+  return resolveClientAddress({
+    peer: event.node?.req?.socket?.remoteAddress,
+    forwardedFor: event.headers?.get("x-forwarded-for"),
+    trusted,
+  });
+}
+
+export interface TrustedProxyDiagnostics {
+  /** Заданы ли доверенные прокси через окружение. */
+  configured: boolean;
+  /** Итоговый список доверенных адресов. */
+  trusted: string[];
+  /** Предупреждения о конфигурации. */
+  warnings: string[];
+}
+
+/**
+ * Диагностика конфигурации доверенных прокси.
+ *
+ * Вызывается при старте приложения, чтобы неверная настройка была замечена
+ * до production-деплоя, а не после первых жалоб пользователей.
+ */
+export function trustedProxyDiagnostics(
+  env: Record<string, string | undefined> = process.env,
+  defaults: readonly string[] = DEFAULT_TRUSTED_PROXIES
+): TrustedProxyDiagnostics {
+  const configured = trustedProxiesFromEnv(env);
+  const trusted = [...defaults, ...configured];
+  const warnings: string[] = [];
+
+  if (configured.length === 0) {
+    warnings.push(
+      "TRUSTED_PROXY_IPS не задан: цепочка X-Forwarded-For не будет использована, все посетители получат один адрес — форма заявок перестанет работать после нескольких отправок"
+    );
+  }
+
+  for (const entry of configured) {
+    if (OVERLY_BROAD_TRUSTED_RANGES.includes(entry.trim())) {
+      warnings.push(
+        `TRUSTED_PROXY_IPS содержит слишком широкую подсеть ${entry}: соседние контейнеры на хосте смогут подменять адрес клиента`
+      );
+    }
+  }
+
+  return { configured: configured.length > 0, trusted, warnings };
 }

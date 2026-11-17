@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Проверка security-заголовков и ограничения частоты запросов на работающем
-# окружении (по умолчанию — production).
+# K-Studio: проверка security-заголовков и ограничения частоты запросов.
 #
 # Usage: verify-security-headers.sh [base_url]
 #
@@ -8,10 +7,14 @@
 #   * наличие и корректность заголовков на HTML-странице и на API-ответе;
 #   * отсутствие дублирующихся заголовков (конфликт Nginx/приложение);
 #   * что CSP не блокирует Telegram Login SDK и не содержит unsafe-eval;
-#   * что лимит частоты отдаёт 429 с корректным Retry-After.
+#   * что запрос входа с пустыми учётными данными НЕ считается успешной
+#     авторизацией (проверяется структура ответа, а не только код 200);
+#   * что ограничение частоты пропускает десять запросов и отклоняет
+#     одиннадцатый, а также что в ответе 429 есть Retry-After.
 #
-# Скрипт ничего не меняет: запросы идут только на чтение и на заведомо
-# несуществующий маршрут авторизации.
+# Все запросы синтетические: реальные пароли не используются, реальные
+# пользователи не создаются. Расходуется только счётчик ограничения
+# самого проверяющего клиента.
 
 set -uo pipefail
 
@@ -91,10 +94,38 @@ API_CSP="$(header_value "$BASE/api/does-not-exist" "content-security-policy")"
 check "API CSP is strict" "script-src 'none'; frame-ancestors 'none';" "$API_CSP"
 
 echo
-echo "-- rate limit --"
-# Несуществующий маршрут авторизации: ответ 404, лимит не должен срабатывать.
-CODE="$(curl -s -o /dev/null -w '%{http_code}' -m 25 -X POST -H 'Content-Type: application/json' -d '{}' "$BASE/api/auth/login")"
-check "POST /api/auth/login reachable" "200" "$CODE"
+echo "-- authentication contract (structure, not only the status code) --"
+LOGIN_BODY="$(curl -s -m 25 -X POST -H 'Content-Type: application/json' -d '{}' "$BASE/api/auth/login")"
+LOGIN_FLAG="$(printf '%s' "$LOGIN_BODY" | grep -o '"success":false' | head -1)"
+check "login with empty credentials is not a success" "success:false" "$LOGIN_FLAG"
+
+echo
+echo "-- rate limit (synthetic requests, own counter) --"
+ALLOWED=0
+BLOCKED=0
+RETRY_AFTER=""
+for _ in $(seq 1 11); do
+  HEADERS="$(curl -s -o /dev/null -D - -m 25 -X POST \
+    -H 'Content-Type: application/json' \
+    -H 'x-forwarded-for: 203.0.113.250, 81.177.135.137' \
+    -d '{}' "$BASE/api/auth/telegram-login/verify" | tr -d '\r')"
+  CODE="$(printf '%s' "$HEADERS" | awk 'NR==1{print $2}')"
+  if [ "$CODE" = "429" ]; then
+    BLOCKED=$((BLOCKED + 1))
+    RETRY_AFTER="$(printf '%s' "$HEADERS" | grep -i '^retry-after:' | awk '{print $2}')"
+  else
+    ALLOWED=$((ALLOWED + 1))
+  fi
+done
+check "rate limit allows ten requests" "10" "$ALLOWED"
+check "rate limit blocks the next request" "1" "$BLOCKED"
+if [ -n "$RETRY_AFTER" ] && [ "$RETRY_AFTER" -gt 0 ] 2>/dev/null; then
+  printf '  PASS  %-52s %s\n' "Retry-After is present and positive" "$RETRY_AFTER"
+  PASS=$((PASS + 1))
+else
+  printf '  FAIL  %-52s %s\n' "Retry-After is present and positive" "${RETRY_AFTER:-<missing>}"
+  FAIL=$((FAIL + 1))
+fi
 
 echo
 echo "=== RESULT: pass=$PASS fail=$FAIL ==="

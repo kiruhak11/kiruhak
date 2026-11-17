@@ -312,13 +312,23 @@ test("prerendered file paths are mapped to their routes", async () => {
   );
 });
 
-test("CSP falls back to a safe variant when the body cannot be inspected", async () => {
+test("CSP fails closed when the body cannot be inspected", async () => {
   const plugin = await loadPlugin();
   const { event, bag } = createEvent("text/html");
 
   await plugin.runBeforeResponse(event, undefined);
 
   const csp = bag.get("content-security-policy") ?? "";
-  assert.match(csp, /script-src 'self' 'unsafe-inline'/);
+  assert.match(
+    csp,
+    /script-src 'none'/,
+    "без вычисленных хешей скрипты должны быть запрещены целиком"
+  );
+  assert.doesNotMatch(
+    csp,
+    /script-src[^;]*'unsafe-inline'/,
+    "для скриптов unsafe-inline недопустим"
+  );
   assert.doesNotMatch(csp, /unsafe-eval/);
+  assert.doesNotMatch(csp, /script-src[^;]*\*/);
 });

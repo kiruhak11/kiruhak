@@ -1,5 +1,5 @@
 import { prisma } from "../../../utils/prisma";
-import { resolveClientIp, trustedProxiesFromEnv } from "../../../utils/client-ip";
+import { resolveClientIp } from "../../../utils/client-ip";
 import { getRuntimeAuthTokenSecret } from "../../../utils/security-config";
 import { getTelegramLoginClientId } from "../../../utils/telegram-config";
 import {
@@ -15,16 +15,7 @@ import {
 type TelegramLoginEvent = Parameters<typeof getHeader>[0];
 
 function resolveTelegramClientIp(event: TelegramLoginEvent): string {
-  return resolveClientIp(
-    {
-      headers: event.headers as unknown as Record<
-        string,
-        string | string[] | undefined
-      >,
-      socket: event.node?.req?.socket,
-    },
-    { trustedProxies: trustedProxiesFromEnv() }
-  );
+  return resolveClientIp(event).address;
 }
 
 export default defineEventHandler(async (event) => {

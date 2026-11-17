@@ -1,7 +1,6 @@
 import {
   resolveClientIp,
   trustedProxiesFromEnv,
-  type ClientIpEvent,
 } from "../utils/client-ip";
 import {
   RATE_LIMIT_POLICIES,
@@ -19,6 +18,9 @@ import {
  *
  * В логи не пишутся адреса клиентов и секреты — только группа и маршрут.
  */
+/** Предупреждение о неверной конфигурации доверенных прокси печатается один раз. */
+let warnedAboutChain = false;
+
 export default defineEventHandler(async (event) => {
   const path = getRequestURL(event).pathname;
   if (!path.startsWith("/api/")) return;
@@ -27,9 +29,15 @@ export default defineEventHandler(async (event) => {
   const group = classifyRateLimitedRoute(method, path);
   if (!group) return;
 
-  const clientAddress = resolveClientIp(event as unknown as ClientIpEvent, {
-    trustedProxies: trustedProxiesFromEnv(),
-  });
+  const resolution = resolveClientIp(event);
+  const clientAddress = resolution.address;
+
+  if (resolution.warning && !warnedAboutChain) {
+    warnedAboutChain = true;
+    console.warn(
+      `[rate-limit] ${resolution.warning}; TRUSTED_PROXY_IPS=${trustedProxiesFromEnv().join(",") || "(пусто)"}`
+    );
+  }
 
   const decision = rateLimiter.consume(
     rateLimitKey(group, clientAddress),

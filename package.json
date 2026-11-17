@@ -27,7 +27,8 @@
     "test:auth-session": "tsx --test tests/auth-session.test.ts",
     "test:security-headers": "tsx --test tests/security-headers.test.ts",
     "test:rate-limit": "tsx --test tests/rate-limit.test.ts",
-    "test:security-regressions": "tsx --test tests/security-regressions.test.ts"
+    "test:security-regressions": "tsx --test tests/security-regressions.test.ts",
+    "test:client-ip-integration": "tsx --test tests/client-ip.integration.test.ts"
   },
   "dependencies": {
     "@morev/vue-transitions": "^3.0.2",

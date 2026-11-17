@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { resolveClientIp, trustedProxiesFromEnv } from "./client-ip";
+import { resolveClientIp } from "./client-ip";
 
 /**
  * Тип события берём из сигнатуры авто-импортируемого h3-хелпера:
@@ -92,14 +92,5 @@ export function leadFingerprint(lead: LeadInput): string {
  * мог бы подменить адрес и обойти ограничение частоты заявок.
  */
 export function getClientAddress(event: LeadRequestEvent): string {
-  return resolveClientIp(
-    {
-      headers: event.headers as unknown as Record<
-        string,
-        string | string[] | undefined
-      >,
-      socket: event.node?.req?.socket,
-    },
-    { trustedProxies: trustedProxiesFromEnv() }
-  );
+  return resolveClientIp(event).address;
 }
