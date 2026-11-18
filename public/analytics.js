@@ -1,188 +1,125 @@
 (function () {
   "use strict";
 
-  // Конфигурация
-  // Определяем URL API в зависимости от окружения
-  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const ANALYTICS_URL = new URL("/api/analytics/track", window.location.origin).href;
-  const SITE_ID = window.KIRUHAK_SITE_ID || "your-site-id"; // Получаем из глобальной переменной
+  /**
+   * Трекер посещений K-Studio.
+   *
+   * Особенности:
+   *
+   * * идентификатор сайта передаётся через атрибут `data-site-id` внешнего
+   *   скрипта — инлайн-JavaScript не нужен, поэтому строгая CSP его не
+   *   блокирует и `unsafe-inline` не требуется;
+   * * без идентификатора сайта трекер не запускается вовсе: запросов нет,
+   *   ложные события не создаются;
+   * * фиксируются только просмотры страниц: типы событий, которых нет в
+   *   модели Visit, не отправляются и не искажают количество посещений;
+   * * в payload попадает путь без query-параметров, referrer — без query,
+   *   постоянные идентификаторы посетителя не создаются;
+   * * повторных попыток нет: при подтверждённой ошибке трекер отключается.
+   */
 
-  // Генерируем уникальный session ID
-  function generateSessionId() {
-    return (
-      "session_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
-    );
+  var script =
+    document.currentScript ||
+    document.querySelector("script[data-site-id]");
+
+  var siteId = String(
+    (script && script.getAttribute("data-site-id")) || ""
+  ).trim();
+
+  // Без корректного идентификатора сайта трекер не работает.
+  if (!siteId) return;
+
+  var ENDPOINT = new URL("/api/analytics/track", window.location.origin).href;
+  var lastTrackedPath = null;
+  var disabled = false;
+
+  function currentPath() {
+    return window.location.pathname;
   }
 
-  // Получаем session ID из localStorage или создаем новый
-  function getSessionId() {
-    let sessionId = localStorage.getItem("analytics_session_id");
-    if (!sessionId) {
-      sessionId = generateSessionId();
-      localStorage.setItem("analytics_session_id", sessionId);
+  function withoutQuery(value) {
+    // query-параметры могут содержать токены восстановления доступа.
+    try {
+      var parsed = new URL(value);
+      return parsed.origin + parsed.pathname;
+    } catch (error) {
+      return null;
     }
-    return sessionId;
   }
 
-  // Получаем информацию о странице
-  function getPageInfo() {
+  function buildPayload() {
     return {
-      page: window.location.pathname + window.location.search,
-      referrer: document.referrer || null,
+      siteId: siteId,
+      page: currentPath(),
+      referrer: document.referrer ? withoutQuery(document.referrer) : null,
       userAgent: navigator.userAgent,
       timestamp: new Date().toISOString(),
-      sessionId: getSessionId(),
+      event: "page_view",
     };
   }
 
-  // Отправляем данные о посещении
-  function trackVisit() {
-    const pageInfo = getPageInfo();
-
-    fetch(ANALYTICS_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        siteId: SITE_ID,
-        ...pageInfo,
-      }),
-    }).catch((error) => {
-      console.warn("Analytics tracking failed:", error);
-    });
+  function disable(reason) {
+    if (disabled) return;
+    disabled = true;
+    // В консоль не попадают payload, адреса и идентификаторы.
+    console.warn("K-Studio analytics отключён:", reason);
   }
 
-  // Отслеживаем переходы между страницами (для SPA)
   function trackPageView() {
-    trackVisit();
-  }
+    if (disabled) return;
 
-  // Отслеживаем клики по ссылкам
-  function trackClicks() {
-    document.addEventListener("click", function (e) {
-      const target = e.target.closest("a");
-      if (target && target.href && !target.href.startsWith("javascript:")) {
-        // Отправляем информацию о клике
-        fetch(ANALYTICS_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            siteId: SITE_ID,
-            page: window.location.pathname + window.location.search,
-            referrer: document.referrer || null,
-            userAgent: navigator.userAgent,
-            timestamp: new Date().toISOString(),
-            sessionId: getSessionId(),
-            event: "click",
-            targetUrl: target.href,
-          }),
-        }).catch((error) => {
-          console.warn("Click tracking failed:", error);
-        });
-      }
-    });
-  }
+    var path = currentPath();
+    // Один переход — одно событие: повторный вызов с тем же путём игнорируется.
+    if (path === lastTrackedPath) return;
+    lastTrackedPath = path;
 
-  // Отслеживаем время на странице
-  function trackTimeOnPage() {
-    let startTime = Date.now();
-
-    window.addEventListener("beforeunload", function () {
-      const timeSpent = Date.now() - startTime;
-
-      // Отправляем данные о времени на странице
-      navigator.sendBeacon(
-        ANALYTICS_URL,
-        JSON.stringify({
-          siteId: SITE_ID,
-          page: window.location.pathname + window.location.search,
-          referrer: document.referrer || null,
-          userAgent: navigator.userAgent,
-          timestamp: new Date().toISOString(),
-          sessionId: getSessionId(),
-          event: "time_on_page",
-          timeSpent: timeSpent,
-        })
-      );
-    });
-  }
-
-  // Инициализация трекера
-  function initAnalytics() {
-    if (isDev) return;
-    // Отслеживаем первое посещение
-    trackVisit();
-
-    // Отслеживаем клики
-    trackClicks();
-
-    // Отслеживаем время на странице
-    trackTimeOnPage();
-
-    // Отслеживаем обновления страницы (refresh)
-    window.addEventListener("beforeunload", function () {
-      // Отправляем данные о том, что страница была обновлена
-      navigator.sendBeacon(
-        ANALYTICS_URL,
-        JSON.stringify({
-          siteId: SITE_ID,
-          page: window.location.pathname + window.location.search,
-          referrer: document.referrer || null,
-          userAgent: navigator.userAgent,
-          timestamp: new Date().toISOString(),
-          sessionId: getSessionId(),
-          event: "page_refresh",
-        })
-      );
-    });
-
-    // Для SPA - отслеживаем изменения URL
-    if (window.history && window.history.pushState) {
-      const originalPushState = window.history.pushState;
-      window.history.pushState = function () {
-        originalPushState.apply(this, arguments);
-        setTimeout(trackPageView, 100);
-      };
-
-      window.addEventListener("popstate", function () {
-        setTimeout(trackPageView, 100);
-      });
+    var payload;
+    try {
+      payload = buildPayload();
+    } catch (error) {
+      disable("не удалось собрать данные события");
+      return;
     }
-  }
 
-  // Запускаем трекер когда DOM загружен
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initAnalytics);
-  } else {
-    initAnalytics();
-  }
-
-  // Экспортируем функции для ручного использования
-  window.KiruhakAnalytics = {
-    track: trackVisit,
-    trackPageView: trackPageView,
-    trackEvent: function (eventName, data = {}) {
-      fetch(ANALYTICS_URL, {
+    window
+      .fetch(ENDPOINT, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          siteId: SITE_ID,
-          page: window.location.pathname + window.location.search,
-          referrer: document.referrer || null,
-          userAgent: navigator.userAgent,
-          timestamp: new Date().toISOString(),
-          sessionId: getSessionId(),
-          event: eventName,
-          ...data,
-        }),
-      }).catch((error) => {
-        console.warn("Event tracking failed:", error);
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      .then(function (response) {
+        if (response.status === 429) {
+          // Ограничение частоты: повтор не делаем, дожидаемся следующего
+          // перехода и Retry-After.
+          console.warn("K-Studio analytics: ограничение частоты, повтор отложен");
+          return;
+        }
+
+        if (!response.ok) {
+          disable("ошибка сервера " + response.status);
+          return;
+        }
+
+        return response.json().then(function (body) {
+          if (!body || body.success !== true) {
+            // Сервер не подтвердил запись — дальше не пишем.
+            disable("запись не подтверждена");
+          }
+        });
+      })
+      .catch(function () {
+        // Транспортная ошибка: повтор не делаем.
+        console.warn("K-Studio analytics: сетевая ошибка");
       });
+  }
+
+  window.KiruhakAnalytics = {
+    trackPageView: trackPageView,
+    isEnabled: function () {
+      return !disabled;
     },
   };
+
+  // Первый просмотр страницы. Дальнейшие переходы вызывает приложение.
+  trackPageView();
 })();
