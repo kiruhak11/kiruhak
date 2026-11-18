@@ -1,6 +1,6 @@
 import { prisma } from "../../utils/prisma";
 import { resolveClientIp } from "../../utils/client-ip";
-import { recordAnalyticsPageView } from "../../utils/analytics";
+import { analyticsWriteAllowed, recordAnalyticsPageView } from "../../utils/analytics";
 
 export default defineEventHandler(async (event) => {
   let body;
@@ -20,6 +20,16 @@ export default defineEventHandler(async (event) => {
       return {
         success: false,
         error: "siteId is required",
+      };
+    }
+
+    // Сбор выключен — endpoint ничего не пишет и в базу не ходит. Проверка
+    // стоит до любого чтения и тем более до создания сайта в dev-режиме:
+    // выключенная аналитика не должна оставлять следов в базе.
+    if (!analyticsWriteAllowed(siteId)) {
+      return {
+        success: false,
+        error: "Analytics is disabled",
       };
     }
 
@@ -58,7 +68,7 @@ export default defineEventHandler(async (event) => {
               userId: firstUser.id,
             },
           });
-        } catch (error) {
+        } catch {
           // Пробуем найти существующий сайт по домену localhost
           site = await prisma.site.findFirst({
             where: { domain: { startsWith: "localhost" } },

@@ -2,6 +2,19 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
+import {
+  buildDocumentContentSecurityPolicy,
+  TELEGRAM_LOGIN_ORIGIN,
+} from "../utils/content-security-policy";
+
+// Политика документа живёт в отдельном модуле: она чистая и проверяется
+// обычным тестом. Здесь она переэкспортируется, чтобы прежние импорты
+// продолжали работать.
+export {
+  buildDocumentContentSecurityPolicy,
+  TELEGRAM_LOGIN_ORIGIN,
+};
+
 /**
  * Security-заголовки для всех ответов приложения.
  *
@@ -33,9 +46,6 @@ export const STRICT_TRANSPORT_SECURITY = "max-age=31536000";
 
 /** Referrer-Policy для документов. */
 export const DOCUMENT_REFERRER_POLICY = "strict-origin-when-cross-origin";
-
-/** Origin Telegram Login SDK: без него вход через Telegram не работает. */
-export const TELEGRAM_LOGIN_ORIGIN = "https://oauth.telegram.org";
 
 const INLINE_SCRIPT_PATTERN = /<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
 
@@ -100,52 +110,6 @@ export function collectRenderedScriptHashes(context: {
 
   const hashes = extractInlineScriptHashes(parts);
   return hashes ?? [];
-}
-
-/**
- * Собирает CSP для HTML-документа.
- *
- * `null` вместо массива хешей означает, что тело ответа не удалось
- * проанализировать: тогда скрипты запрещаются целиком (`script-src 'none'`),
- * политика не ослабляется.
- */
-export function buildDocumentContentSecurityPolicy(
-  inlineScriptHashes: string[] | null,
-  secureRequest = false
-): string {
-  // Если хеши вычислить не удалось, политика не ослабляется: скрипты
-  // запрещаются целиком (fail-closed). Страница остаётся читаемой (SSR
-  // разметка уже в ответе), но ни один скрипт не выполняется.
-  const scriptSrc =
-    inlineScriptHashes === null
-      ? ["'none'"]
-      : ["'self'", ...inlineScriptHashes, TELEGRAM_LOGIN_ORIGIN];
-
-  const directives = [
-    "default-src 'self'",
-    "base-uri 'self'",
-    "object-src 'none'",
-    "frame-ancestors 'none'",
-    "form-action 'self'",
-    "img-src 'self' data: blob:",
-    "font-src 'self' data:",
-    "media-src 'self' blob:",
-    "style-src 'self' 'unsafe-inline'",
-    `script-src ${scriptSrc.join(" ")}`,
-    "frame-src 'self' data: blob: https://oauth.telegram.org https://telegram.org",
-    "connect-src 'self' https://oauth.telegram.org https://telegram.org",
-    "worker-src 'self' blob:",
-    "manifest-src 'self'",
-  ];
-
-  // upgrade-insecure-requests применяется только к защищённым запросам:
-  // на не-HTTPS origin директива обновляет и same-origin ресурсы (например,
-  // /_payload.json), ломая их загрузку.
-  if (secureRequest) {
-    directives.push("upgrade-insecure-requests");
-  }
-
-  return directives.join("; ");
 }
 
 type NitroEvent = Parameters<typeof setResponseHeader>[0];

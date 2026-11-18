@@ -9,12 +9,14 @@ import {
   ANALYTICS_TRACKER_PATH,
 } from "../constants/analytics";
 import {
-  ANALYTICS_SUPPORTED_EVENT,
+  analyticsEnabled,
+  analyticsWriteAllowed,
   sanitizeAnalyticsPage,
   sanitizeAnalyticsReferrer,
   sanitizeAnalyticsUserAgent,
 } from "../server/utils/analytics";
 import { classifyApiRoute } from "../server/utils/auth-route-policy";
+import { buildDocumentContentSecurityPolicy } from "../server/utils/content-security-policy";
 
 /**
  * Регрессии трекера посещений.
@@ -306,9 +308,8 @@ test("сервер вырезает query-параметры из сохраня
 
 // --- 11/12. SSR, hydration и CSP ---------------------------------------------
 
-test("трекер подключается только при заданном siteId", () => {
-  assert.match(pluginSource, /analyticsSiteId/);
-  // Путь и атрибут передаются константами, а не строковыми литералами.
+test("трекер подключается только по разрешению runtime-конфигурации", () => {
+  assert.match(pluginSource, /\/api\/analytics\/config/);
   assert.match(pluginSource, /ANALYTICS_TRACKER_PATH/);
   assert.match(pluginSource, /ANALYTICS_SITE_ID_ATTRIBUTE/);
   assert.match(pluginSource, /page:finish/);
@@ -316,16 +317,101 @@ test("трекер подключается только при заданном
   assert.equal(ANALYTICS_SITE_ID_ATTRIBUTE, "data-site-id");
 });
 
-test("пререндеренные страницы получают siteId из конфигурации сервера", () => {
-  // На пререндеренных страницах payload собран при сборке, поэтому
-  // идентификатор запрашивается у сервера отдельным запросом.
-  assert.match(pluginSource, /\/api\/analytics\/config/);
-  assert.match(configEndpointSource, /public\.analyticsSiteId/);
-  assert.match(configEndpointSource, /siteId: siteId \|\| null/);
+test("пререндеренные страницы не включают трекер по значению из payload", () => {
+  // Идентификатор собирается при сборке и в пререндере устаревает: по нему
+  // трекер включаться не должен. Разрешение спрашивается у сервера.
+  assert.doesNotMatch(pluginSource, /analyticsSiteId/);
+  assert.doesNotMatch(pluginSource, /public\./);
+  assert.doesNotMatch(configEndpointSource, /public\.analyticsSiteId/);
+
+  // Ответ конфигурации — единственный источник разрешения, и он явно
+  // требует подтверждения: тишина и ошибка означают «не включать».
+  assert.match(pluginSource, /response\?\.enabled !== true/);
+  assert.match(configEndpointSource, /enabled/);
+  assert.match(configEndpointSource, /analyticsEnabled\(\)/);
+
   // Запрос конфигурации не должен блокировать запуск приложения.
   assert.doesNotMatch(pluginSource, /await \$fetch/);
 });
 
+test("конфигурация аналитики не кэшируется", () => {
+  // Иначе выключенная аналитика оставалась бы включённой из-за
+  // закэшированного публичного ответа.
+  assert.match(configEndpointSource, /Cache-Control/);
+  assert.match(configEndpointSource, /no-store/);
+  assert.doesNotMatch(configEndpointSource, /max-age=300/);
+});
+
+test("сбор посещений по умолчанию выключен", () => {
+  const previous = process.env.ANALYTICS_ENABLED;
+  try {
+    delete process.env.ANALYTICS_ENABLED;
+    assert.equal(analyticsEnabled(), false);
+
+    process.env.ANALYTICS_ENABLED = "true";
+    assert.equal(analyticsEnabled(), true);
+
+    process.env.ANALYTICS_ENABLED = "TRUE";
+    assert.equal(analyticsEnabled(), true);
+
+    process.env.ANALYTICS_ENABLED = "false";
+    assert.equal(analyticsEnabled(), false);
+
+    process.env.ANALYTICS_ENABLED = "1";
+    assert.equal(analyticsEnabled(), false, "включает только явный true");
+  } finally {
+    if (previous === undefined) delete process.env.ANALYTICS_ENABLED;
+    else process.env.ANALYTICS_ENABLED = previous;
+  }
+});
+
+test("выключенный сбор не пишет для сайта приложения и не запрещает чужие", () => {
+  const previousFlag = process.env.ANALYTICS_ENABLED;
+  const previousSite = process.env.NUXT_PUBLIC_ANALYTICS_SITE_ID;
+  try {
+    process.env.ANALYTICS_ENABLED = "false";
+    process.env.NUXT_PUBLIC_ANALYTICS_SITE_ID = "site-of-the-application";
+
+    assert.equal(
+      analyticsWriteAllowed("site-of-the-application"),
+      false,
+      "сайт приложения при выключенном сборе писаться не должен"
+    );
+    assert.equal(
+      analyticsWriteAllowed("site-of-a-client"),
+      true,
+      "глобальный запрет сломал бы трекинг чужих сайтов"
+    );
+
+    process.env.ANALYTICS_ENABLED = "true";
+    assert.equal(analyticsWriteAllowed("site-of-the-application"), true);
+  } finally {
+    if (previousFlag === undefined) delete process.env.ANALYTICS_ENABLED;
+    else process.env.ANALYTICS_ENABLED = previousFlag;
+    if (previousSite === undefined) delete process.env.NUXT_PUBLIC_ANALYTICS_SITE_ID;
+    else process.env.NUXT_PUBLIC_ANALYTICS_SITE_ID = previousSite;
+  }
+});
+
+test("оба endpoint'а записи отказывают при выключенном сборе", () => {
+  for (const source of [trackSource, trackSimpleSource]) {
+    assert.match(source, /analyticsWriteAllowed/);
+    assert.match(source, /Analytics is disabled/);
+  }
+});
+
+test("CSP не ослаблена: в script-src нет unsafe-inline", () => {
+  const policy = buildDocumentContentSecurityPolicy(["sha256-abc"], true);
+  const scriptSrc = policy
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("script-src"));
+
+  assert.ok(scriptSrc, "в политике должна быть директива script-src");
+  assert.doesNotMatch(scriptSrc, /unsafe-inline/);
+  assert.doesNotMatch(scriptSrc, /unsafe-eval/);
+  assert.match(scriptSrc, /'self'/);
+});
 
 test("маршрут конфигурации аналитики публичен только для чтения", () => {
   const decision = classifyApiRoute("/api/analytics/config", "GET");

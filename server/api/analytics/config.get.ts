@@ -1,19 +1,27 @@
 /**
  * Конфигурация собственной аналитики для клиента.
  *
- * Идентификатор сайта нужен клиенту на пререндеренных страницах: их payload
- * собран на этапе сборки и не содержит значение, переданное окружением при
- * запуске. Endpoint отдаёт актуальное значение и не раскрывает ничего, кроме
- * публичного идентификатора сайта (он и так находится в коде установки
- * трекера на клиентских сайтах).
+ * Это единственный источник действующего разрешения на трекинг. Клиент
+ * спрашивает его в момент загрузки страницы и подключает трекер только
+ * тогда, когда ответ однозначно разрешает сбор.
+ *
+ * Значение идентификатора не берётся из payload пререндеренных страниц:
+ * там оно собрано при сборке и может быть устаревшим, поэтому пререндер
+ * не должен включать трекер самостоятельно.
+ *
+ * Ответ не кэшируется. Иначе выключенная аналитика оставалась бы включённой
+ * ещё пять минут из-за закэшированного публичного ответа.
  */
-export default defineEventHandler((event) => {
-  const config = useRuntimeConfig();
-  const siteId = String(config.public.analyticsSiteId || "").trim();
+import { analyticsEnabled, ownAnalyticsSiteId } from "../../utils/analytics";
 
-  setResponseHeader(event, "Cache-Control", "public, max-age=300");
+export default defineEventHandler((event) => {
+  const enabled = analyticsEnabled();
+  const siteId = enabled ? ownAnalyticsSiteId() : "";
+
+  setResponseHeader(event, "Cache-Control", "no-store");
 
   return {
+    enabled,
     siteId: siteId || null,
   };
 });

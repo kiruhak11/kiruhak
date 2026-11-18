@@ -111,9 +111,12 @@ export default defineNuxtConfig({
     public: {
       siteUrl,
       channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || "webmonkey",
-      // Идентификатор сайта для собственной аналитики посещений. Без него
-      // трекер не подключается: запросов нет, ложные события не создаются.
-      analyticsSiteId: process.env.NUXT_PUBLIC_ANALYTICS_SITE_ID || "",
+      // Идентификатор сайта для собственной аналитики НЕ публикуется в
+      // payload: пререндеренные страницы собираются при сборке, и значение
+      // там устаревает. Клиент получает его из runtime-эндпоинта
+      // /api/analytics/config, который отдаёт его только когда сбор
+      // разрешён флагом ANALYTICS_ENABLED.
+      //
       // Юридические документы опубликованы; gate можно закрыть флагом.
       legalDocumentsPublic:
         process.env.NUXT_PUBLIC_LEGAL_DOCUMENTS_PUBLIC !== "false",

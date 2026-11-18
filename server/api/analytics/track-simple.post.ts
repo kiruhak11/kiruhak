@@ -1,6 +1,6 @@
 import { prisma } from "../../utils/prisma";
 import { resolveClientIp } from "../../utils/client-ip";
-import { recordAnalyticsPageView } from "../../utils/analytics";
+import { analyticsWriteAllowed, recordAnalyticsPageView } from "../../utils/analytics";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -19,6 +19,14 @@ export default defineEventHandler(async (event) => {
       return {
         success: false,
         error: "siteId is required",
+      };
+    }
+
+    // Сбор выключен — endpoint ничего не пишет и в базу не ходит.
+    if (!analyticsWriteAllowed(siteId)) {
+      return {
+        success: false,
+        error: "Analytics is disabled",
       };
     }
 
