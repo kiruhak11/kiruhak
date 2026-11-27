@@ -44,12 +44,15 @@ K-Studio — личное портфолио и рабочая платформ�
 ```bash
 git clone https://github.com/kiruhak11/kiruhak.git
 cd kiruhak
-npm install
+npm ci
 cp .env.example .env
-npm run dev
+npm run db:generate
+# Укажите URI заранее созданной пустой базы.
+DATABASE_URL="$EMPTY_DATABASE_URL" npm run db:bootstrap
+DATABASE_URL="$EMPTY_DATABASE_URL" npm run dev
 ```
 
-Приложение будет доступно по адресу `http://localhost:3000`.
+Укажите тот же URI в `.env` для запуска приложения по адресу `http://localhost:3000`. Для базы из бэкапа используйте [инструкцию восстановления](docs/runbooks/DATABASE_RECOVERY.md).
 
 Для production-сборки:
 

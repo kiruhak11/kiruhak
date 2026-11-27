@@ -57,25 +57,7 @@ npx prisma generate
 
 ## 3. База данных
 
-Схема применяется **только миграциями**:
-
-```bash
-npx prisma migrate deploy
-```
-
-`prisma db push` применять нельзя: две таблицы из��пользуются через raw SQL
-и в схеме Prisma отсутствуют, поэтому `db push` их не создаст:
-
-| Таблица | Миграция |
-| --- | --- |
-| `auth_session_controls` | `20261009120000_create_auth_session_controls` |
-| `telegram_recovery_challenges` | `20261009150000_create_telegram_recovery_challenges` |
-
-Проверка после восстановления:
-
-```bash
-psql "$DATABASE_URL" -f ops/check-db-tables.sql
-```
+Для актуальной ревизии используйте [инструкцию восстановления PostgreSQL](../runbooks/DATABASE_RECOVERY.md). Она описывает bootstrap пустой базы, восстановление дампа и проверку схемы. Для базы с данными выбирайте восстановление полного дампа с журналом миграций.
 
 ## 4. Проверки
 

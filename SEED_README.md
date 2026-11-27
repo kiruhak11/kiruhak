@@ -29,21 +29,22 @@
 
 ## 🛠️ Запуск
 
-### Вариант 1: Автоматический скрипт (рекомендуется)
+### Вариант 1: Скрипт для окружения с подготовленной базой
 ```bash
 ./seed-docker.sh
 ```
 
-### Вариант 2: Ручной запуск
+### Вариант 2: Ручной запуск на пустой базе
 ```bash
 # 1. Установите зависимости
 npm install
 
-# 2. Примените миграции
-npx prisma migrate deploy
+# 2. Укажите пустую локальную базу и выполните bootstrap
+npm run db:generate
+DATABASE_URL="$EMPTY_DATABASE_URL" npm run db:bootstrap
 
 # 3. Заполните базу данных
-npm run db:seed
+DATABASE_URL="$EMPTY_DATABASE_URL" npm run db:seed
 ```
 
 ## 🔧 Требования
@@ -126,8 +127,8 @@ npx prisma migrate deploy
 # Проверьте логи
 npx prisma db seed --verbose
 
-# Убедитесь, что база данных доступна
-npx prisma db push
+# Проверьте состояние миграций
+DATABASE_URL="$EMPTY_DATABASE_URL" npx prisma migrate status
 ```
 
 ## 📝 Примечания
