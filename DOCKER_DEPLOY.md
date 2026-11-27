@@ -91,25 +91,9 @@ git pull
 
 ## 🗄️ База данных
 
-### Миграции
+### Подготовка и восстановление
 
-```bash
-# Выполнить миграции
-docker-compose -f docker-compose.prod.yml exec app npx prisma migrate deploy
-
-# Сбросить базу (только для разработки!)
-docker-compose -f docker-compose.prod.yml exec app npx prisma migrate reset
-```
-
-### Резервное копирование
-
-```bash
-# Создать бэкап
-docker-compose -f docker-compose.prod.yml exec postgres pg_dump -U kiruhak_user kiruhak > backup.sql
-
-# Восстановить из бэкапа
-docker-compose -f docker-compose.prod.yml exec -T postgres psql -U kiruhak_user kiruhak < backup.sql
-```
+Выполните команды из [инструкции восстановления PostgreSQL](docs/runbooks/DATABASE_RECOVERY.md) в рабочей копии с зависимостями Prisma. Для пустой базы используйте `npm run db:bootstrap`. Для базы из полного дампа используйте `npm run db:migrate` после сверки журнала.
 
 ## 🔒 SSL/HTTPS
 
@@ -162,8 +146,8 @@ docker-compose -f docker-compose.prod.yml exec app env | grep -E "(DATABASE_URL|
 # Проверить статус PostgreSQL
 docker-compose -f docker-compose.prod.yml exec postgres pg_isready -U kiruhak_user
 
-# Проверить подключение
-docker-compose -f docker-compose.prod.yml exec app npx prisma db push
+# Проверить доступность базы по настроенному PostgreSQL URI
+pg_isready --dbname="$RESTORE_PG_URL"
 ```
 
 ### Проблемы с сетью

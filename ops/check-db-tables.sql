@@ -1,18 +1,11 @@
 -- K-Studio: schema check for a restored database.
 --
 -- Run with:
---   psql "$DATABASE_URL" -f ops/check-db-tables.sql
+--   psql "$RESTORE_PG_URL" -f ops/check-db-tables.sql
 --
--- Two tables are used through raw SQL and are therefore NOT part of the
--- Prisma schema: `prisma db push` does NOT create them. They exist only
--- because of their migrations:
---
---   auth_session_controls        <- 20261009120000_create_auth_session_controls
---   telegram_recovery_challenges  <- 20261009150000_create_telegram_recovery_challenges
---
--- A restored database must contain them, otherwise the session-revocation
--- and the account-recovery flows fail at runtime. Restore the database with
--- `prisma migrate deploy`, never with `prisma db push`.
+-- For bootstrap and complete schema comparison see
+-- docs/runbooks/DATABASE_RECOVERY.md. These tables back session revocation,
+-- Telegram account recovery and lead delivery.
 
 \echo '--- expected tables ---'
 

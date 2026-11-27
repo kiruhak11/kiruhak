@@ -35,6 +35,8 @@ model Project {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
+  @@index([featured, order])
+  @@index([category])
   @@map("projects")
 }
 
@@ -54,13 +56,15 @@ model User {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  sites                     Site[]
-  transactions              Transaction[]
-  tutorialProgress          TutorialProgress[]
-  materialRatings           MaterialRating[]
-  materialDownloads         MaterialDownload[]
-  uiComponents              UiComponent[]
-  uiComponentViews          UiComponentView[]
+  sites                      Site[]
+  transactions               Transaction[]
+  tutorialProgress           TutorialProgress[]
+  materialRatings            MaterialRating[]
+  materialDownloads          MaterialDownload[]
+  uiComponents               UiComponent[]
+  uiComponentViews           UiComponentView[]
+  telegramRecoveryChallenges TelegramRecoveryChallenge[]
+  visits                     Visit[]
 
   @@map("users")
 }
@@ -77,6 +81,33 @@ model TelegramLoginTransaction {
   @@index([expiresAt])
   @@index([clientKeyHash, createdAt])
   @@map("telegram_login_transactions")
+}
+
+model AuthSessionControl {
+  userId    String   @id @map("user_id")
+  revokedAt DateTime @default(now()) @map("revoked_at") @db.Timestamptz(6)
+
+  @@map("auth_session_controls")
+}
+
+model TelegramRecoveryChallenge {
+  id                 String    @id
+  userId             String    @map("user_id")
+  stateHash          String    @unique @map("state_hash")
+  nonceHash          String    @map("nonce_hash")
+  pkceVerifier       String    @map("pkce_verifier")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt          DateTime  @map("expires_at") @db.Timestamptz(6)
+  attempts           Int       @default(0)
+  callbackStartedAt  DateTime? @map("callback_started_at") @db.Timestamptz(6)
+  telegramVerifiedAt DateTime? @map("telegram_verified_at") @db.Timestamptz(6)
+  consumedAt         DateTime? @map("consumed_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt], map: "telegram_recovery_challenges_user_created_idx")
+  @@index([expiresAt], map: "telegram_recovery_challenges_expiry_idx")
+  @@map("telegram_recovery_challenges")
 }
 
 model RevokedAuthSession {
@@ -101,6 +132,7 @@ model Site {
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   visits Visit[]
 
+  @@index([userId])
   @@map("sites")
 }
 
@@ -115,8 +147,12 @@ model Visit {
   sessionId String?
   userId    String?
 
-  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  site Site  @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  @@index([siteId, timestamp])
+  @@index([userId])
+  @@index([timestamp])
   @@map("visits")
 }
 
@@ -130,6 +166,7 @@ model Transaction {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, createdAt])
   @@map("transactions")
 }
 
@@ -156,6 +193,8 @@ model UiComponent {
   author User?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
   views  UiComponentView[]
 
+  @@index([authorId])
+  @@index([category, isActive])
   @@map("ui_components")
 }
 
@@ -170,6 +209,8 @@ model UiComponentView {
   component UiComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
   user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  @@index([componentId, viewedAt])
+  @@index([userId])
   @@map("ui_component_views")
 }
 
@@ -191,6 +232,7 @@ model Tutorial {
   userProgress  TutorialProgress[]
   testQuestions TutorialTestQuestion[]
 
+  @@index([category, isActive])
   @@map("tutorials")
 }
 
@@ -205,6 +247,7 @@ model TutorialStep {
 
   tutorial Tutorial @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
 
+  @@index([tutorialId])
   @@map("tutorial_steps")
 }
 
@@ -222,6 +265,7 @@ model TutorialProgress {
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tutorialId, userId])
+  @@index([userId])
   @@map("tutorial_progress")
 }
 
@@ -237,6 +281,7 @@ model TutorialTestQuestion {
   tutorial Tutorial             @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
   answers  TutorialTestAnswer[]
 
+  @@index([tutorialId])
   @@map("tutorial_test_questions")
 }
 
@@ -251,6 +296,7 @@ model TutorialTestAnswer {
 
   question TutorialTestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
+  @@index([questionId])
   @@map("tutorial_test_answers")
 }
 
@@ -271,6 +317,7 @@ model Material {
   ratings   MaterialRating[]
   downloads MaterialDownload[]
 
+  @@index([category, isActive])
   @@map("materials")
 }
 
@@ -285,6 +332,7 @@ model MaterialRating {
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([materialId, userId])
+  @@index([userId])
   @@map("material_ratings")
 }
 
@@ -297,6 +345,8 @@ model MaterialDownload {
   material Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, createdAt])
+  @@index([materialId])
   @@map("material_downloads")
 }
 
@@ -304,12 +354,12 @@ model LeadDelivery {
   id                 String    @id
   idempotencyKeyHash String    @unique @map("idempotency_key_hash")
   payloadHash        String    @map("payload_hash")
-  name               String
-  contact            String?
-  email              String
-  business           String?
-  task               String
-  budget             String?
+  name               String    @db.VarChar(120)
+  contact            String?   @db.VarChar(160)
+  email              String    @db.VarChar(254)
+  business           String?   @db.VarChar(180)
+  task               String    @db.VarChar(4000)
+  budget             String?   @db.VarChar(160)
   clientFingerprint  String?   @map("client_fingerprint")
   status             String    @default("PENDING")
   attemptCount       Int       @default(0) @map("attempt_count")
@@ -319,9 +369,9 @@ model LeadDelivery {
   telegramMessageId  BigInt?   @map("telegram_message_id")
   lastErrorCode      String?   @map("last_error_code")
   createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  @@index([status, nextAttemptAt, lockedUntil])
-  @@index([clientFingerprint, createdAt])
+  @@index([status, nextAttemptAt, lockedUntil], map: "lead_deliveries_queue_idx")
+  @@index([clientFingerprint, createdAt], map: "lead_deliveries_rate_idx")
   @@map("lead_deliveries")
 }
