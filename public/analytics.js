@@ -18,18 +18,15 @@
    * * повторных попыток нет: при подтверждённой ошибке трекер отключается.
    */
 
-  var script =
-    document.currentScript ||
-    document.querySelector("script[data-site-id]");
+  var script = document.currentScript;
+  if (!script || !script.src) return;
 
-  var siteId = String(
-    (script && script.getAttribute("data-site-id")) || ""
-  ).trim();
-
-  // Без корректного идентификатора сайта трекер не работает.
+  var attribute = script.getAttribute("data-site-id");
+  var siteId = String(attribute === null ? window.KIRUHAK_SITE_ID || "" : attribute)
+    .trim();
   if (!siteId) return;
 
-  var ENDPOINT = new URL("/api/analytics/track", window.location.origin).href;
+  var ENDPOINT = new URL("/api/analytics/track", script.src).href;
   var lastTrackedPath = null;
   var disabled = false;
 
@@ -42,7 +39,7 @@
     try {
       var parsed = new URL(value);
       return parsed.origin + parsed.pathname;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -76,7 +73,7 @@
     var payload;
     try {
       payload = buildPayload();
-    } catch (error) {
+    } catch {
       disable("не удалось собрать данные события");
       return;
     }
@@ -84,6 +81,7 @@
     window
       .fetch(ENDPOINT, {
         method: "POST",
+        credentials: "omit",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })

@@ -7,6 +7,21 @@ export default defineEventHandler((event) => {
   const path = getRequestURL(event).pathname;
   if (!path.startsWith("/api/")) return;
 
+  const method = getMethod(event);
+  const isTracking = path === "/api/analytics/track" ||
+    path === "/api/analytics/track-simple";
+
+  if (isTracking && (method === "POST" || method === "OPTIONS")) {
+    setResponseHeader(event, "Access-Control-Allow-Origin", "*");
+    if (method === "OPTIONS") {
+      setResponseHeader(event, "Access-Control-Allow-Methods", "POST");
+      setResponseHeader(event, "Access-Control-Allow-Headers", "Content-Type");
+      setResponseStatus(event, 204);
+      return "";
+    }
+    return;
+  }
+
   appendResponseHeader(event, "Vary", "Origin");
   const config = useRuntimeConfig();
   const configuredOrigins = String(
@@ -25,7 +40,7 @@ export default defineEventHandler((event) => {
     setResponseHeader(event, name, value);
   }
 
-  if (getMethod(event) === "OPTIONS") {
+  if (method === "OPTIONS") {
     setResponseStatus(event, 204);
     return "";
   }

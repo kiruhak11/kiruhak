@@ -12,16 +12,9 @@
  * Ответ не кэшируется. Иначе выключенная аналитика оставалась бы включённой
  * ещё пять минут из-за закэшированного публичного ответа.
  */
-import { analyticsEnabled, ownAnalyticsSiteId } from "../../utils/analytics";
+import { getOwnAnalyticsConfig } from "../../utils/analytics";
 
 export default defineEventHandler((event) => {
-  const enabled = analyticsEnabled();
-  const siteId = enabled ? ownAnalyticsSiteId() : "";
-
   setResponseHeader(event, "Cache-Control", "no-store");
-
-  return {
-    enabled,
-    siteId: siteId || null,
-  };
+  return getOwnAnalyticsConfig();
 });

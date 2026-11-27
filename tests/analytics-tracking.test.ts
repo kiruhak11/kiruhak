@@ -11,6 +11,7 @@ import {
 import {
   analyticsEnabled,
   analyticsWriteAllowed,
+  getOwnAnalyticsConfig,
   sanitizeAnalyticsPage,
   sanitizeAnalyticsReferrer,
   sanitizeAnalyticsUserAgent,
@@ -47,6 +48,10 @@ const trackSimpleSource = readFileSync(
   new URL("../server/api/analytics/track-simple.post.ts", import.meta.url),
   "utf8"
 );
+const trackHandlerSource = readFileSync(
+  new URL("../server/utils/analytics-track-handler.ts", import.meta.url),
+  "utf8"
+);
 const analyticsUtilSource = readFileSync(
   new URL("../server/utils/analytics.ts", import.meta.url),
   "utf8"
@@ -56,10 +61,12 @@ const configEndpointSource = readFileSync(
   "utf8"
 );
 
-type TrackerCall = { url: string; body: Record<string, unknown> };
+type TrackerCall = { url: string; body: Record<string, unknown>; credentials: string };
 
 type HarnessOptions = {
   siteId?: string | null;
+  legacySiteId?: string;
+  pageOrigin?: string;
   pathname?: string;
   search?: string;
   referrer?: string;
@@ -74,21 +81,22 @@ const runTracker = (options: HarnessOptions = {}) => {
   const respond = options.respond ?? { status: 200, body: { success: true } };
 
   const script = {
+    src: "https://kiruhak11.ru/analytics.js?v=20261127",
     getAttribute: (name: string) =>
       name === ANALYTICS_SITE_ID_ATTRIBUTE ? options.siteId ?? null : null,
   };
 
   const location = {
-    origin: "https://kiruhak11.ru",
-    hostname: "kiruhak11.ru",
+    origin: options.pageOrigin ?? "https://kiruhak11.ru",
     pathname: options.pathname ?? "/",
     search: options.search ?? "",
   };
 
   const win: Record<string, unknown> = {
     location,
-    fetch: async (url: string, init: { body: string }) => {
-      calls.push({ url, body: JSON.parse(init.body) });
+    KIRUHAK_SITE_ID: options.legacySiteId,
+    fetch: async (url: string, init: { body: string; credentials: string }) => {
+      calls.push({ url, body: JSON.parse(init.body), credentials: init.credentials });
       if (respond === "network-error") throw new TypeError("fetch failed");
       return {
         ok: respond.status >= 200 && respond.status < 300,
@@ -144,6 +152,21 @@ test("валидный siteId передаётся трекеру и уходи�
   assert.equal(calls[0].body.siteId, "site-valid-1");
   assert.equal(calls[0].body.event, ANALYTICS_EVENT_PAGE_VIEW);
   assert.equal(calls[0].url, "https://kiruhak11.ru/api/analytics/track");
+});
+
+test("оба формата сниппета отправляют POST на origin скрипта без credentials", () => {
+  for (const options of [
+    { siteId: "attribute-id", legacySiteId: "ignored-id" },
+    { legacySiteId: "legacy-id" },
+  ]) {
+    const { calls } = runTracker({ ...options, pageOrigin: "https://client.test" });
+    assert.equal(calls.length, 1);
+    assert.deepEqual(
+      [calls[0].url, calls[0].body.siteId, calls[0].credentials],
+      ["https://kiruhak11.ru/api/analytics/track", options.siteId ?? "legacy-id", "omit"]
+    );
+  }
+  assert.equal(runTracker({ siteId: "", legacySiteId: "ignored-id" }).calls.length, 0);
 });
 
 // --- 3. Некорректный siteId не создаёт событий -------------------------------
@@ -220,10 +243,10 @@ test("сервер принимает только просмотр страни
   assert.match(analyticsUtilSource, /Unsupported event type/);
   assert.match(analyticsUtilSource, /!site \|\| !site\.isActive/);
 
-  // Оба endpoint'а обращаются к этой утилите и не создают Visit напрямую.
+  assert.match(trackHandlerSource, /recordAnalyticsPageView/);
+  assert.doesNotMatch(trackHandlerSource, /prisma\.visit\.create/);
   for (const source of [trackSource, trackSimpleSource]) {
-    assert.match(source, /recordAnalyticsPageView/);
-    assert.doesNotMatch(source, /prisma\.visit\.create/);
+    assert.match(source, /export default analyticsTrackHandler/);
   }
 });
 
@@ -327,8 +350,7 @@ test("пререндеренные страницы не включают тре
   // Ответ конфигурации — единственный источник разрешения, и он явно
   // требует подтверждения: тишина и ошибка означают «не включать».
   assert.match(pluginSource, /response\?\.enabled !== true/);
-  assert.match(configEndpointSource, /enabled/);
-  assert.match(configEndpointSource, /analyticsEnabled\(\)/);
+  assert.match(configEndpointSource, /getOwnAnalyticsConfig\(\)/);
 
   // Запрос конфигурации не должен блокировать запуск приложения.
   assert.doesNotMatch(pluginSource, /await \$fetch/);
@@ -393,10 +415,25 @@ test("выключенный сбор не пишет для сайта прил
   }
 });
 
-test("оба endpoint'а записи отказывают при выключенном сборе", () => {
-  for (const source of [trackSource, trackSimpleSource]) {
-    assert.match(source, /analyticsWriteAllowed/);
-    assert.match(source, /Analytics is disabled/);
+test("без Site ID свой домен закрыт при любом значении флага", () => {
+  const previousFlag = process.env.ANALYTICS_ENABLED;
+  const previousSite = process.env.NUXT_PUBLIC_ANALYTICS_SITE_ID;
+  try {
+    delete process.env.NUXT_PUBLIC_ANALYTICS_SITE_ID;
+    for (const enabled of ["true", "false"]) {
+      process.env.ANALYTICS_ENABLED = enabled;
+      assert.deepEqual(getOwnAnalyticsConfig(), { enabled: false, siteId: null });
+      assert.equal(analyticsWriteAllowed("own", "kiruhak11.ru"), false);
+      assert.equal(analyticsWriteAllowed("own", "WWW.KIRUHAK11.RU."), false);
+      assert.equal(analyticsWriteAllowed("external", "client.test", "https://kiruhak11.ru"), false);
+      assert.equal(analyticsWriteAllowed("external", "client.test", "https://client.test"), true);
+      assert.equal(analyticsWriteAllowed("external", "kiruhak11.ru.client.test"), true);
+    }
+  } finally {
+    if (previousFlag === undefined) delete process.env.ANALYTICS_ENABLED;
+    else process.env.ANALYTICS_ENABLED = previousFlag;
+    if (previousSite === undefined) delete process.env.NUXT_PUBLIC_ANALYTICS_SITE_ID;
+    else process.env.NUXT_PUBLIC_ANALYTICS_SITE_ID = previousSite;
   }
 });
 

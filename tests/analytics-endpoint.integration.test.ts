@@ -216,7 +216,24 @@ test("выключенный сбор не создаёт запись для с
         client
       );
 
-      assert.equal(refused.success, false);
+      assert.deepEqual(refused, { success: false, error: "Analytics is disabled" });
+
+      await client.site.update({
+        where: { id: site.siteId },
+        data: { domain: "www.kiruhak11.ru" },
+      });
+      delete process.env.NUXT_PUBLIC_ANALYTICS_SITE_ID;
+      for (const flag of ["false", "true"]) {
+        process.env.ANALYTICS_ENABLED = flag;
+        assert.deepEqual(
+          await recordAnalyticsPageView(
+            { siteId: site.siteId, page: "/qa-check", ip: "203.0.113.9" },
+            client
+          ),
+          { success: false, error: "Analytics is disabled" }
+        );
+      }
+
       assert.equal(
         await client.visit.count(),
         before,

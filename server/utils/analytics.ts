@@ -1,5 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { ANALYTICS_ORIGIN } from "../../constants/analytics";
+
 import { prisma } from "./prisma";
 
 /**
@@ -43,19 +45,29 @@ export const analyticsEnabled = (): boolean =>
 export const ownAnalyticsSiteId = (): string =>
   String(process.env.NUXT_PUBLIC_ANALYTICS_SITE_ID ?? "").trim();
 
-/**
- * Разрешена ли запись посещения для конкретного сайта.
- *
- * Общий флаг `ANALYTICS_ENABLED` относится только к сайту самого
- * приложения. Чужие сайты используют тот же endpoint, и глобальный запрет
- * сломал бы их трекинг, поэтому для них действует прежнее поведение.
- */
-export const analyticsWriteAllowed = (siteId: string): boolean => {
-  if (analyticsEnabled()) return true;
-  const own = ownAnalyticsSiteId();
-  if (!own) return true;
-  return siteId !== own;
+const ownHostname = new URL(ANALYTICS_ORIGIN).hostname;
+
+function isOwnHostname(hostname?: string): boolean {
+  const normalized = hostname?.trim().toLowerCase().replace(/\.$/, "");
+  return normalized === ownHostname || normalized === `www.${ownHostname}`;
+}
+
+export const analyticsWriteAllowed = (
+  siteId: string,
+  domain?: string,
+  origin?: string
+): boolean => {
+  const ownSiteId = ownAnalyticsSiteId();
+  if (analyticsEnabled() && ownSiteId) return true;
+
+  const originHost = origin ? URL.parse(origin)?.hostname : undefined;
+  return siteId !== ownSiteId && !isOwnHostname(domain) && !isOwnHostname(originHost);
 };
+
+export function getOwnAnalyticsConfig() {
+  const siteId = analyticsEnabled() ? ownAnalyticsSiteId() : "";
+  return { enabled: Boolean(siteId), siteId: siteId || null };
+}
 
 /** Путь страницы без query-параметров и фрагмента. */
 export const sanitizeAnalyticsPage = (value: unknown): string => {
@@ -93,7 +105,8 @@ export type AnalyticsRecordResult =
  */
 export const recordAnalyticsPageView = async (
   input: {
-    siteId: string;
+    siteId: unknown;
+    origin?: string;
     page?: unknown;
     referrer?: unknown;
     userAgent?: unknown;
@@ -104,6 +117,9 @@ export const recordAnalyticsPageView = async (
   // там подключение должно идти к тестовой базе, а не к DATABASE_URL.
   client: PrismaClient = prisma
 ): Promise<AnalyticsRecordResult> => {
+  const siteId = typeof input.siteId === "string" ? input.siteId.trim() : "";
+  if (!siteId) return { success: false, error: "siteId is required" };
+
   const event =
     typeof input.event === "string" && input.event
       ? input.event
@@ -113,23 +129,26 @@ export const recordAnalyticsPageView = async (
     return { success: false, error: "Unsupported event type" };
   }
 
-  // Сбор выключен — запись не создаётся, в базу не ходим вообще.
-  if (!analyticsWriteAllowed(input.siteId)) {
+  if (!analyticsWriteAllowed(siteId, undefined, input.origin)) {
     return { success: false, error: "Analytics is disabled" };
   }
 
   const site = await client.site.findUnique({
-    where: { id: input.siteId },
-    select: { id: true, isActive: true },
+    where: { id: siteId },
+    select: { domain: true, isActive: true },
   });
 
   if (!site || !site.isActive) {
     return { success: false, error: "Site not found" };
   }
 
+  if (!analyticsWriteAllowed(siteId, site.domain, input.origin)) {
+    return { success: false, error: "Analytics is disabled" };
+  }
+
   const visit = await client.visit.create({
     data: {
-      siteId: input.siteId,
+      siteId,
       page: sanitizeAnalyticsPage(input.page),
       referrer: sanitizeAnalyticsReferrer(input.referrer),
       userAgent: sanitizeAnalyticsUserAgent(input.userAgent),

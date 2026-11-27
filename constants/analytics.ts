@@ -6,6 +6,8 @@
  * блокирует внешний скрипт, и `unsafe-inline` не требуется.
  */
 
+export const ANALYTICS_ORIGIN = "https://kiruhak11.ru";
+
 /** Путь к внешнему трекеру. */
 export const ANALYTICS_TRACKER_PATH = "/analytics.js";
 
@@ -15,7 +17,7 @@ export const ANALYTICS_TRACKER_PATH = "/analytics.js";
  * Подставляется в query-параметр, чтобы браузеры и CDN не отдавали старый
  * файл трекера, который умеет отправлять неподдерживаемые типы событий.
  */
-export const ANALYTICS_TRACKER_VERSION = "20261118";
+export const ANALYTICS_TRACKER_VERSION = "20261127";
 
 /** Атрибут, в котором внешнему скрипту передаётся идентификатор сайта. */
 export const ANALYTICS_SITE_ID_ATTRIBUTE = "data-site-id";
