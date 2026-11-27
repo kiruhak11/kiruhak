@@ -8,6 +8,17 @@ import {
   validateLeadInput,
 } from "../server/utils/lead-delivery";
 
+import { formatLeadMessage, sendLeadNotification } from "../server/utils/lead-notification";
+import { needsLeadDeliveryConfirmation } from "../types/admin-lead";
+
+const telegramLead = { id: "lead-fixture", name: "Ирина", email: "demo@example.test", task: "Сайт" };
+const createdAt = new Date("2026-11-27T09:00:00Z");
+const mockResponse = (status: number, payload: unknown) => async () => ({
+  status,
+  ok: status >= 200 && status < 300,
+  json: async () => payload,
+});
+
 test("lead input validation accepts a complete application", () => {
   const lead = validateLeadInput({
     name: "  Кирилл  ",
@@ -96,4 +107,47 @@ test("lead delivery limits match the production configuration", () => {
   assert.equal(LEAD_MAX_BODY_BYTES, 16 * 1024);
   assert.equal(LEAD_RATE_LIMIT, 5);
   assert.equal(LEAD_RATE_WINDOW_MINUTES, 15);
+});
+
+test("long Telegram notifications preserve the ID and metadata within 4096 UTF-16 units", () => {
+  const task = "🧪".repeat(2000);
+  const text = formatLeadMessage({ ...telegramLead, task, budget: "150 000 ₽" }, createdAt);
+  assert.ok(text.length <= 4096);
+  assert.ok(text.isWellFormed());
+  assert.match(text, /ID заявки: lead-fixture/);
+  assert.match(text, /150 000 ₽/);
+  assert.match(text, /Продолжение в админке/);
+  assert.match(formatLeadMessage(telegramLead, createdAt), /Задача: Сайт$/);
+});
+
+test("Telegram acknowledgement requires a valid message ID", async () => {
+  const sent = await sendLeadNotification(telegramLead, createdAt, "1", "123:TEST",
+    mockResponse(200, { ok: true, result: { message_id: 42 } }));
+  assert.deepEqual(sent, { messageId: 42n });
+
+  await assert.rejects(sendLeadNotification(telegramLead, createdAt, "1", "123:TEST",
+    mockResponse(200, { ok: true })), /TELEGRAM_DELIVERY_UNCONFIRMED/);
+});
+
+test("retry-after is honored only on a definite rate-limit response", async () => {
+  const send = (status: number, payload: unknown) =>
+    sendLeadNotification(telegramLead, createdAt, "1", "123:TEST", mockResponse(status, payload));
+  await assert.rejects(send(429, { ok: false, parameters: { retry_after: 120 } }),
+    { code: "TELEGRAM_RATE_LIMIT", retryAfterSeconds: 120 });
+  await assert.rejects(send(400, { ok: false }), { code: "TELEGRAM_HTTP_400" });
+  await assert.rejects(send(502, {}), { code: "TELEGRAM_DELIVERY_UNCONFIRMED" });
+  await assert.rejects(send(408, {}), { code: "TELEGRAM_TIMEOUT_UNCONFIRMED" });
+});
+
+test("manual retry requires a Telegram check after an unconfirmed delivery", () => {
+  for (const code of [
+    "TELEGRAM_TIMEOUT_UNCONFIRMED", "TELEGRAM_DELIVERY_UNCONFIRMED", "WORKER_LEASE_UNCONFIRMED",
+    "WORKER_LEASE_EXHAUSTED", "REQUEST_FAILED", "TELEGRAM_HTTP_502",
+  ]) {
+    assert.equal(needsLeadDeliveryConfirmation(code), true, code);
+  }
+
+  for (const code of ["TELEGRAM_RATE_LIMIT", "TELEGRAM_HTTP_400", "TELEGRAM_PROXY_NOT_CONFIGURED"]) {
+    assert.equal(needsLeadDeliveryConfirmation(code), false, code);
+  }
 });

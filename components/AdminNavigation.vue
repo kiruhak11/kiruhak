@@ -5,6 +5,16 @@
     </div>
     <ul class="nav-list">
       <li>
+        <NuxtLink to="/admin/leads" class="nav-link" active-class="active">
+          <span>Заявки</span>
+          <span
+            v-if="counts && counts.undelivered > 0"
+            class="lead-count"
+            :aria-label="`Без подтверждённой доставки: ${counts.undelivered}`"
+          >{{ counts.undelivered }}</span>
+        </NuxtLink>
+      </li>
+      <li>
         <NuxtLink to="/admin/projects" class="nav-link" active-class="active">
           <svg
             width="20"
@@ -243,6 +253,21 @@
   </nav>
 </template>
 
+<script setup lang="ts">
+const { counts, refreshLeadCounts } = useLeadDeliverySummary();
+let refreshTimer: ReturnType<typeof setInterval> | undefined;
+
+onMounted(() => {
+  void refreshLeadCounts();
+  refreshTimer = setInterval(refreshLeadCounts, 30_000);
+});
+
+onBeforeUnmount(() => {
+  clearInterval(refreshTimer);
+  counts.value = null;
+});
+</script>
+
 <style lang="scss" scoped>
 .admin-nav {
   background: var(--background-color);
@@ -296,6 +321,18 @@
   svg {
     flex-shrink: 0;
   }
+}
+
+.lead-count {
+  min-width: 1.5rem;
+  padding: 2px 6px;
+  border-radius: 20px;
+  background: #fae7ca;
+  color: #6d3508;
+  font-size: .78rem;
+  font-weight: 750;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 // Адаптивность
