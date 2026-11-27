@@ -1,4 +1,9 @@
 import { prisma } from "../utils/prisma";
+import {
+  ANALYTICS_ORIGIN,
+  ANALYTICS_TRACKER_PATH,
+  ANALYTICS_TRACKER_VERSION,
+} from "../../constants/analytics";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -117,12 +122,12 @@ export default defineEventHandler(async (event) => {
 });
 
 function generateTrackingCode(siteId: string) {
+  // Идентификатор сайта передаётся атрибутом внешнего скрипта: инлайн-код
+  // блокируется строгой CSP, `unsafe-inline` в политику добавлять нельзя.
+  const safeSiteId = siteId.replace(/[^A-Za-z0-9_-]/g, "");
   return `
 <!-- Kiruhak Analytics -->
-<script>
-  window.KIRUHAK_SITE_ID = '${siteId}';
-</script>
-<script src="https://kiruhak11.ru/analytics.js"></script>
+<script src="${ANALYTICS_ORIGIN}${ANALYTICS_TRACKER_PATH}?v=${ANALYTICS_TRACKER_VERSION}" data-site-id="${safeSiteId}" async></script>
 <!-- End Kiruhak Analytics -->
   `.trim();
 }
