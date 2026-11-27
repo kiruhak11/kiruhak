@@ -86,8 +86,9 @@
             <div><dt>ID заявки</dt><dd>{{ selected.id }}</dd></div>
             <div><dt>Попыток в текущем цикле</dt><dd>{{ selected.attemptCount }}</dd></div>
             <div v-if="selected.status === 'RETRY'"><dt>Следующая попытка</dt><dd>{{ dateLabel(selected.nextAttemptAt) }}</dd></div>
-            <div v-if="selected.sentAt"><dt>Доставлена</dt><dd>{{ dateLabel(selected.sentAt) }}</dd></div>
+            <div v-if="selected.sentAt"><dt>{{ selected.manualConfirmation ? "Подтверждена вручную" : "Доставлена" }}</dt><dd>{{ dateLabel(selected.sentAt) }}</dd></div>
             <div v-if="selected.telegramMessageId"><dt>ID сообщения Telegram</dt><dd>{{ selected.telegramMessageId }}</dd></div>
+            <div v-if="selected.manualConfirmation"><dt>ID администратора</dt><dd>{{ selected.manualConfirmation.adminId }}</dd></div>
           </dl>
           <section class="lead-task">
             <h3>Задача</h3>
@@ -98,21 +99,34 @@
             <p>{{ deliveryErrorLabel(selected.lastErrorCode) }}</p>
             <code>{{ selected.lastErrorCode }}</code>
           </section>
+          <form v-if="selected.status === 'FAILED'" id="confirm-delivery" class="manual-confirm" @submit.prevent="confirmLead">
+            <h3>Уведомление уже есть в Telegram</h3>
+            <label class="message-id">
+              ID сообщения Telegram
+              <input v-model.trim="messageId" inputmode="numeric" pattern="[1-9][0-9]{0,18}" maxlength="19" required :disabled="Boolean(acting)" />
+            </label>
+            <label class="retry-confirm">
+              <input v-model="checkedTelegram" type="checkbox" :disabled="Boolean(acting) || !messageId" @change="confirmed = false" />
+              <span>Я сверил уведомление с этой заявкой в чате доставки.</span>
+            </label>
+          </form>
           <label v-if="confirmationRequired" class="retry-confirm">
-            <input v-model="confirmed" type="checkbox" :disabled="retrying" />
+            <input v-model="confirmed" type="checkbox" :disabled="Boolean(acting)" @change="clearManualConfirmation" />
             <span>Я проверил Telegram по ID заявки и не нашёл уведомление.</span>
           </label>
+          <p v-if="actionError" class="notice notice--error" role="alert">{{ actionError }}</p>
         </template>
         <template #footer>
           <div class="dialog-actions">
-            <button class="button" type="button" :disabled="retrying" @click="closeLead">Закрыть</button>
-            <button
-              v-if="selected?.status === 'FAILED'"
-              class="button button--primary"
-              type="button"
-              :disabled="retrying || (confirmationRequired && !confirmed)"
-              @click="retryLead"
-            >{{ retrying ? "Возвращаем в очередь…" : "Повторить доставку" }}</button>
+            <button class="button" type="button" :disabled="Boolean(acting)" @click="closeLead">Закрыть</button>
+            <template v-if="selected?.status === 'FAILED'">
+              <button class="button" type="button" :disabled="Boolean(acting) || (confirmationRequired && !confirmed) || Boolean(messageId)" @click="retryLead">
+                {{ acting === "retry" ? "Возвращаем в очередь…" : "Повторить доставку" }}
+              </button>
+              <button class="button button--primary" type="submit" form="confirm-delivery" :disabled="Boolean(acting) || !canConfirm">
+                {{ acting === "confirm" ? "Сохраняем…" : "Подтвердить доставку" }}
+              </button>
+            </template>
           </div>
         </template>
       </AdminDialog>
@@ -141,10 +155,14 @@ const loading = ref(true);
 const loadError = ref("");
 const selected = ref<AdminLead | null>(null);
 const confirmed = ref(false);
-const retrying = ref(false);
+const checkedTelegram = ref(false);
+const messageId = ref("");
+const acting = ref<"retry" | "confirm" | null>(null);
+const actionError = ref("");
 const notice = ref("");
 
 const maxPage = computed(() => data.value ? Math.max(1, Math.ceil(data.value.total / data.value.pageSize)) : 1);
+const canConfirm = computed(() => checkedTelegram.value && /^[1-9]\d{0,18}$/.test(messageId.value));
 const confirmationRequired = computed(() => selected.value?.status === "FAILED" &&
   needsLeadDeliveryConfirmation(selected.value.lastErrorCode));
 const dateFormat = new Intl.DateTimeFormat("ru-RU", {
@@ -204,39 +222,58 @@ function changeFilter() {
   goToPage(1);
 }
 
+function clearManualConfirmation() {
+  if (!confirmed.value) return;
+  messageId.value = "";
+  checkedTelegram.value = false;
+}
+
 function openLead(lead: AdminLead) {
   selected.value = lead;
   confirmed.value = false;
+  checkedTelegram.value = false;
+  messageId.value = "";
+  actionError.value = "";
 }
 
 function closeLead() {
-  if (!retrying.value) selected.value = null;
+  if (!acting.value) selected.value = null;
 }
 
-async function retryLead() {
+async function runLeadAction(action: "retry" | "confirm", body: Record<string, unknown>, success: string) {
   const lead = selected.value;
-  if (!lead || lead.status !== "FAILED" || retrying.value || (confirmationRequired.value && !confirmed.value)) {
-    return;
-  }
+  if (!lead || lead.status !== "FAILED" || acting.value) return;
 
-  retrying.value = true;
+  acting.value = action;
+  actionError.value = "";
   notice.value = "";
   try {
-    await apiFetch(`/api/admin/leads/${encodeURIComponent(lead.id)}/retry`, {
+    await apiFetch(`/api/admin/leads/${encodeURIComponent(lead.id)}/${action}`, {
       method: "POST",
-      body: { updatedAt: lead.updatedAt, confirmed: confirmed.value },
+      body: { ...body, updatedAt: lead.updatedAt },
       retry: 0,
     });
     selected.value = null;
-    notice.value = "Заявка возвращена в очередь доставки.";
+    notice.value = success;
     await refresh();
-  } catch {
-    selected.value = null;
-    await refresh();
-    notice.value = "Повтор доставки не подтверждён. Проверьте текущий статус заявки.";
+  } catch (error) {
+    const status = (error as { statusCode?: number })?.statusCode;
+    actionError.value = status === 409
+      ? "Заявка уже изменилась или этот ID сообщения уже используется. Сверьте ID и обновите список."
+      : "Сохранение не подтверждено. Проверьте данные и состояние заявки.";
   } finally {
-    retrying.value = false;
+    acting.value = null;
   }
+}
+
+function retryLead() {
+  if ((confirmationRequired.value && !confirmed.value) || messageId.value) return;
+  return runLeadAction("retry", { confirmed: confirmed.value }, "Заявка возвращена в очередь доставки.");
+}
+
+function confirmLead() {
+  if (!canConfirm.value) return;
+  return runLeadAction("confirm", { checkedTelegram: true, messageId: messageId.value }, "Доставка подтверждена вручную.");
 }
 
 onMounted(loadLeads);
@@ -336,6 +373,25 @@ onMounted(loadLeads);
 .lead-task p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .delivery-error p { margin: 0 0 6px; }
 .delivery-error code { font-size: .8rem; overflow-wrap: anywhere; }
+.manual-confirm {
+  display: grid;
+  gap: 10px;
+  margin: 4px 0 13px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+}
+.manual-confirm h3 { margin: 0; font-size: .95rem; }
+.message-id { display: grid; gap: 5px; width: min(100%, 260px); font-size: .87rem; }
+.message-id input {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--background-color);
+  color: var(--color-text);
+  font: inherit;
+}
 .retry-confirm {
   display: flex;
   align-items: flex-start;

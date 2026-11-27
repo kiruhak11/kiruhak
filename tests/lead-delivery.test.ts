@@ -9,6 +9,7 @@ import {
 } from "../server/utils/lead-delivery";
 
 import { formatLeadMessage, sendLeadNotification } from "../server/utils/lead-notification";
+import { encodeLeadConfirmation, parseLeadMessageId, readLeadConfirmation } from "../server/utils/lead-confirmation";
 import { needsLeadDeliveryConfirmation } from "../types/admin-lead";
 
 const telegramLead = { id: "lead-fixture", name: "Ирина", email: "demo@example.test", task: "Сайт" };
@@ -150,4 +151,24 @@ test("manual retry requires a Telegram check after an unconfirmed delivery", () 
   for (const code of ["TELEGRAM_RATE_LIMIT", "TELEGRAM_HTTP_400", "TELEGRAM_PROXY_NOT_CONFIGURED"]) {
     assert.equal(needsLeadDeliveryConfirmation(code), false, code);
   }
+});
+
+
+test("manual confirmation parses a positive PostgreSQL bigint without losing precision", () => {
+  assert.equal(parseLeadMessageId("9007199254740993"), 9007199254740993n);
+  assert.equal(parseLeadMessageId("9223372036854775807"), 9223372036854775807n);
+  for (const bad of ["0", "-5", "01", "1e3", "1.0", "9223372036854775808", 12, null]) {
+    assert.equal(parseLeadMessageId(bad), null, String(bad));
+  }
+});
+
+test("manual confirmation audit preserves actor, time and original delivery error", () => {
+  const audit = {
+    adminId: "fixture-admin",
+    confirmedAt: "2026-11-27T10:00:00.000Z",
+    previousErrorCode: "TELEGRAM_TIMEOUT_UNCONFIRMED",
+  };
+  assert.deepEqual(readLeadConfirmation(encodeLeadConfirmation(audit)), audit);
+  assert.equal(readLeadConfirmation("TELEGRAM_TIMEOUT_UNCONFIRMED"), null);
+  assert.equal(readLeadConfirmation("MANUAL_CONFIRMED:{}"), null);
 });

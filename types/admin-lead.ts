@@ -10,6 +10,12 @@ export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
 
 export type LeadCounts = { undelivered: number; failed: number };
 
+export type LeadManualConfirmation = {
+  adminId: string;
+  confirmedAt: string;
+  previousErrorCode: string | null;
+};
+
 export type AdminLead = {
   id: string;
   name: string;
@@ -25,6 +31,7 @@ export type AdminLead = {
   sentAt: string | null;
   telegramMessageId: string | null;
   lastErrorCode: string | null;
+  manualConfirmation: LeadManualConfirmation | null;
   createdAt: string;
   updatedAt: string;
 };

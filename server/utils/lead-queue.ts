@@ -1,3 +1,4 @@
+import { isLeadMessageIdInUse } from "./lead-confirmation";
 import { LEAD_MAX_ATTEMPTS } from "./lead-delivery";
 import {
   LEAD_SEND_TIMEOUT_MS,
@@ -76,9 +77,20 @@ export async function deliverQueuedLead(recipient: string, token: string) {
   }
 
   // A database error after Telegram accepts the message must never schedule another send.
-  await prisma.$executeRaw`
-    UPDATE lead_deliveries SET status = 'SENT', sent_at = NOW(), locked_until = NULL,
-      telegram_message_id = ${messageId}, last_error_code = NULL, updated_at = clock_timestamp()
-    WHERE id = ${lead.id} AND locked_until = ${lead.locked_until} AND attempt_count = ${lead.attempt_count}
-  `;
+  await prisma.$transaction(async tx => {
+    if (await isLeadMessageIdInUse(tx, messageId)) {
+      await tx.$executeRaw`
+        UPDATE lead_deliveries SET status = 'FAILED', locked_until = NULL,
+          last_error_code = 'TELEGRAM_MESSAGE_ID_CONFLICT_UNCONFIRMED', updated_at = clock_timestamp()
+        WHERE id = ${lead.id} AND locked_until = ${lead.locked_until} AND attempt_count = ${lead.attempt_count}
+      `;
+      return;
+    }
+
+    await tx.$executeRaw`
+      UPDATE lead_deliveries SET status = 'SENT', sent_at = NOW(), locked_until = NULL,
+        telegram_message_id = ${messageId}, last_error_code = NULL, updated_at = clock_timestamp()
+      WHERE id = ${lead.id} AND locked_until = ${lead.locked_until} AND attempt_count = ${lead.attempt_count}
+    `;
+  });
 }

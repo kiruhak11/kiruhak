@@ -1,4 +1,5 @@
 import { needsLeadDeliveryConfirmation } from "../../../../../types/admin-lead";
+import { failedLeadVersion } from "../../../../utils/lead-confirmation";
 import { prisma } from "../../../../utils/prisma";
 import { requireAdmin } from "../../../../utils/require-admin";
 
@@ -29,8 +30,7 @@ export default defineEventHandler(async (event) => {
 
   const updated = await prisma.leadDelivery.updateMany({
     where: {
-      id, status: "FAILED", lockedUntil: null, sentAt: null, telegramMessageId: null,
-      updatedAt: { gte: new Date(version), lt: new Date(version + 1) },
+      ...failedLeadVersion(id, version),
       lastErrorCode: lead.lastErrorCode,
     },
     data: { status: "PENDING", attemptCount: 0, nextAttemptAt: new Date() },

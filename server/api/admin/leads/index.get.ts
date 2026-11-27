@@ -1,4 +1,5 @@
 import { isLeadStatus } from "../../../../types/admin-lead";
+import { readLeadConfirmation } from "../../../utils/lead-confirmation";
 import { prisma } from "../../../utils/prisma";
 import { requireAdmin } from "../../../utils/require-admin";
 
@@ -47,9 +48,14 @@ export default defineEventHandler(async (event) => {
   return {
     total,
     pageSize: PAGE_SIZE,
-    leads: leads.map(lead => ({
-      ...lead,
-      telegramMessageId: lead.telegramMessageId?.toString() ?? null,
-    })),
+    leads: leads.map(lead => {
+      const manualConfirmation = readLeadConfirmation(lead.lastErrorCode);
+      return {
+        ...lead,
+        telegramMessageId: lead.telegramMessageId?.toString() ?? null,
+        lastErrorCode: manualConfirmation ? manualConfirmation.previousErrorCode : lead.lastErrorCode,
+        manualConfirmation,
+      };
+    }),
   };
 });

@@ -5,6 +5,7 @@ import { getTelegramBotToken } from "../utils/telegram-config";
 export default defineNitroPlugin((nitroApp) => {
   let running: Promise<void> | undefined;
   let warnedUnavailable = false;
+  let reportedReady = false;
   let warnedSenderConfig = false;
   let lastFingerprintCleanupAt = 0;
 
@@ -31,6 +32,10 @@ export default defineNitroPlugin((nitroApp) => {
       if (token && /^\d{1,24}$/.test(recipient)) {
         warnedSenderConfig = false;
         await deliverQueuedLead(recipient, token);
+        if (!reportedReady) {
+          console.info("[lead-delivery] worker started; queue check completed");
+          reportedReady = true;
+        }
       } else if (!warnedSenderConfig) {
         console.error("[lead-delivery] sender configuration unavailable; queued requests remain persisted");
         warnedSenderConfig = true;
