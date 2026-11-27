@@ -1,3 +1,4 @@
+import { getPortfolioPublication } from "../../constants/portfolio-publications";
 import { getProjectCaseStudy } from "../../constants/project-case-studies";
 import type { PublicProjectCaseStudy } from "../../types/project-case-study";
 
@@ -7,6 +8,7 @@ type PublicProjectOutput = {
   description: string;
   shortDescription: string;
   image: string;
+  caseSlug: string | null;
   client: string | null;
   duration: null;
   budget: null;
@@ -51,18 +53,15 @@ export function toPublicProject<T extends { id: string }>(project: T): PublicPro
     productionUrl: isVerified ? (validType ? row.liveUrl ?? null : registry?.productionUrl ?? null) : null,
     repositoryUrl: isVerified ? (validType ? row.githubUrl ?? null : registry?.repositoryUrl ?? null) : null,
   };
-  const optimizedImages: Record<string, string> = {
-    cmm7zid0n0004o301rk66jffv: "/images/projects/k-studio.webp",
-    cmewb3qvv0003o11ge17zb005: "/images/projects/kes.webp",
-    cmm7z9yya0003o3013vri6scs: "/images/projects/okna.webp",
-    cmmth95p90000qp017bjtfbkt: "/images/projects/malina.webp",
-  };
-  const image = optimizedImages[project.id];
+  const publication = getPortfolioPublication(project.id, ownershipType);
+  const image = publication?.cover.src ?? "";
+  const caseSlug = publication?.slug ?? null;
 
   if (!isVerified) {
     return {
       ...publicBase,
-      ...(image ? { image } : {}),
+      image,
+      caseSlug,
       description: "Описание проекта уточняется.",
       shortDescription: "",
       client: null,
@@ -84,7 +83,8 @@ export function toPublicProject<T extends { id: string }>(project: T): PublicPro
 
   return {
     ...publicBase,
-    ...(image ? { image } : {}),
+    image,
+    caseSlug,
     description: caseStudy.projectSummary,
     shortDescription: caseStudy.projectSummary,
     client: caseStudy.company ?? null,

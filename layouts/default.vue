@@ -1,5 +1,8 @@
 <template>
   <div class="app" :class="{ 'app--portfolio': isPortfolioPage }">
+    <nav v-if="hasSkipLink" aria-label="Быстрый переход">
+      <a class="skip-link" href="#main-content">Перейти к содержимому</a>
+    </nav>
     <TheHeader />
     <div class="content"><slot></slot></div>
 
@@ -65,10 +68,13 @@ import { computed, ref, onMounted, onUnmounted } from "vue";
 import { publicContact } from "~/constants/public-contact";
 
 const route = useRoute();
-const isPortfolioPage = computed(() => ["/", "/projects", "/contact"].includes(route.path));
+const isProjectPage = computed(() => route.path === "/projects" || route.path.startsWith("/projects/"));
+const isPortfolioPage = computed(() => ["/", "/contact"].includes(route.path) || isProjectPage.value);
+const hasSkipLink = computed(() => route.path === "/" || isProjectPage.value);
 
 const goTop = () => {
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
 };
 const isActive = ref<boolean>(false);
 const currentYear = useState("portfolio-current-year", () => new Date().getFullYear());
@@ -88,6 +94,22 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="scss">
+.skip-link {
+  position: fixed;
+  z-index: 40;
+  top: .65rem;
+  left: var(--portfolio-gutter);
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding-inline: .85rem;
+  transform: translateY(calc(-100% - 1rem));
+  border-radius: var(--portfolio-radius-sm);
+  background: var(--portfolio-accent);
+  color: var(--portfolio-accent-contrast);
+}
+.app--portfolio :deep(#main-content) { scroll-margin-top: 6rem; }
+.skip-link:focus-visible { transform: none; outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
 .content {
   flex-grow: 1;
   position: relative;

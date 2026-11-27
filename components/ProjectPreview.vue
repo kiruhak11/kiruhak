@@ -1,77 +1,89 @@
 <template>
-  <img
-    v-if="visible && isUsableProjectPreview(src)"
-    :src="src ?? undefined"
-    :alt="alt"
-    :class="imgClass"
-    :loading="priority ? 'eager' : 'lazy'"
-    :fetchpriority="priority ? 'high' : 'auto'"
-    decoding="async"
-    width="1600"
-    height="790"
-    @error="visible = false"
-  />
-  <div
-    v-else
-    :class="['image-fallback', fallbackClass]"
-    role="img"
-    :aria-label="`${alt}: превью недоступно`"
-  >
-    <span class="preview-mark" aria-hidden="true">PROJECT</span>
-    <span class="preview-title">{{ alt }}</span>
+  <div class="preview" :class="{ 'preview--missing': !cover || failed }">
+    <img
+      v-if="cover && !failed"
+      :key="cover.src"
+      ref="imageElement"
+      :src="cover.src"
+      :alt="alt"
+      :class="imgClass"
+      :loading="priority ? 'eager' : 'lazy'"
+      :fetchpriority="priority ? 'high' : 'auto'"
+      :width="cover.width"
+      :height="cover.height"
+      decoding="async"
+      @error="markFailed"
+    />
+    <div v-else :class="['image-fallback', fallbackClass]" :aria-hidden="!alt || undefined">
+      <span class="preview-title">{{ title || alt }}</span>
+      <span class="preview-note">Превью недоступно</span>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { isUsableProjectPreview } from "~/utils/project-links";
+import { getPortfolioCover } from "~/constants/portfolio-publications";
 
-withDefaults(
-  defineProps<{
-    src?: string | null;
-    alt: string;
-    imgClass?: string;
-    fallbackClass?: string;
-    priority?: boolean;
-  }>(),
-  { src: "", imgClass: "", fallbackClass: "", priority: false }
-);
+const props = withDefaults(defineProps<{
+  src?: string | null;
+  alt?: string;
+  title?: string;
+  imgClass?: string;
+  fallbackClass?: string;
+  priority?: boolean;
+}>(), { src: "", alt: "", title: "", imgClass: "", fallbackClass: "", priority: false });
 
-const visible = ref(true);
+const cover = computed(() => getPortfolioCover(props.src));
+const imageElement = ref<HTMLImageElement | null>(null);
+const failed = ref(false);
+
+watch(cover, () => { failed.value = false; });
+function markFailed(event: Event) {
+  if (event.currentTarget === imageElement.value) failed.value = true;
+}
+
+function detectCachedError() {
+  const image = imageElement.value;
+  if (image?.complete && image.naturalWidth === 0) failed.value = true;
+}
+
+onMounted(detectCachedError);
+watch(imageElement, detectCachedError, { flush: "post" });
 </script>
 
-<style scoped lang="scss">
-.preview-mark,
-.preview-title {
-  position: relative;
-  z-index: 1;
+<style scoped>
+.preview {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
+  background: var(--portfolio-surface-hover);
 }
-
-.preview-mark {
-  color: var(--color-accent);
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+.preview > img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.preview--missing {
+  background: radial-gradient(ellipse at 15% 0%, var(--portfolio-grid), transparent 58%), var(--portfolio-surface-hover);
 }
-
-.preview-title {
-  max-width: min(80%, 22rem);
-  color: var(--color-text);
-  font-size: clamp(0.85rem, 2vw, 1.1rem);
-  font-weight: 700;
-  text-align: center;
-}
-
 .image-fallback {
-  display: flex;
+  display: grid;
   width: 100%;
   height: 100%;
-  min-height: 140px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.7rem;
-  overflow: hidden;
+  align-content: center;
+  justify-items: center;
+  gap: .55rem;
   padding: 1rem;
-  background: var(--portfolio-surface-hover, var(--background-color-secondary));
+  text-align: center;
 }
+.preview-title {
+  max-width: 25ch;
+  color: var(--portfolio-text);
+  font-size: clamp(1rem, 2.8vw, 1.6rem);
+  font-weight: 650;
+  letter-spacing: -.04em;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.preview-note { color: var(--portfolio-text-secondary); font-size: .75rem; }
 </style>

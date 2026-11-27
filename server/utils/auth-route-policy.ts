@@ -52,6 +52,7 @@ export const API_ROUTE_TABLE: RouteRule[] = [
   { methods: GET, policy: "public", pattern: /^\/api\/health$/ },
   { methods: GET, policy: "public", pattern: /^\/api\/projects$/ },
   { methods: GET, policy: "public", pattern: /^\/api\/projects\/[^/]+$/ },
+  { methods: GET, policy: "public", pattern: /^\/api\/__sitemap__\/portfolio$/ },
   { methods: GET, policy: "public", pattern: /^\/api\/tutorials$/ },
   { methods: GET, policy: "public", pattern: /^\/api\/tutorials\/[^/]+$/ },
   { methods: GET, policy: "public", pattern: /^\/api\/materials$/ },

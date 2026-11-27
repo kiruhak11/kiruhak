@@ -1,7 +1,7 @@
 import { prisma } from "../utils/prisma";
 import { toPublicProject } from "../utils/public-project";
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async () => {
   try {
     const projects = await prisma.project.findMany({
       orderBy: [{ featured: "desc" }, { order: "asc" }, { createdAt: "desc" }],

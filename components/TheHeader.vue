@@ -1,10 +1,10 @@
 <template>
   <header class="header container" :class="{ 'is-scrolled': isScrolled }">
-    <NuxtLink class="brand" to="/" aria-label="Кирилл Коваленко — главная">
+    <NuxtLink class="brand" to="/" aria-label="Кирилл Коваленко — веб-разработчик, главная">
       <span class="brand-mark" aria-hidden="true">К</span>
       <span class="brand-copy">
         <strong>Кирилл Коваленко</strong>
-        <small>WEB DEVELOPER</small>
+        <small>ВЕБ-РАЗРАБОТЧИК</small>
       </span>
     </NuxtLink>
 

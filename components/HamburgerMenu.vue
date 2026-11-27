@@ -1,10 +1,10 @@
 <template>
   <div class="mobile-header">
-    <NuxtLink to="/" class="mobile-brand" aria-label="Кирилл — главная">
+    <NuxtLink to="/" class="mobile-brand" aria-label="Кирилл Коваленко — веб-разработчик, главная">
       <span class="brand-mark" aria-hidden="true">К</span>
       <span class="brand-copy">
         <strong>Кирилл</strong>
-        <small>WEB · PRODUCT</small>
+        <small>ВЕБ-РАЗРАБОТЧИК</small>
       </span>
     </NuxtLink>
 
@@ -217,7 +217,7 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 
   if (event.key !== "Tab" || !menuPanel.value) return;
-  const focusable: HTMLElement[] = Array.from(
+  const focusable = Array.from<HTMLElement>(
     menuPanel.value.querySelectorAll<HTMLElement>(
       'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
     )

@@ -7,6 +7,7 @@ export interface PublicProject {
   description: string;
   shortDescription?: string;
   image: string;
+  caseSlug?: string | null;
   technologies: string[];
   category: string;
   client?: string | null;

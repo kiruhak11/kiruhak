@@ -1,9 +1,8 @@
 <template>
   <NuxtLayout>
-    <main class="projects-page">
+    <main id="main-content" class="projects-page" tabindex="-1">
       <div class="container">
         <header class="page-intro">
-          <p class="eyebrow">ПОРТФОЛИО / КЕЙСЫ</p>
           <h1>Проекты и продукты</h1>
           <p class="intro-copy">
             От собственных сервисов до коммерческой разработки — с контекстом проекта и моей конкретной ролью.
@@ -44,7 +43,7 @@
               @click="selectOwnership(tab.value)"
               @keydown="handleTabKeydown($event, tab.value)"
             >
-              <span class="tab-label">{{ tab.label }}</span><span class="tab-count">{{ tab.count }}</span>
+              <span class="tab-label">{{ tab.label }}</span><span class="tab-count" aria-hidden="true">{{ tab.count }}</span>
             </button>
           </div>
 
@@ -120,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import type { DeepReadonly } from "vue";
 import ProjectCard from "~/components/ProjectCard.vue";
 import ProjectModal from "~/components/ProjectModal.vue";
@@ -128,6 +127,10 @@ import type { Project } from "~/composables/useProjects";
 import { groupProjectsByOwnership } from "~/utils/project-ownership";
 import { getProjectCaseView } from "~/utils/project-case-view";
 import { formatConfirmedCaseCount } from "~/utils/project-count";
+import { portfolioOpenGraphCover } from "~/constants/portfolio-publications";
+
+const siteUrl = useRuntimeConfig().public.siteUrl;
+const ogImage = new URL(portfolioOpenGraphCover.src, siteUrl).href;
 
 useSeoMeta({
   title: "Проекты — Кирилл Коваленко",
@@ -136,7 +139,10 @@ useSeoMeta({
   ogDescription: "Собственные продукты, самостоятельная разработка для клиентов и опыт участия в командах.",
   ogType: "website",
   ogUrl: new URL("/projects", useRuntimeConfig().public.siteUrl).href,
-  twitterCard: "summary",
+  ogImage,
+  ogImageAlt: portfolioOpenGraphCover.alt,
+  twitterImage: ogImage,
+  twitterCard: "summary_large_image",
   twitterTitle: "Проекты — Кирилл Коваленко",
   twitterDescription: "Собственные продукты, клиентские сайты и опыт участия в командах.",
   robots: "index, follow",
@@ -148,9 +154,7 @@ const {
   status: projectsStatus,
   error: projectsLoadError,
   refresh: fetchProjects,
-} = await useAsyncData<Project[]>("public-projects", () => $fetch<Project[]>("/api/projects" as string), {
-  default: () => [],
-});
+} = await useAsyncData<Project[]>("public-projects", () => $fetch<Project[]>("/api/projects" as string));
 const retryProjects = () => fetchProjects();
 const projects = computed(() => projectsData.value ?? []);
 const loading = computed(() => projectsStatus.value === "pending");
@@ -158,7 +162,14 @@ const error = computed(() =>
   projectsLoadError.value ? "Ошибка при загрузке проектов" : null,
 );
 type PortfolioOwnership = "OWN" | "CLIENT" | "PARTICIPATION";
-const selectedOwnership = ref<PortfolioOwnership>("OWN");
+const ownershipQueries: Record<PortfolioOwnership, string> = {
+  OWN: "own",
+  CLIENT: "client",
+  PARTICIPATION: "participation",
+};
+const ownershipOrder: PortfolioOwnership[] = ["OWN", "CLIENT", "PARTICIPATION"];
+const route = useRoute();
+const router = useRouter();
 const tabRefs = ref<Partial<Record<PortfolioOwnership, HTMLButtonElement>>>({});
 const selectedProject = ref<DeepReadonly<Project> | null>(null);
 
@@ -167,6 +178,11 @@ const ownProjects = computed(() => projectGroups.value.OWN);
 const clientProjects = computed(() => projectGroups.value.CLIENT);
 const participationProjects = computed(() => projectGroups.value.PARTICIPATION);
 const unverifiedProjects = computed(() => projectGroups.value.UNVERIFIED);
+const selectedOwnership = computed(() =>
+  ownershipOrder.find((type) => ownershipQueries[type] === route.query.type) ??
+  ownershipOrder.find((type) => projectGroups.value[type].length > 0) ??
+  "OWN"
+);
 const ownershipTabs = computed(() => [
   { value: "OWN" as const, label: "Мои проекты", count: ownProjects.value.length },
   { value: "CLIENT" as const, label: "Клиентские проекты", count: clientProjects.value.length },
@@ -175,21 +191,17 @@ const ownershipTabs = computed(() => [
 const selectedOwnershipLabel = computed(() => ownershipTabs.value.find((tab) => tab.value === selectedOwnership.value)?.label ?? "Проекты");
 const selectedProjects = computed(() => projectGroups.value[selectedOwnership.value]);
 
-watch(projects, (loadedProjects) => {
-  const groups = groupProjectsByOwnership(loadedProjects);
-  selectedOwnership.value = groups.OWN.length ? "OWN" : groups.CLIENT.length ? "CLIENT" : "PARTICIPATION";
-});
-
 const setTabRef = (type: PortfolioOwnership, element: unknown) => {
-  if (element instanceof HTMLButtonElement) tabRefs.value[type] = element;
+  if (import.meta.client && element instanceof HTMLButtonElement) tabRefs.value[type] = element;
 };
 const selectOwnership = (ownership: PortfolioOwnership, focus = false) => {
-  selectedOwnership.value = ownership;
-  if (focus) nextTick(() => tabRefs.value[ownership]?.focus());
+  if (focus) tabRefs.value[ownership]?.focus();
+  if (selectedOwnership.value === ownership) return;
+  void router.replace({ query: { ...route.query, type: ownershipQueries[ownership] } });
 };
 
 const handleTabKeydown = (event: KeyboardEvent, current: PortfolioOwnership) => {
-  const values: PortfolioOwnership[] = ["OWN", "CLIENT", "PARTICIPATION"];
+  const values = ownershipOrder;
   const index = values.indexOf(current);
   let next: PortfolioOwnership | null = null;
   if (event.key === "ArrowRight") next = values[(index + 1) % values.length];
@@ -219,7 +231,7 @@ h1 { margin: 0; color: var(--portfolio-text); font-size: clamp(2rem, 4vw, 3.3rem
 .error-state { color: var(--portfolio-error); }
 .loading-mark { width: 22px; height: 22px; border: 2px solid var(--portfolio-border); border-top-color: var(--portfolio-accent); border-radius: 50%; animation: spin 800ms linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.text-action { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.text-action { min-height: var(--portfolio-control-compact); padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .ownership-tabs { display: flex; width: fit-content; max-width: 100%; gap: clamp(0.5rem, 2vw, 1.5rem); margin: 0 0 1.5rem; border-bottom: 1px solid var(--portfolio-border); }
 .ownership-tab { display: inline-flex; min-width: 0; min-height: 48px; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.7rem 0.15rem; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: transparent; color: var(--portfolio-text-muted); font: inherit; font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: color 140ms ease, border-color 140ms ease; }
 .ownership-tab:hover { color: var(--portfolio-text); }
@@ -257,6 +269,6 @@ h1 { margin: 0; color: var(--portfolio-text); font-size: clamp(2rem, 4vw, 3.3rem
 .contact-link:hover { border-color: var(--portfolio-border-hover); background: var(--portfolio-surface-hover); color: var(--portfolio-accent); }
 
 @media (max-width: 760px) { .project-grid { grid-template-columns: 1fr; } .projects-cta { align-items: flex-start; flex-direction: column; gap: 1rem; } }
-@media (max-width: 520px) { .ownership-tabs { display: grid; width: 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.3rem; } .ownership-tab { min-height: 56px; flex: 1 1 0; flex-direction: column; gap: 0.25rem; padding: 0.45rem 0.15rem; font-size: clamp(0.62rem, 2.6vw, 0.76rem); line-height: 1.15; text-align: center; } .tab-label { text-align: center; overflow-wrap: anywhere; } .archive-item { align-items: flex-start; gap: 0.8rem; } }
+@media (max-width: 520px) { .ownership-tabs { display: grid; width: 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.3rem; } .ownership-tab { min-height: 56px; flex: 1 1 0; flex-direction: column; gap: 0.25rem; padding: 0.45rem 0.15rem; font-size: clamp(0.7rem, 2.6vw, 0.79rem); line-height: 1.15; text-align: center; } .tab-label { text-align: center; overflow-wrap: anywhere; } .archive-item { align-items: flex-start; gap: 0.8rem; } }
 @media (prefers-reduced-motion: reduce) { .loading-mark { animation: none; } .ownership-tab,.project-archive summary svg,.contact-link { transition: none; } }
 </style>
