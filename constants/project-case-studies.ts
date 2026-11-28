@@ -38,7 +38,7 @@ export const projectCaseStudies: Record<string, PublicProjectCaseStudy> = {
     ownershipType: "CLIENT",
     projectSummary:
       "Официальный сайт котельного завода с каталогом оборудования и формами обращений.",
-    role: "Полная реализация сайта от идеи до продакшена",
+    role: "Разработчик сайта и каталога",
     company: "КотлоЭнергоСнаб",
     responsibilities: [
       "Разрабатывал страницы сайта и каталог продукции на Nuxt 3.",
@@ -58,7 +58,7 @@ export const projectCaseStudies: Record<string, PublicProjectCaseStudy> = {
     ownershipType: "CLIENT",
     projectSummary:
       "Сайт оконного мастера в Барнауле с услугами, контактами и формой заявки.",
-    role: "Полная реализация от идеи до продакшена",
+    role: "Разработчик сайта",
     company: "k-studio",
     responsibilities: [
       "Реализовал страницу услуг и адаптивный интерфейс на Nuxt 4/Vue 3.",
@@ -78,7 +78,7 @@ export const projectCaseStudies: Record<string, PublicProjectCaseStudy> = {
     ownershipType: "CLIENT",
     projectSummary:
       "Сайт кондитерского бренда с каталогом десертов, галереей, заказами и административной частью.",
-    role: "Полная реализация от идеи до продакшена",
+    role: "Разработчик сайта",
     company: "k-studio",
     responsibilities: [
       "Разрабатывал каталог, страницы продукта и галерею на Nuxt 4/Vue 3.",

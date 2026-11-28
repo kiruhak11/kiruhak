@@ -26,9 +26,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
 
-const isDark = ref(false)
+const isDark = useState('portfolio-theme-dark', () => false)
 
 const toggleTheme = () => {
   isDark.value = !isDark.value

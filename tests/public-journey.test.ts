@@ -10,6 +10,9 @@ import {
 } from "../utils/project-links";
 import { getProjectCaseView } from "../utils/project-case-view";
 import { getFeaturedPortfolioProjects } from "../utils/featured-projects";
+import {
+  getPortfolioCover, getPortfolioPublicationBySlug, portfolioCasePath, portfolioPublications,
+} from "../constants/portfolio-publications";
 import { getVerifiedProjectLinks } from "../utils/project-case-links";
 import { groupProjectsByOwnership } from "../utils/project-ownership";
 import { formatConfirmedCaseCount } from "../utils/project-count";
@@ -44,7 +47,7 @@ test("confirmed project count uses correct Russian plural forms", () => {
 
 test("project case modal is portaled to the document body and keeps its interaction hooks", () => {
   const modal = readFileSync(new URL("../components/ProjectModal.vue", import.meta.url), "utf8");
-  const projectsPage = readFileSync(new URL("../pages/projects.vue", import.meta.url), "utf8");
+  const projectsPage = readFileSync(new URL("../pages/projects/index.vue", import.meta.url), "utf8");
 
   assert.match(modal, /<Teleport\s+to="body">[\s\S]*?class="project-modal-overlay"[\s\S]*?<\/Teleport>/);
   assert.match(modal, /window\.addEventListener\("keydown", handleModalKeydown\)/);
@@ -342,8 +345,14 @@ test("case modal supports roles/contributions while unverified entries receive n
   assert.match(modal, /role="dialog"/);
   assert.match(modal, /aria-modal="true"/);
   assert.match(modal, /handleModalKeydown/);
-  assert.match(card, /Открыть сайт/);
-  assert.match(card, /noopener noreferrer/);
+  const casePage = read("../pages/projects/[slug].vue");
+  assert.match(card, /portfolioCasePath\(caseSlug\)/);
+  assert.match(card, /getProjectCaseView\(props\.project\)/);
+  assert.match(casePage, /getProjectCaseView\(caseProject\)/);
+  assert.match(casePage, /getVerifiedProjectLinks\(caseProject\)/);
+  assert.doesNotMatch(card + casePage, /getProjectCaseStudy\(/);
+  assert.match(casePage, /Открыть сайт/);
+  assert.match(casePage, /noopener noreferrer/);
 });
 
 test("project media retains lazy loading, stable intrinsic size, and visible fallback", () => {
@@ -351,8 +360,9 @@ test("project media retains lazy loading, stable intrinsic size, and visible fal
   const card = readFileSync(new URL("../components/ProjectCard.vue", import.meta.url), "utf8");
   const modal = readFileSync(new URL("../components/ProjectModal.vue", import.meta.url), "utf8");
   assert.match(preview, /priority \? 'eager' : 'lazy'/);
-  assert.match(preview, /width="1600"/);
-  assert.match(preview, /height="790"/);
+  assert.match(preview, /:width="cover.width"/);
+  assert.match(preview, /:height="cover.height"/);
+  assert.match(preview, /naturalWidth === 0/);
   assert.match(preview, /decoding="async"/);
   assert.match(preview, /превью недоступно/i);
   assert.match(card, /aspect-ratio: 2 \/ 1/);
@@ -360,7 +370,7 @@ test("project media retains lazy loading, stable intrinsic size, and visible fal
 });
 
 test("three ownership tabs are always available and keyboard operable; unverified items stay separate", () => {
-  const page = readFileSync(new URL("../pages/projects.vue", import.meta.url), "utf8");
+  const page = readFileSync(new URL("../pages/projects/index.vue", import.meta.url), "utf8");
   const gallery = readFileSync(new URL("../components/InteractiveGallery.vue", import.meta.url), "utf8");
   assert.match(page, /label: "Мои проекты"/);
   assert.match(page, /label: "Клиентские проекты"/);
@@ -382,7 +392,7 @@ test("three ownership tabs are always available and keyboard operable; unverifie
 test("key public copy is personal and does not surface unsupported result sections", () => {
   const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
   const homepage = read("../pages/index.vue");
-  const projectPage = read("../pages/projects.vue");
+  const projectPage = read("../pages/projects/index.vue");
   const contactPage = read("../pages/contact.vue");
   const projectModal = read("../components/ProjectModal.vue");
   const app = read("../app.vue");
@@ -423,4 +433,30 @@ test("restored public surface keeps the lead contract and the legal documents re
   assert.match(legalIndex, /\/legal\/\$\{doc\.id\}/);
   assert.match(legalDocument, /legalDocumentById/);
   assert.match(legalDocument, /statusCode:\s*404/);
+});
+
+
+test("only published case IDs produce approved media and stable slugs", () => {
+  const slugs = new Set<string>();
+  for (const publication of portfolioPublications) {
+    assert.equal(slugs.has(publication.slug), false);
+    slugs.add(publication.slug);
+    const project = toPublicProject({ id: publication.id, ownershipType: "CLIENT", image: "https://assets.example.test/unreviewed.png" });
+    assert.equal(project.caseSlug, publication.slug);
+    assert.equal(project.image, publication.cover.src);
+    assert.equal(getPortfolioCover(project.image), publication.cover);
+    assert.equal(getPortfolioPublicationBySlug(publication.slug), publication);
+    assert.match(portfolioCasePath(publication.slug), /^\/projects\/[a-z0-9-]+$/);
+    const bytes = readFileSync(new URL(`../public${publication.cover.src}`, import.meta.url));
+    assert.equal(bytes.toString("ascii", 8, 12), "WEBP");
+    const archived = toPublicProject({ id: publication.id, ownershipType: "UNVERIFIED", image: publication.cover.src });
+    assert.equal(archived.caseSlug, null);
+    assert.equal(archived.image, "");
+  }
+  assert.deepEqual(slugs, new Set(["k-studio", "kes", "okna-brn", "malina"]));
+  const pending = toPublicProject({ id: "new-case", ownershipType: "CLIENT", image: "https://assets.example.test/unreviewed.png" });
+  assert.equal(pending.caseSlug, null);
+  assert.equal(pending.image, "");
+  assert.equal(getPortfolioCover("/images/projects/not-present.webp"), undefined);
+  assert.equal(getPortfolioCover("https://assets.example.test/unreviewed.png"), undefined);
 });

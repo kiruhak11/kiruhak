@@ -17,6 +17,7 @@ export default defineNuxtConfig({
     sitemaps: false,
     excludeAppSources: true,
     urls: ["/", "/projects", "/contact"],
+    sources: ["/api/__sitemap__/portfolio"],
     defaults: {
       changefreq: "weekly",
       priority: 0.7,
@@ -26,6 +27,7 @@ export default defineNuxtConfig({
     sitemap: `${siteUrl}/sitemap.xml`,
   },
   routeRules: {
+    "/": { prerender: false },
     "/projects": { prerender: false },
     "/login": { robots: "noindex, nofollow" },
     "/analytics": { robots: "noindex, nofollow" },
@@ -89,7 +91,7 @@ export default defineNuxtConfig({
   },
   nitro: {
     prerender: {
-      routes: ["/", "/contact"],
+      routes: ["/contact"],
     },
   },
   runtimeConfig: {

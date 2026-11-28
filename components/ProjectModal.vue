@@ -43,6 +43,7 @@
           <div class="modal-media">
             <ProjectPreview
               :src="project.image"
+              :title="project.title"
               :alt="`Превью проекта «${project.title}»`"
               img-class="project-hero-image"
               fallback-class="project-modal-image-fallback"

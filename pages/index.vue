@@ -1,6 +1,6 @@
 <template>
   <NuxtLayout>
-    <main class="landing-page">
+    <main id="main-content" class="landing-page" tabindex="-1">
       <section class="hero-section" aria-labelledby="hero-title">
         <div class="container hero-layout">
           <div class="hero-copy">
@@ -10,19 +10,17 @@
               Проектирую интерфейсы, соединяю их с серверной логикой и интеграциями, затем довожу проект до production.
             </p>
             <div class="hero-actions">
-              <NuxtLink class="cta-button primary" to="/projects">
+              <a class="cta-button primary" href="#featured-projects">
                 Посмотреть проекты
                 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" /></svg>
-              </NuxtLink>
+              </a>
               <NuxtLink class="cta-button secondary" to="/contact#contact-form">Обсудить задачу</NuxtLink>
             </div>
-            <a class="hero-github-link" :href="publicContact.github.href" target="_blank" rel="noopener noreferrer">
-              GitHub {{ publicContact.github.label }}
-              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5h8v8m-.5-7.5-8 8" /></svg>
-            </a>
           </div>
         </div>
       </section>
+
+      <PortfolioFeaturedProjects :items="caseItems" :loading="projectsLoading" :error="projectsError" />
 
       <section id="about" class="about-section" aria-labelledby="about-title">
         <div class="container about-layout">
@@ -34,7 +32,6 @@
         </div>
       </section>
 
-      <PortfolioFeaturedProjects :items="caseItems" :loading="projectsLoading" :error="projectsError" />
       <PortfolioCapabilitiesSection :groups="skillGroups" />
       <PortfolioProcessSection :steps="workSteps" />
       <PortfolioServicesSection :packages="packages" @choose="scrollToForm" />
@@ -59,11 +56,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
-import { useProjects } from "~/composables/useProjects";
+import type { Project } from "~/composables/useProjects";
 import { publicContact } from "~/constants/public-contact";
 import { getFeaturedPortfolioProjects } from "~/utils/featured-projects";
-import { getProjectCaseView } from "~/utils/project-case-view";
+import { portfolioOpenGraphCover } from "~/constants/portfolio-publications";
+
+const siteUrl = useRuntimeConfig().public.siteUrl;
+const ogImage = new URL(portfolioOpenGraphCover.src, siteUrl).href;
 
 useSeoMeta({
   title: "Кирилл Коваленко — веб-разработчик Vue/Nuxt",
@@ -72,7 +71,10 @@ useSeoMeta({
   ogDescription: "Веб-продукты на Vue/Nuxt: собственные проекты, коммерческий опыт и технические кейсы.",
   ogType: "website",
   ogUrl: new URL("/", useRuntimeConfig().public.siteUrl).href,
-  twitterCard: "summary",
+  ogImage,
+  ogImageAlt: portfolioOpenGraphCover.alt,
+  twitterImage: ogImage,
+  twitterCard: "summary_large_image",
   twitterTitle: "Кирилл Коваленко — веб-разработчик Vue/Nuxt",
   twitterDescription: "Веб-продукты на Vue/Nuxt: проекты, коммерческий опыт и технические кейсы.",
   robots: "index, follow",
@@ -128,40 +130,18 @@ const workSteps = [
   { title: "Опубликовать", description: "Настраиваю production-размещение и проверяю работу опубликованной версии." },
 ];
 
-const { projects, loading: projectsLoading, error: projectsError, fetchProjects } = useProjects();
-
-const caseItems = computed(() => getFeaturedPortfolioProjects(projects.value)
-  .slice(0, 3)
-  .map((project) => {
-    const view = getProjectCaseView({
-      ...project,
-      technologies: [...project.technologies],
-      features: project.features ? [...project.features] : undefined,
-      caseStudy: project.caseStudy
-        ? {
-            ...project.caseStudy,
-            responsibilities: [...project.caseStudy.responsibilities],
-            technicalHighlights: [...project.caseStudy.technicalHighlights],
-            technologies: [...project.caseStudy.technologies],
-          }
-        : undefined,
-    });
-    return {
-      id: project.id,
-      title: project.title,
-      image: project.image,
-      summary: view.productSummary,
-      ownershipType: view.ownershipType,
-      role: view.role,
-      company: view.company,
-      productionUrl: project.caseStudy?.productionUrl,
-      responsibilities: view.responsibilities,
-      technologies: view.technologies,
-    };
-  }));
+const { data: projects, status: projectsStatus, error: projectsLoadError } = await useAsyncData<Project[]>(
+  "public-projects",
+  () => $fetch<Project[]>("/api/projects" as string)
+);
+const projectsLoading = computed(() => projectsStatus.value === "pending");
+const projectsError = computed(() => projectsLoadError.value ? "Не удалось загрузить избранные проекты." : null);
+const caseItems = computed<Project[]>(() => getFeaturedPortfolioProjects<Project>(projects.value ?? [])
+  .filter((project) => project.caseSlug)
+  .slice(0, 3));
 
 const skillGroups = computed(() => {
-  const featuredTechnologies = new Set(caseItems.value.flatMap((item) => item.technologies));
+  const featuredTechnologies = new Set(caseItems.value.flatMap((item: Project) => item.technologies));
   return skillCatalog
     .map((group) => ({ ...group, tools: group.tools.filter((tool) => featuredTechnologies.has(tool)) }))
     .filter((group) => group.tools.length > 0);
@@ -177,14 +157,13 @@ const scrollToForm = () => {
   });
 };
 
-onMounted(() => { fetchProjects(); });
 </script>
 
 <style scoped lang="scss">
 .landing-page { min-height: 100vh; padding-bottom: var(--portfolio-space-12); background: var(--portfolio-bg); color: var(--portfolio-text); font-family: var(--portfolio-font-sans); }
 .landing-page :deep(*) { font-family: inherit; }
 .container { width: min(var(--portfolio-content-width), calc(100% - 2 * var(--portfolio-gutter))); margin: 0 auto; }
-.hero-section { position: relative; overflow: hidden; padding: clamp(3.5rem, 8vw, 7rem) 0 clamp(3rem, 6vw, 5rem); }
+.hero-section { position: relative; overflow: hidden; padding: clamp(1.8rem, 4.2vw, 3.4rem) 0 clamp(1rem, 2.6vw, 2.1rem); }
 .hero-section::before { position: absolute; inset: 0 0 auto; height: 100%; background-image: linear-gradient(var(--portfolio-grid) 1px, transparent 1px), linear-gradient(90deg, var(--portfolio-grid) 1px, transparent 1px); background-size: 56px 56px; mask-image: linear-gradient(180deg, #000, transparent 94%); pointer-events: none; content: ""; }
 .hero-layout { position: relative; }
 .hero-copy { max-width: 900px; animation: hero-enter 380ms ease-out both; }
@@ -203,11 +182,8 @@ onMounted(() => { fetchProjects(); });
 .cta-button:hover { transform: translateY(-1px); border-color: var(--portfolio-border-hover); }
 .cta-button.primary:hover { border-color: var(--portfolio-accent-hover); background: var(--portfolio-accent-hover); }
 .cta-button.secondary:hover { background: var(--portfolio-surface-hover); }
-.cta-button:focus-visible,.hero-github-link:focus-visible,.messenger-links a:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
+.cta-button:focus-visible,.messenger-links a:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
 .cta-button:disabled { cursor: not-allowed; opacity: 0.65; }
-.hero-github-link { display: inline-flex; align-items: center; gap: 6px; margin-top: var(--portfolio-space-6); color: var(--portfolio-text-secondary); font-size: var(--portfolio-small); text-underline-offset: 4px; transition: color 160ms ease; }
-.hero-github-link:hover { color: var(--portfolio-text); }
-.hero-github-link svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
 @keyframes hero-enter { from { opacity: 0.72; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .about-section { padding: clamp(3rem, 6vw, 5rem) 0; border-top: 1px solid var(--portfolio-border); }
 .about-layout { display: grid; grid-template-columns: minmax(180px, 0.42fr) minmax(0, 1fr); gap: clamp(2rem, 7vw, 7rem); }
@@ -222,11 +198,10 @@ onMounted(() => { fetchProjects(); });
 .form-intro > p:not(.eyebrow) { max-width: 42ch; margin: 0.9rem 0 0; color: var(--portfolio-text-secondary); line-height: 1.65; }
 .messenger-links { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; margin-top: 1.25rem; }
 .messenger-links a { color: var(--portfolio-text); font-size: var(--portfolio-small); font-weight: 650; text-underline-offset: 4px; }
-.hero-section { padding-bottom: var(--portfolio-section-space); }
 .about-section,.contact-section { padding-block: var(--portfolio-section-space); }
 .cta-button { min-height: var(--portfolio-control-standard); }
 
 @media (max-width: 760px) { .about-layout,.form-layout { grid-template-columns: 1fr; gap: 1.4rem; } .form-intro { position: static; } }
-@media (max-width: 520px) { .hero-section { padding: 3rem 0 2.75rem; } .hero-eyebrow { gap: 7px; margin-bottom: 18px; font-size: 0.62rem; letter-spacing: 0.07em; } .hero-title { font-size: clamp(2.25rem, 9.5vw, 3.1rem); line-height: 1.04; letter-spacing: -0.06em; } .hero-subtitle { margin-top: 18px; font-size: 1rem; line-height: 1.55; } .hero-actions { flex-direction: column; align-items: stretch; margin-top: 24px; } .hero-actions .cta-button { width: 100%; } .hero-github-link { margin-top: 15px; } }
-@media (prefers-reduced-motion: reduce) { .hero-copy { animation: none; } .cta-button,.hero-github-link { transition: none; } .cta-button:hover { transform: none; } }
+@media (max-width: 520px) { .hero-section { padding: 2rem 0 1.15rem; } .hero-eyebrow { gap: 7px; margin-bottom: 18px; font-size: 0.62rem; letter-spacing: 0.07em; } .hero-title { font-size: clamp(2.25rem, 9.5vw, 3.1rem); line-height: 1.04; letter-spacing: -0.06em; } .hero-subtitle { margin-top: 18px; font-size: 1rem; line-height: 1.55; } .hero-actions { flex-direction: column; align-items: stretch; margin-top: 24px; } .hero-actions .cta-button { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .hero-copy { animation: none; } .cta-button { transition: none; } .cta-button:hover { transform: none; } }
 </style>

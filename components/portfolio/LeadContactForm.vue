@@ -251,7 +251,8 @@ const onInput = () => {
 .lead-message.error { color: var(--portfolio-error); }
 .lead-message.hint { color: var(--portfolio-text-muted); }
 .lead-privacy-note { margin: 0; color: var(--portfolio-text-secondary); font-size: 0.82rem; line-height: 1.55; }
-.lead-privacy-note a { color: var(--portfolio-accent); text-underline-offset: 3px; }
+.lead-privacy-note a { color: var(--portfolio-accent); text-decoration: underline; text-underline-offset: 3px; }
+.lead-privacy-note a:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
 .lead-success { display: grid; justify-items: start; gap: 0.55rem; padding: clamp(1.4rem, 3vw, 2rem); border: 1px solid var(--portfolio-border); border-radius: var(--portfolio-radius-lg); background: var(--portfolio-bg-elevated); box-shadow: var(--portfolio-shadow-soft); }
 .lead-success-mark { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 50%; background: var(--portfolio-success); color: var(--portfolio-bg); }
 .lead-success-mark svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
