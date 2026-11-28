@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { LEAD_FIELD_LIMITS, validateLeadFields, type LeadField } from "../../utils/lead-fields";
 import { resolveClientIp } from "./client-ip";
 
 /**
@@ -19,25 +20,15 @@ export const LEAD_RATE_WINDOW_MINUTES = 15;
 /** Максимальное количество попыток доставки заявки. */
 export const LEAD_MAX_ATTEMPTS = 6;
 
-const limits = {
-  name: 120,
-  contact: 160,
-  email: 254,
-  business: 180,
-  task: 4000,
-  budget: 160,
-};
-
 export type LeadInput = {
   name: string;
   contact?: string;
-  email: string;
+  email?: string;
   business?: string;
   task: string;
   budget?: string;
 };
 
-type LeadField = keyof typeof limits;
 
 /**
  * Проверяет и нормализует полезную нагрузку заявки.
@@ -51,7 +42,7 @@ export function validateLeadInput(value: unknown): LeadInput {
   const source = value as Record<string, unknown>;
   const result: Partial<Record<LeadField, string>> = {};
 
-  for (const key of Object.keys(limits) as LeadField[]) {
+  for (const key of Object.keys(LEAD_FIELD_LIMITS) as LeadField[]) {
     const raw = source[key];
 
     if (raw !== undefined && typeof raw !== "string") {
@@ -60,7 +51,7 @@ export function validateLeadInput(value: unknown): LeadInput {
 
     const text = typeof raw === "string" ? raw.trim() : "";
 
-    if (text.length > limits[key]) {
+    if (text.length > LEAD_FIELD_LIMITS[key]) {
       throw new Error("FIELD_TOO_LONG");
     }
 
@@ -69,13 +60,13 @@ export function validateLeadInput(value: unknown): LeadInput {
     }
   }
 
-  if (!result.name || !result.email || !result.task) {
+  if (!result.name || !(result.email || result.contact) || !result.task) {
     throw new Error("REQUIRED_FIELDS");
   }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result.email)) {
-    throw new Error("INVALID_EMAIL");
-  }
+  const errors = validateLeadFields(result);
+  if (errors.email) throw new Error("INVALID_EMAIL");
+  if (errors.contact) throw new Error("INVALID_CONTACT");
 
   return result as LeadInput;
 }

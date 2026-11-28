@@ -4,17 +4,14 @@
       <section class="hero-section" aria-labelledby="hero-title">
         <div class="container hero-layout">
           <div class="hero-copy">
-            <p class="hero-eyebrow"><span aria-hidden="true"></span>КИРИЛЛ КОВАЛЕНКО <i>/</i> VUE · NUXT</p>
-            <h1 id="hero-title" class="hero-title">Создаю веб-продукты <span>— от интерфейса до запуска.</span></h1>
+            <p class="hero-eyebrow">Кирилл Коваленко · Vue / Nuxt</p>
+            <h1 id="hero-title" class="hero-title">Разрабатываю сайты <span>и веб‑сервисы</span></h1>
             <p class="hero-subtitle">
-              Проектирую интерфейсы, соединяю их с серверной логикой и интеграциями, затем довожу проект до production.
+              Проектирую интерфейсы, пишу серверную часть и запускаю продукт.
             </p>
             <div class="hero-actions">
-              <a class="cta-button primary" href="#featured-projects">
-                Посмотреть проекты
-                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" /></svg>
-              </a>
-              <NuxtLink class="cta-button secondary" to="/contact#contact-form">Обсудить задачу</NuxtLink>
+              <a class="cta-button primary" href="#application-form">Обсудить проект</a>
+              <NuxtLink class="cta-button secondary" to="/contact#employers">Работодателям</NuxtLink>
             </div>
           </div>
         </div>
@@ -22,33 +19,18 @@
 
       <PortfolioFeaturedProjects :items="caseItems" :loading="projectsLoading" :error="projectsError" />
 
-      <section id="about" class="about-section" aria-labelledby="about-title">
-        <div class="container about-layout">
-          <p class="eyebrow">ОТ ИНТЕРФЕЙСА ДО ЗАПУСКА</p>
-          <div>
-            <h2 id="about-title">Думаю о продукте целиком — от пользовательского сценария до работающей системы.</h2>
-            <p>Я Кирилл, веб-разработчик. В проектах соединяю интерфейс, серверную логику и интеграции, чтобы решение было не только удобным, но и готовым к реальному использованию.</p>
-          </div>
-        </div>
-      </section>
-
       <PortfolioCapabilitiesSection :groups="skillGroups" />
       <PortfolioProcessSection :steps="workSteps" />
       <PortfolioServicesSection :packages="packages" @choose="scrollToForm" />
 
-      <section id="application-form" class="contact-section" aria-labelledby="contact-title">
+      <section id="application-form" tabindex="-1" class="contact-section" aria-labelledby="contact-title">
         <div class="container form-layout">
           <div class="form-intro">
-            <p class="eyebrow">СЛЕДУЮЩИЙ ШАГ</p>
-            <h2 id="contact-title">Есть задача или предложение?</h2>
-            <p>Напишите, что хотите запустить или улучшить. Я отвечу и помогу определить реалистичный следующий шаг.</p>
-            <div class="messenger-links">
-              <a :href="publicContact.telegram.href" target="_blank" rel="noopener noreferrer">Telegram</a>
-              <a :href="publicContact.email.href">{{ publicContact.email.label }}</a>
-            </div>
+            <h2 id="contact-title">Расскажите о проекте</h2>
+            <p>Опишите задачу и примерные сроки. Я отвечу удобным для вас способом.</p>
           </div>
 
-          <PortfolioLeadContactForm id-prefix="lead" :submit-label="mainCtaText" />
+          <PortfolioLeadContactForm id-prefix="lead" />
         </div>
       </section>
     </main>
@@ -90,8 +72,6 @@ useHead({
     sameAs: [publicContact.github.href, publicContact.telegram.href],
   }) }],
 });
-
-const mainCtaText = "Отправить заявку";
 
 const skillCatalog = [
   { title: "Web-интерфейсы", tools: ["Vue 3", "Nuxt 3", "Nuxt 4", "TypeScript", "SCSS"] },
@@ -151,10 +131,7 @@ const skillGroups = computed(() => {
 // composables/useLeadSubmission.ts и используется общей компонентой формы
 // на главной странице и на /contact.
 const scrollToForm = () => {
-  document.getElementById("application-form")?.scrollIntoView({
-    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-    block: "start",
-  });
+  document.getElementById("application-form")?.focus();
 };
 
 </script>
@@ -167,41 +144,34 @@ const scrollToForm = () => {
 .hero-section::before { position: absolute; inset: 0 0 auto; height: 100%; background-image: linear-gradient(var(--portfolio-grid) 1px, transparent 1px), linear-gradient(90deg, var(--portfolio-grid) 1px, transparent 1px); background-size: 56px 56px; mask-image: linear-gradient(180deg, #000, transparent 94%); pointer-events: none; content: ""; }
 .hero-layout { position: relative; }
 .hero-copy { max-width: 900px; animation: hero-enter 380ms ease-out both; }
-.hero-eyebrow,.eyebrow { margin: 0 0 var(--portfolio-space-6); color: var(--portfolio-text-secondary); font-size: var(--portfolio-label); font-weight: 650; letter-spacing: 0.1em; }
-.hero-eyebrow { display: flex; align-items: center; gap: 9px; }
-.hero-eyebrow > span { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: var(--portfolio-accent); }
-.hero-eyebrow i { color: var(--portfolio-text-muted); font-style: normal; }
-.hero-title { max-width: 900px; margin: 0; color: var(--portfolio-text); font-size: var(--portfolio-h1); font-weight: 650; letter-spacing: -0.065em; line-height: 1.02; }
+.hero-eyebrow { margin: 0 0 .65rem; color: var(--portfolio-text-secondary); font-size: .875rem; font-weight: 650; letter-spacing: .025em; }
+.hero-title { max-width: 20ch; margin: 0; color: var(--portfolio-text); font-size: var(--portfolio-h1); font-weight: 650; letter-spacing: -0.05em; line-height: 1.08; text-wrap: balance; }
 .hero-title span { color: var(--portfolio-accent); }
 .hero-subtitle { max-width: 650px; margin: var(--portfolio-space-6) 0 0; color: var(--portfolio-text-secondary); font-size: var(--portfolio-body-large); line-height: 1.65; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: var(--portfolio-space-8); }
-.cta-button { display: inline-flex; min-height: 48px; justify-content: center; align-items: center; gap: 10px; padding: 0 18px; border: 1px solid transparent; border-radius: var(--portfolio-radius-sm); font-size: 0.92rem; font-weight: 650; text-decoration: none; cursor: pointer; transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
+.cta-button { display: inline-flex; min-height: 48px; justify-content: center; align-items: center; gap: 10px; padding: 0 18px; border: 1px solid transparent; border-radius: var(--portfolio-radius-sm); font-size: 0.95rem; font-weight: 650; text-decoration: none; cursor: pointer; transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
 .cta-button.primary { border-color: var(--portfolio-accent); background: var(--portfolio-accent); color: var(--portfolio-accent-contrast); }
-.cta-button.primary svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
-.cta-button.secondary { border-color: var(--portfolio-border); background: transparent; color: var(--portfolio-text); }
+.cta-button.secondary { border-color: var(--portfolio-control-border); background: transparent; color: var(--portfolio-text); }
 .cta-button:hover { transform: translateY(-1px); border-color: var(--portfolio-border-hover); }
 .cta-button.primary:hover { border-color: var(--portfolio-accent-hover); background: var(--portfolio-accent-hover); }
 .cta-button.secondary:hover { background: var(--portfolio-surface-hover); }
-.cta-button:focus-visible,.messenger-links a:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
-.cta-button:disabled { cursor: not-allowed; opacity: 0.65; }
+.cta-button:focus-visible,.contact-section:focus-visible { outline: 2px solid var(--portfolio-accent); outline-offset: 3px; }
 @keyframes hero-enter { from { opacity: 0.72; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-.about-section { padding: clamp(3rem, 6vw, 5rem) 0; border-top: 1px solid var(--portfolio-border); }
-.about-layout { display: grid; grid-template-columns: minmax(180px, 0.42fr) minmax(0, 1fr); gap: clamp(2rem, 7vw, 7rem); }
-.about-layout .eyebrow { margin: 0; color: var(--portfolio-accent); }
-.about-layout h2 { max-width: 850px; margin: 0; font-size: clamp(1.65rem, 3vw, 2.55rem); line-height: 1.2; letter-spacing: -0.045em; }
-.about-layout div > p { max-width: 66ch; margin: 1rem 0 0; color: var(--portfolio-text-secondary); font-size: var(--portfolio-body-large); line-height: 1.7; }
-.contact-section { padding: clamp(3.5rem, 7vw, 6rem) 0; border-top: 1px solid var(--portfolio-border); }
+.contact-section { padding: clamp(3.5rem, 7vw, 6rem) 0; border-top: 1px solid var(--portfolio-border); scroll-margin-top: 6rem; }
 .form-layout { display: grid; grid-template-columns: minmax(240px, 0.8fr) minmax(320px, 1.2fr); gap: clamp(2rem, 7vw, 7rem); align-items: start; }
 .form-intro { position: sticky; top: 6rem; }
-.form-intro .eyebrow { color: var(--portfolio-accent); }
-.form-intro h2 { max-width: 16ch; margin: 0; font-size: var(--portfolio-h2); line-height: 1.12; letter-spacing: -0.04em; }
-.form-intro > p:not(.eyebrow) { max-width: 42ch; margin: 0.9rem 0 0; color: var(--portfolio-text-secondary); line-height: 1.65; }
-.messenger-links { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; margin-top: 1.25rem; }
-.messenger-links a { color: var(--portfolio-text); font-size: var(--portfolio-small); font-weight: 650; text-underline-offset: 4px; }
-.about-section,.contact-section { padding-block: var(--portfolio-section-space); }
+.form-intro h2 { max-width: 22ch; margin: 0; font-size: var(--portfolio-h2); line-height: 1.12; letter-spacing: -0.04em; }
+.form-intro > p { max-width: 42ch; margin: 0.9rem 0 0; color: var(--portfolio-text-secondary); line-height: 1.65; }
 .cta-button { min-height: var(--portfolio-control-standard); }
 
-@media (max-width: 760px) { .about-layout,.form-layout { grid-template-columns: 1fr; gap: 1.4rem; } .form-intro { position: static; } }
-@media (max-width: 520px) { .hero-section { padding: 2rem 0 1.15rem; } .hero-eyebrow { gap: 7px; margin-bottom: 18px; font-size: 0.62rem; letter-spacing: 0.07em; } .hero-title { font-size: clamp(2.25rem, 9.5vw, 3.1rem); line-height: 1.04; letter-spacing: -0.06em; } .hero-subtitle { margin-top: 18px; font-size: 1rem; line-height: 1.55; } .hero-actions { flex-direction: column; align-items: stretch; margin-top: 24px; } .hero-actions .cta-button { width: 100%; } }
+@media (max-width: 760px) { .form-layout { grid-template-columns: 1fr; gap: 1.4rem; } .form-intro { position: static; } }
+@media (max-width: 520px) {
+  .hero-section { padding: 1.4rem 0 .75rem; }
+  .hero-title { font-size: clamp(2rem, 8.6vw, 2.8rem); }
+  .hero-subtitle { margin-top: .75rem; font-size: 1rem; line-height: 1.5; }
+  .hero-actions { margin-top: 1rem; }
+  .hero-actions .cta-button { padding-inline: .75rem; }
+}
+@media (max-width: 355px) { .hero-actions .cta-button { flex: 1 1 100%; } }
 @media (prefers-reduced-motion: reduce) { .hero-copy { animation: none; } .cta-button { transition: none; } .cta-button:hover { transform: none; } }
 </style>

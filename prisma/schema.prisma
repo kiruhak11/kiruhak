@@ -356,7 +356,7 @@ model LeadDelivery {
   payloadHash        String    @map("payload_hash")
   name               String    @db.VarChar(120)
   contact            String?   @db.VarChar(160)
-  email              String    @db.VarChar(254)
+  email              String?   @db.VarChar(254)
   business           String?   @db.VarChar(180)
   task               String    @db.VarChar(4000)
   budget             String?   @db.VarChar(160)

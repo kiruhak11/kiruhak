@@ -85,7 +85,7 @@ test("contact experience uses canonical channels and keeps platform access secon
   assert.doesNotMatch(footer, /K-Studio|\/analytics|\/content|\/admin|\/tutorials|\/materials/);
   assert.match(footer, /portfolio-current-year/);
   assert.match(home, /publicContact\.telegram\.href/);
-  assert.match(home, /publicContact\.email\.href/);
+  assert.match(home, /to="\/contact#employers"/);
 });
 
 test("project links suppress repository URLs masquerading as production sites", () => {
@@ -346,7 +346,7 @@ test("case modal supports roles/contributions while unverified entries receive n
   assert.match(modal, /aria-modal="true"/);
   assert.match(modal, /handleModalKeydown/);
   const casePage = read("../pages/projects/[slug].vue");
-  assert.match(card, /portfolioCasePath\(caseSlug\)/);
+  assert.match(card, /portfolioCasePath\(caseSlug\.value\)/);
   assert.match(card, /getProjectCaseView\(props\.project\)/);
   assert.match(casePage, /getProjectCaseView\(caseProject\)/);
   assert.match(casePage, /getVerifiedProjectLinks\(caseProject\)/);
@@ -401,11 +401,11 @@ test("key public copy is personal and does not surface unsupported result sectio
   const publicCopy = [homepage, projectPage, contactPage, app, footer].join("\n");
 
   assert.match(homepage, /Кирилл Коваленко/);
-  assert.match(homepage, /Посмотреть проекты/);
+  assert.match(homepage, /Работодателям/);
   assert.doesNotMatch(publicCopy, /K-Studio — корпоративная веб|наша команда|мы создаём|мы создаем/i);
   assert.doesNotMatch(homepage + projectPage + projectModal, /project\.results|caseItem\.result/);
   assert.doesNotMatch(projectPage + contactPage, /Поддержать проект|handleDonationClick/);
-  assert.match(contactPage, /отвечаю лично/);
+  assert.match(contactPage, /Заказчикам[\s\S]*Работодателям/);
   assert.match(hamburger, /\.mobile-menu-backdrop\s*\{[^}]*font-family:\s*var\(--portfolio-font-sans\)/s);
   assert.doesNotMatch([homepage, projectModal, hamburger].join("\n"), /CASE STUDY|\bSTACK\b|\bPRODUCTION\b|\bProduction\b/);
 });

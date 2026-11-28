@@ -1,11 +1,14 @@
 import { computed, reactive, ref } from "vue";
+import { validateLeadFields, type LeadField, type LeadFieldErrors, type LeadFormValues, type LeadReplyMethod } from "../utils/lead-fields";
+
+export { isValidLeadEmail, LEAD_FIELD_LIMITS } from "../utils/lead-fields";
+export type { LeadFormValues } from "../utils/lead-fields";
 
 /**
  * Логика отправки заявки.
  *
  * Единая реализация используется на главной странице и на `/contact`.
- * Контракт `/api/telegram` не меняется: тело заявки, заголовок
- * `Idempotency-Key` и набор полей те же, что и раньше.
+ * Тело содержит выбранный контакт, а `Idempotency-Key` защищает повторную отправку.
  *
  * Семантика идемпотентности:
  *
@@ -20,15 +23,6 @@ import { computed, reactive, ref } from "vue";
  * Форма не сбрасывается до подтверждённого ответа сервера: при ошибке все
  * введённые значения сохраняются, и отправку можно повторить.
  */
-
-export type LeadFormValues = {
-  name: string;
-  contact: string;
-  email: string;
-  business: string;
-  task: string;
-  budget: string;
-};
 
 export type LeadSubmissionState = "idle" | "submitting" | "success" | "error";
 
@@ -48,6 +42,7 @@ export type LeadSubmissionError = {
   message: string;
   statusCode?: number;
   retryAfterSeconds?: number;
+  field?: LeadField;
 };
 
 export type LeadSubmissionResult = {
@@ -72,21 +67,6 @@ export type LeadStorage = {
 
 export const LEAD_ENDPOINT = "/api/telegram";
 export const LEAD_IDEMPOTENCY_STORAGE_KEY = "kstudio.lead.idempotency-key";
-
-/** Ограничения полей — те же, что проверяет сервер. */
-export const LEAD_FIELD_LIMITS = {
-  name: 120,
-  contact: 160,
-  email: 254,
-  business: 180,
-  task: 4000,
-  budget: 160,
-} as const;
-
-/** Поля, обязательные для сохранения заявки. */
-export const LEAD_REQUIRED_FIELDS = ["name", "email", "task"] as const;
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const createEmptyLeadValues = (): LeadFormValues => ({
   name: "",
@@ -114,21 +94,11 @@ export const buildLeadPayload = (
   return payload;
 };
 
-/** Проверка email на клиенте — та же логика, что на сервере. */
-export const isValidLeadEmail = (email: string): boolean => {
-  const text = typeof email === "string" ? email.trim() : "";
-  if (!text) return false;
-  return EMAIL_PATTERN.test(text);
-};
-
-export const missingLeadFields = (values: LeadFormValues): string[] => {
-  const missing: string[] = [];
-
-  for (const key of LEAD_REQUIRED_FIELDS) {
-    const text = values[key]?.trim() ?? "";
-    if (!text) missing.push(key);
-  }
-
+export const missingLeadFields = (values: LeadFormValues): LeadField[] => {
+  const missing: LeadField[] = [];
+  if (!values.name.trim()) missing.push("name");
+  if (!values.email.trim() && !values.contact.trim()) missing.push("contact");
+  if (!values.task.trim()) missing.push("task");
   return missing;
 };
 
@@ -238,11 +208,15 @@ export const classifyLeadError = (error: unknown): LeadSubmissionError => {
   }
 
   if (statusCode === 400 || statusCode === 413 || statusCode === 422) {
-    const message = statusMessage.includes("INVALID_EMAIL")
-      ? "Проверьте адрес email — он указан неверно."
-      : statusMessage.includes("FIELD_TOO_LONG")
-        ? "Одно из полей слишком длинное — сократите текст."
-        : "Проверьте форму: обязательны имя, email и описание задачи.";
+    if (statusMessage.includes("INVALID_EMAIL")) {
+      return { kind: "validation", statusCode, field: "email", message: "Введите адрес в формате name@example.com." };
+    }
+    if (statusMessage.includes("INVALID_CONTACT")) {
+      return { kind: "validation", statusCode, field: "contact", message: "Проверьте имя пользователя Telegram или номер телефона." };
+    }
+    const message = statusMessage.includes("FIELD_TOO_LONG")
+      ? "Одно из полей слишком длинное — сократите текст."
+      : "Проверьте форму: укажите имя, контакт для ответа и сообщение.";
     return { kind: "validation", statusCode, message };
   }
 
@@ -322,12 +296,12 @@ export const useLeadSubmission = (
   const state = ref<LeadSubmissionState>("idle");
   const error = ref<LeadSubmissionError | null>(null);
   const result = ref<LeadSubmissionResult | null>(null);
-  const fieldError = ref<string | null>(null);
+  const fieldErrors = ref<LeadFieldErrors>({});
 
   const isSubmitting = computed(() => state.value === "submitting");
   const isSuccess = computed(() => state.value === "success");
   const canSubmit = computed(
-    () => !isSubmitting.value && missingLeadFields(values).length === 0
+    () => !isSubmitting.value && Object.keys(validateLeadFields(values)).length === 0
   );
 
   const readStored = (): StoredIdempotency | null => {
@@ -378,8 +352,13 @@ export const useLeadSubmission = (
   };
 
   /** Пользователь изменил данные: прежний ключ больше не подходит. */
-  const handleInput = () => {
-    fieldError.value = null;
+  const handleInput = (field?: LeadField) => {
+    if (!field) {
+      fieldErrors.value = {};
+    } else if (fieldErrors.value[field]) {
+      const { [field]: changed, ...remaining } = fieldErrors.value;
+      if (changed) fieldErrors.value = remaining;
+    }
     // Во время отправки состояние не трогаем: блокировка повторного submit
     // должна сохраняться.
     if (isSubmitting.value) return;
@@ -396,7 +375,7 @@ export const useLeadSubmission = (
     state.value = "idle";
     error.value = null;
     result.value = null;
-    fieldError.value = null;
+    fieldErrors.value = {};
     clearIdempotencyKey();
   };
 
@@ -404,32 +383,19 @@ export const useLeadSubmission = (
     state.value = "idle";
     error.value = null;
     result.value = null;
-    fieldError.value = null;
+    fieldErrors.value = {};
   };
 
-  const submit = async (): Promise<LeadSubmissionResult | null> => {
+  const submit = async (method?: LeadReplyMethod): Promise<LeadSubmissionResult | null> => {
     if (isSubmitting.value) return null;
 
-    const missing = missingLeadFields(values);
-    if (missing.length > 0) {
-      fieldError.value =
-        "Заполните обязательные поля: имя, email и описание задачи.";
+    fieldErrors.value = validateLeadFields(values, method);
+    if (Object.keys(fieldErrors.value).length > 0) {
       state.value = "error";
-      error.value = {
-        kind: "validation",
-        message: fieldError.value,
-      };
+      error.value = { kind: "validation", message: "Проверьте отмеченные поля." };
       return null;
     }
 
-    if (!isValidLeadEmail(values.email)) {
-      fieldError.value = "Проверьте адрес email — он указан неверно.";
-      state.value = "error";
-      error.value = { kind: "validation", message: fieldError.value };
-      return null;
-    }
-
-    fieldError.value = null;
     error.value = null;
     state.value = "submitting";
 
@@ -467,6 +433,7 @@ export const useLeadSubmission = (
       const classified = classifyLeadError(cause);
       // Данные формы сохраняются: отправку можно повторить.
       error.value = classified;
+      if (classified.field) fieldErrors.value = { [classified.field]: classified.message };
       state.value = "error";
 
       // Конфликт ключа идемпотентности означает, что этот ключ уже использован
@@ -488,7 +455,7 @@ export const useLeadSubmission = (
     state,
     error,
     result,
-    fieldError,
+    fieldErrors,
     isSubmitting,
     isSuccess,
     canSubmit,

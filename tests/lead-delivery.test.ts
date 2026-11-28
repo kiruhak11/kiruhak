@@ -40,7 +40,7 @@ test("lead input validation accepts a complete application", () => {
   });
 });
 
-test("lead input validation requires name, email and task", () => {
+test("lead input validation requires name, a reply channel and task", () => {
   assert.throws(
     () => validateLeadInput({ email: "web@kiruhak11.ru", task: "x" }),
     /REQUIRED_FIELDS/
@@ -171,4 +171,20 @@ test("manual confirmation audit preserves actor, time and original delivery erro
   assert.deepEqual(readLeadConfirmation(encodeLeadConfirmation(audit)), audit);
   assert.equal(readLeadConfirmation("TELEGRAM_TIMEOUT_UNCONFIRMED"), null);
   assert.equal(readLeadConfirmation("MANUAL_CONFIRMED:{}"), null);
+});
+
+test("lead accepts Telegram or phone without email and rejects an unusable contact", () => {
+  for (const contact of ["@tester", "+7 (900) 123-45-67"]) {
+    const lead = validateLeadInput({ name: "Тест", contact, task: "Проект" });
+    assert.equal(lead.contact, contact);
+    assert.equal(lead.email, undefined);
+  }
+
+  assert.throws(() => validateLeadInput({ name: "Тест", contact: "telegram", task: "Проект" }), /INVALID_CONTACT/);
+});
+
+test("notification includes the selected contact without a blank email line", () => {
+  const message = formatLeadMessage({ ...telegramLead, email: null, contact: "@tester" }, new Date(0));
+  assert.match(message, /Telegram или телефон: @tester/);
+  assert.doesNotMatch(message, /Email:/);
 });

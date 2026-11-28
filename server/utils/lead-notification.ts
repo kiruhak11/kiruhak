@@ -4,7 +4,7 @@ export type LeadNotificationLead = {
   id: string;
   name: string;
   contact?: string | null;
-  email: string;
+  email?: string | null;
   business?: string | null;
   task: string;
   budget?: string | null;
@@ -33,9 +33,9 @@ export function formatLeadMessage(lead: LeadNotificationLead, createdAt: Date): 
     `Дата и время: ${createdAt.toISOString()}`,
     "",
     `Имя: ${lead.name}`,
-    `Email: ${lead.email}`,
   ];
 
+  if (lead.email) lines.push(`Email: ${lead.email}`);
   if (lead.contact) lines.push(`Telegram или телефон: ${lead.contact}`);
   if (lead.business) lines.push(`Ниша / компания: ${lead.business}`);
   if (lead.budget) lines.push(`Ориентировочный бюджет: ${lead.budget}`);

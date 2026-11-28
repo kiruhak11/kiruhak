@@ -1,6 +1,6 @@
 <template>
   <div class="mobile-header">
-    <NuxtLink to="/" class="mobile-brand" aria-label="Кирилл Коваленко — веб-разработчик, главная">
+    <NuxtLink to="/" class="mobile-brand">
       <span class="brand-mark" aria-hidden="true">К</span>
       <span class="brand-copy">
         <strong>Кирилл</strong>
@@ -9,7 +9,7 @@
     </NuxtLink>
 
     <div class="header-actions">
-      <NuxtLink to="/contact" class="header-cta" aria-label="Контакт — обсудить проект">
+      <NuxtLink to="/contact" class="header-cta">
         <span>Контакт</span>
         <svg viewBox="0 0 20 20" aria-hidden="true">
           <path d="M4.5 10h10m-4-4 4 4-4 4" />
