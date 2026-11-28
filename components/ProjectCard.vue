@@ -17,7 +17,7 @@
         <NuxtLink
           v-if="caseSlug"
           class="case-link"
-          :to="{ path: portfolioCasePath(caseSlug), query: catalogOwnership ? { type: portfolioOwnershipQuery[catalogOwnership] } : {} }"
+          :to="caseRoute"
           :aria-label="`Открыть кейс «${title}»`"
         >
           Открыть кейс
@@ -50,12 +50,20 @@ const props = withDefaults(defineProps<{
   priority?: boolean;
   compact?: boolean;
   heading?: "h2" | "h3";
-  catalogOwnership?: PortfolioOwnership;
-}>(), { priority: false, compact: false, heading: "h2" });
+  catalogOwnership?: PortfolioOwnership | null;
+}>(), { priority: false, compact: false, heading: "h2", catalogOwnership: null });
 
 defineEmits<{ "open-modal": [project: DeepReadonly<Project>] }>();
 
 const caseSlug = computed(() => props.project.caseSlug);
+const caseRoute = computed(() => {
+  if (!caseSlug.value) return "";
+  const ownership = props.catalogOwnership;
+  return {
+    path: portfolioCasePath(caseSlug.value),
+    query: ownership ? { type: portfolioOwnershipQuery[ownership] } : undefined,
+  };
+});
 const title = computed(() => props.project.title);
 const caseView = computed(() => getProjectCaseView(props.project));
 </script>

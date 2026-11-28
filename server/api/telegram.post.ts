@@ -136,7 +136,7 @@ export default defineEventHandler(async (event) => {
           id, idempotency_key_hash, payload_hash, name, contact, email, business, task, budget,
           client_fingerprint, status, attempt_count, next_attempt_at, created_at, updated_at
         ) VALUES (
-          ${id}, ${keyHash}, ${payloadHash}, ${lead.name}, ${lead.contact || null}, ${lead.email},
+          ${id}, ${keyHash}, ${payloadHash}, ${lead.name}, ${lead.contact || null}, ${lead.email ?? null},
           ${lead.business || null}, ${lead.task}, ${lead.budget || null}, ${clientHash},
           'PENDING', 0, NOW(), NOW(), NOW()
         )

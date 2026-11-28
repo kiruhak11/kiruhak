@@ -20,7 +20,7 @@ export type AdminLead = {
   id: string;
   name: string;
   contact: string | null;
-  email: string;
+  email: string | null;
   business: string | null;
   task: string;
   budget: string | null;

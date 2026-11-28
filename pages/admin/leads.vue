@@ -43,7 +43,7 @@
           <li v-for="lead in data.leads" :key="lead.id" class="lead-row">
             <div class="lead-main">
               <h2>{{ lead.name }}</h2>
-              <p class="secondary-text">{{ lead.email }}<template v-if="lead.business"> · {{ lead.business }}</template></p>
+              <p class="secondary-text">{{ lead.email || lead.contact }}<template v-if="lead.business"> · {{ lead.business }}</template></p>
               <p class="task-preview">{{ lead.task }}</p>
             </div>
             <div class="lead-state">
@@ -79,8 +79,8 @@
             <time class="secondary-text" :datetime="selected.createdAt">{{ dateLabel(selected.createdAt) }}</time>
           </div>
           <dl class="details-grid">
-            <div><dt>Email</dt><dd>{{ selected.email }}</dd></div>
-            <div><dt>Telegram или телефон</dt><dd>{{ selected.contact || "—" }}</dd></div>
+            <div v-if="selected.email"><dt>Email</dt><dd>{{ selected.email }}</dd></div>
+            <div v-if="selected.contact"><dt>Telegram или телефон</dt><dd>{{ selected.contact }}</dd></div>
             <div><dt>Ниша / компания</dt><dd>{{ selected.business || "—" }}</dd></div>
             <div><dt>Бюджет</dt><dd>{{ selected.budget || "—" }}</dd></div>
             <div><dt>ID заявки</dt><dd>{{ selected.id }}</dd></div>

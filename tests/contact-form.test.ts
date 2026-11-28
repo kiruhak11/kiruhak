@@ -226,7 +226,7 @@ test("ответ 400 даёт понятное сообщение и сохра�
 
   assert.equal(submission.state.value, "error");
   assert.equal(submission.error.value?.kind, "validation");
-  assert.match(submission.error.value?.message ?? "", /обязательны имя, email и описание задачи/i);
+  assert.match(submission.error.value?.message ?? "", /укажите имя, контакт для ответа и сообщение/i);
   assert.equal(submission.values.name, "Кирилл");
   assert.equal(submission.values.task, "Нужен лендинг для услуг");
 });
@@ -364,9 +364,9 @@ test("форма не сбрасывается до подтверждённог
 
 // --- 13. Ссылка на политику обработки данных -----------------------------------
 
-test("форма и страница /contact содержат ссылку на политику обработки данных", () => {
+test("обе страницы используют общую форму со ссылкой на политику", () => {
   assert.match(formComponent, /to="\/legal\/privacy"/);
-  assert.match(contactPage, /to="\/legal\/privacy"/);
+  assert.match(contactPage, /PortfolioLeadContactForm/);
   assert.match(homePage, /PortfolioLeadContactForm/);
 });
 
@@ -380,15 +380,15 @@ test("на странице /contact сохранены быстрые спос�
 // --- 14. SSR и гидратация ------------------------------------------------------
 
 test("форма серверно-рендерится и доступна с клавиатуры", () => {
-  assert.match(formComponent, /<form[\s\S]*?@submit\.prevent="submit"/);
+  assert.match(formComponent, /<form[\s\S]*?@submit\.prevent="submitForm"/);
   assert.match(formComponent, /aria-label/);
-  assert.match(formComponent, /aria-live="polite"/);
+  assert.match(formComponent, /role="status"/);
   assert.match(formComponent, /role="alert"/);
-  assert.match(formComponent, /:aria-busy="isSubmitting"/);
+  assert.match(formComponent, /:aria-disabled="isSubmitting"/);
   assert.match(formComponent, /:disabled="isSubmitting"/);
   assert.match(formComponent, /autocomplete="name"/);
-  assert.match(formComponent, /autocomplete="email"/);
-  assert.match(formComponent, /autocomplete="organization"/);
+  assert.match(formComponent, /aria-describedby/);
+  assert.match(formComponent, /aria-invalid/);
   // Браузерные API не используются во время SSR.
   assert.doesNotMatch(formComponent, /window\./);
 });
@@ -562,4 +562,31 @@ test("некорректный успешный ответ не считаетс
     calls[1].headers["Idempotency-Key"],
     "при неподтверждённом результате ключ сохраняется для безопасного повтора"
   );
+});
+
+test("заявка выбирает один контакт и сохраняет адрес при ошибке", async () => {
+  const { submission, calls } = createHarness(() => {
+    throw httpError(503);
+  });
+  submission.values.name = "Тест";
+  submission.values.task = "Обсудить проект";
+  submission.values.contact = "@invalid username";
+  await submission.submit("telegram");
+  assert.match(submission.fieldErrors.value.contact ?? "", /Telegram/);
+  assert.equal(calls.length, 0);
+  submission.values.contact = "@tester";
+  submission.handleInput("contact");
+  await submission.submit("telegram");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0]?.body.contact, "@tester");
+  assert.equal(Object.hasOwn(calls[0]?.body ?? {}, "email"), false);
+  assert.equal(submission.values.contact, "@tester");
+});
+
+test("исправление одного поля сохраняет остальные подсказки", async () => {
+  const { submission } = createHarness(() => null);
+  await submission.submit("phone");
+  assert.deepEqual(Object.keys(submission.fieldErrors.value), ["name", "contact", "task"]);
+  submission.handleInput("name");
+  assert.deepEqual(Object.keys(submission.fieldErrors.value), ["contact", "task"]);
 });

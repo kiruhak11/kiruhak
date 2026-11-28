@@ -70,7 +70,7 @@ import { publicContact } from "~/constants/public-contact";
 const route = useRoute();
 const isProjectPage = computed(() => route.path === "/projects" || route.path.startsWith("/projects/"));
 const isPortfolioPage = computed(() => ["/", "/contact"].includes(route.path) || isProjectPage.value);
-const hasSkipLink = computed(() => route.path === "/" || isProjectPage.value);
+const hasSkipLink = computed(() => isPortfolioPage.value);
 
 const goTop = () => {
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
