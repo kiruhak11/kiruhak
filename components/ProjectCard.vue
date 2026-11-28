@@ -15,9 +15,9 @@
 
       <div class="card-footer">
         <NuxtLink
-          v-if="publication"
+          v-if="caseSlug"
           class="case-link"
-          :to="portfolioCasePath(publication.slug)"
+          :to="{ path: portfolioCasePath(caseSlug), query: catalogOwnership ? { type: portfolioOwnershipQuery[catalogOwnership] } : {} }"
           :aria-label="`Открыть кейс «${title}»`"
         >
           Открыть кейс
@@ -41,8 +41,8 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue";
 import type { Project } from "~/composables/useProjects";
-import { getPortfolioPublication, portfolioCasePath } from "~/constants/portfolio-publications";
-import { getProjectCaseStudy } from "~/constants/project-case-studies";
+import { portfolioCasePath } from "~/constants/portfolio-publications";
+import { portfolioOwnershipQuery, type PortfolioOwnership } from "~/utils/project-ownership";
 import { getProjectCaseView } from "~/utils/project-case-view";
 
 const props = withDefaults(defineProps<{
@@ -50,23 +50,14 @@ const props = withDefaults(defineProps<{
   priority?: boolean;
   compact?: boolean;
   heading?: "h2" | "h3";
+  catalogOwnership?: PortfolioOwnership;
 }>(), { priority: false, compact: false, heading: "h2" });
 
 defineEmits<{ "open-modal": [project: DeepReadonly<Project>] }>();
 
-const publication = computed(() => {
-  const item = getPortfolioPublication(props.project.id, props.project.caseStudy?.ownershipType);
-  return item?.slug === props.project.caseSlug ? item : undefined;
-});
-const title = computed(() => publication.value?.title ?? props.project.title);
-const reviewedDetails = computed(() => publication.value ? getProjectCaseStudy(publication.value.id) : null);
-const caseView = computed(() => getProjectCaseView({
-  ...props.project,
-  caseStudy: reviewedDetails.value
-    ? { ...reviewedDetails.value, ownershipType: props.project.caseStudy?.ownershipType ?? reviewedDetails.value.ownershipType }
-    : props.project.caseStudy,
-}));
-
+const caseSlug = computed(() => props.project.caseSlug);
+const title = computed(() => props.project.title);
+const caseView = computed(() => getProjectCaseView(props.project));
 </script>
 
 <style scoped>

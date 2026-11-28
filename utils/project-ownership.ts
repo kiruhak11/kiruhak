@@ -1,5 +1,19 @@
 import type { ProjectOwnershipType } from "~/types/project-case-study";
 
+export type PortfolioOwnership = Exclude<ProjectOwnershipType, "UNVERIFIED">;
+
+export const portfolioOwnershipQuery = {
+  OWN: "own",
+  CLIENT: "client",
+  PARTICIPATION: "participation",
+} as const satisfies Record<PortfolioOwnership, string>;
+
+export const portfolioOwnershipOrder: readonly PortfolioOwnership[] = ["OWN", "CLIENT", "PARTICIPATION"];
+
+export function getPortfolioOwnershipFromQuery(query: unknown) {
+  return portfolioOwnershipOrder.find((type) => portfolioOwnershipQuery[type] === query);
+}
+
 type OwnershipRecord = {
   id?: string;
   caseStudy?: { ownershipType?: ProjectOwnershipType | null } | null;

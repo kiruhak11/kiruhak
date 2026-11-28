@@ -3,23 +3,23 @@
     <main id="main-content" class="case-page" tabindex="-1">
       <div class="case-shell">
         <nav class="breadcrumbs" aria-label="Путь к странице">
-          <NuxtLink to="/projects"><span aria-hidden="true">←</span> Все проекты</NuxtLink>
+          <NuxtLink :to="catalogLocation"><span aria-hidden="true">←</span> Все проекты</NuxtLink>
         </nav>
 
         <header class="case-hero">
           <div class="case-intro">
             <p class="case-kind">{{ view.ownershipLabel }}</p>
-            <h1>{{ publication.title }}</h1>
+            <h1>{{ caseProject.title }}</h1>
             <p class="case-summary">{{ view.productSummary }}</p>
             <p v-if="view.role" class="case-role">{{ view.role }}</p>
-            <a v-if="links.liveUrl" class="hero-link" href="#case-demo">
+            <a v-if="links.liveUrl || links.githubUrl" class="hero-link" href="#case-demo">
               Смотреть демонстрацию <span aria-hidden="true">↓</span>
             </a>
           </div>
 
           <div class="hero-cover">
             <div class="hero-preview">
-              <ProjectPreview :src="publication.cover.src" :alt="publication.cover.alt" :title="publication.title" priority />
+              <ProjectPreview :src="caseProject.image" :alt="cover?.alt" :title="caseProject.title" priority />
             </div>
           </div>
         </header>
@@ -80,15 +80,16 @@
 
 <script setup lang="ts">
 import type { Project } from "~/composables/useProjects";
-import { getPortfolioPublicationBySlug, portfolioCasePath } from "~/constants/portfolio-publications";
-import { getProjectCaseStudy } from "~/constants/project-case-studies";
+import { getPortfolioCover, getPortfolioPublicationBySlug, portfolioCasePath, portfolioOpenGraphCover } from "~/constants/portfolio-publications";
+import { getPortfolioOwnershipFromQuery, portfolioOwnershipQuery } from "~/utils/project-ownership";
 import { getVerifiedProjectLinks } from "~/utils/project-case-links";
 import { getProjectCaseView } from "~/utils/project-case-view";
 
 definePageMeta({ key: (route) => route.path });
 
 const notFound = () => createError({ statusCode: 404, statusMessage: "Project case not found", message: "Кейс не найден", fatal: true });
-const slug = useRoute().params.slug;
+const route = useRoute();
+const slug = route.params.slug;
 const publication = typeof slug === "string" ? getPortfolioPublicationBySlug(slug) : undefined;
 if (!publication) throw notFound();
 
@@ -99,18 +100,23 @@ const { data: project, error } = await useAsyncData<Project>(
 if (error.value?.statusCode === 404) throw notFound();
 if (error.value) throw createError({ statusCode: 503, statusMessage: "Project case unavailable", message: "Кейс временно недоступен", fatal: true });
 
-const ownershipType = project.value?.caseStudy?.ownershipType;
-const reviewed = getProjectCaseStudy(publication.id);
-if (!reviewed || !ownershipType || ownershipType === "UNVERIFIED" || project.value?.caseSlug !== publication.slug) {
+const caseProject = project.value;
+const ownershipType = caseProject?.caseStudy?.ownershipType;
+if (!caseProject || !ownershipType || ownershipType === "UNVERIFIED" || caseProject.caseSlug !== publication.slug) {
   throw notFound();
 }
-const caseStudy = { ...reviewed, ownershipType };
-const view = getProjectCaseView({ description: "", caseStudy });
-const links = getVerifiedProjectLinks({ caseStudy });
+const catalogLocation = computed(() => ({
+  path: "/projects",
+  query: { type: portfolioOwnershipQuery[getPortfolioOwnershipFromQuery(route.query.type) ?? ownershipType] },
+}));
+const view = getProjectCaseView(caseProject);
+const links = getVerifiedProjectLinks(caseProject);
+const cover = getPortfolioCover(caseProject.image);
+const socialCover = cover ?? portfolioOpenGraphCover;
 const siteUrl = useRuntimeConfig().public.siteUrl;
 const canonical = new URL(portfolioCasePath(publication.slug), siteUrl).href;
-const ogImage = new URL(publication.cover.src, siteUrl).href;
-const title = `${publication.title} — кейс Кирилла Коваленко`;
+const ogImage = new URL(socialCover.src, siteUrl).href;
+const title = `${caseProject.title} — кейс Кирилла Коваленко`;
 
 useSeoMeta({
   title,
@@ -122,14 +128,14 @@ useSeoMeta({
   ogLocale: "ru_RU",
   ogUrl: canonical,
   ogImage,
-  ogImageAlt: publication.cover.alt,
-  ogImageWidth: publication.cover.width,
-  ogImageHeight: publication.cover.height,
+  ogImageAlt: socialCover.alt,
+  ogImageWidth: socialCover.width,
+  ogImageHeight: socialCover.height,
   twitterCard: "summary_large_image",
   twitterTitle: title,
   twitterDescription: view.productSummary,
   twitterImage: ogImage,
-  twitterImageAlt: publication.cover.alt,
+  twitterImageAlt: socialCover.alt,
   robots: "index, follow",
 });
 useHead({ link: [{ rel: "canonical", href: canonical }] });

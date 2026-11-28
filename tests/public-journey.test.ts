@@ -346,7 +346,11 @@ test("case modal supports roles/contributions while unverified entries receive n
   assert.match(modal, /aria-modal="true"/);
   assert.match(modal, /handleModalKeydown/);
   const casePage = read("../pages/projects/[slug].vue");
-  assert.match(card, /portfolioCasePath\(publication.slug\)/);
+  assert.match(card, /portfolioCasePath\(caseSlug\)/);
+  assert.match(card, /getProjectCaseView\(props\.project\)/);
+  assert.match(casePage, /getProjectCaseView\(caseProject\)/);
+  assert.match(casePage, /getVerifiedProjectLinks\(caseProject\)/);
+  assert.doesNotMatch(card + casePage, /getProjectCaseStudy\(/);
   assert.match(casePage, /Открыть сайт/);
   assert.match(casePage, /noopener noreferrer/);
 });

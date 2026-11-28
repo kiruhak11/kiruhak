@@ -59,6 +59,7 @@
                 v-for="(project, index) in selectedProjects"
                 :key="project.id"
                 :project="project"
+                :catalog-ownership="selectedOwnership"
                 :priority="index === 0"
                 @open-modal="openProjectModal"
               />
@@ -124,7 +125,13 @@ import type { DeepReadonly } from "vue";
 import ProjectCard from "~/components/ProjectCard.vue";
 import ProjectModal from "~/components/ProjectModal.vue";
 import type { Project } from "~/composables/useProjects";
-import { groupProjectsByOwnership } from "~/utils/project-ownership";
+import {
+  getPortfolioOwnershipFromQuery,
+  groupProjectsByOwnership,
+  portfolioOwnershipOrder,
+  portfolioOwnershipQuery,
+  type PortfolioOwnership,
+} from "~/utils/project-ownership";
 import { getProjectCaseView } from "~/utils/project-case-view";
 import { formatConfirmedCaseCount } from "~/utils/project-count";
 import { portfolioOpenGraphCover } from "~/constants/portfolio-publications";
@@ -161,13 +168,6 @@ const loading = computed(() => projectsStatus.value === "pending");
 const error = computed(() =>
   projectsLoadError.value ? "Ошибка при загрузке проектов" : null,
 );
-type PortfolioOwnership = "OWN" | "CLIENT" | "PARTICIPATION";
-const ownershipQueries: Record<PortfolioOwnership, string> = {
-  OWN: "own",
-  CLIENT: "client",
-  PARTICIPATION: "participation",
-};
-const ownershipOrder: PortfolioOwnership[] = ["OWN", "CLIENT", "PARTICIPATION"];
 const route = useRoute();
 const router = useRouter();
 const tabRefs = ref<Partial<Record<PortfolioOwnership, HTMLButtonElement>>>({});
@@ -179,8 +179,8 @@ const clientProjects = computed(() => projectGroups.value.CLIENT);
 const participationProjects = computed(() => projectGroups.value.PARTICIPATION);
 const unverifiedProjects = computed(() => projectGroups.value.UNVERIFIED);
 const selectedOwnership = computed(() =>
-  ownershipOrder.find((type) => ownershipQueries[type] === route.query.type) ??
-  ownershipOrder.find((type) => projectGroups.value[type].length > 0) ??
+  getPortfolioOwnershipFromQuery(route.query.type) ??
+  portfolioOwnershipOrder.find((type) => projectGroups.value[type].length > 0) ??
   "OWN"
 );
 const ownershipTabs = computed(() => [
@@ -197,11 +197,11 @@ const setTabRef = (type: PortfolioOwnership, element: unknown) => {
 const selectOwnership = (ownership: PortfolioOwnership, focus = false) => {
   if (focus) tabRefs.value[ownership]?.focus();
   if (selectedOwnership.value === ownership) return;
-  void router.replace({ query: { ...route.query, type: ownershipQueries[ownership] } });
+  void router.replace({ query: { ...route.query, type: portfolioOwnershipQuery[ownership] } });
 };
 
 const handleTabKeydown = (event: KeyboardEvent, current: PortfolioOwnership) => {
-  const values = ownershipOrder;
+  const values = portfolioOwnershipOrder;
   const index = values.indexOf(current);
   let next: PortfolioOwnership | null = null;
   if (event.key === "ArrowRight") next = values[(index + 1) % values.length];
